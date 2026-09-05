@@ -26,6 +26,12 @@ export default async function PracticeSessionPage({
 
   const { session, item: question } = view;
   const isLast = question.position === session.actualQuestionCount;
+  const sessionLabel =
+    session.mode === "DIAGNOSTIC"
+      ? "Math diagnostic"
+      : session.mode === "ADAPTIVE"
+        ? "Adaptive practice"
+        : "Topic practice";
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -35,10 +41,8 @@ export default async function PracticeSessionPage({
             ← Practice home
           </Link>
           <p className="mt-5 text-xs font-bold tracking-[0.12em] text-[#607477] uppercase">
-            {session.mode === "DIAGNOSTIC"
-              ? "Math diagnostic"
-              : "Topic practice"}{" "}
-            · {question.skillTitle} · {label(question.difficulty)}
+            {sessionLabel} · {question.skillTitle} ·{" "}
+            {label(question.difficulty)}
           </p>
           <h1 className="mt-2 font-serif text-3xl sm:text-4xl">
             Question {question.position} of {session.actualQuestionCount}
@@ -89,6 +93,18 @@ export default async function PracticeSessionPage({
           {question.prompt}
         </h2>
         <Stimulus stimulus={question.stimulus} />
+
+        {session.mode === "ADAPTIVE" && (
+          <details
+            open
+            className="mt-5 rounded-xl border border-[#d6ddd7] bg-[#edf3ef] p-4 text-xs leading-5 text-[#52676a]"
+          >
+            <summary className="cursor-pointer font-bold text-[#116b65]">
+              Why this question?
+            </summary>
+            <p className="mt-2">{question.selectionReason}</p>
+          </details>
+        )}
 
         {question.feedback ? (
           <Feedback

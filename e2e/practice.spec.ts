@@ -165,19 +165,62 @@ test("completes a coverage-aware diagnostic and recommends a starting skill", as
       .getByRole("heading", { name: "Arithmetic" }),
   ).toBeVisible();
   await expect(page.getByText(/not proof of mastery/i)).toBeVisible();
-  await page.evaluate(() => {
-    document.querySelectorAll("nextjs-portal").forEach((portal) => {
-      portal.remove();
-    });
-  });
-  await page.screenshot({
-    path: "public/screenshots/diagnostic-results.png",
-    fullPage: true,
-  });
   await page.getByRole("link", { name: "Practice this skill" }).click();
   await expect(page.getByLabel("Topic").locator("option:checked")).toHaveText(
     /Arithmetic/,
   );
+});
+
+test("builds and completes an inspectable adaptive session", async ({
+  page,
+}) => {
+  await page.goto("/practice/adaptive");
+
+  await expect(
+    page.getByRole("heading", { name: "Practice where the evidence points." }),
+  ).toBeVisible();
+  const firstPriority = page.locator("li").filter({ hasText: "Priority 1" });
+  await expect(
+    firstPriority.getByRole("heading", { name: "Arithmetic" }),
+  ).toBeVisible();
+  await expect(page.getByText("adaptive-baseline-v1")).toBeVisible();
+
+  await page.getByLabel("Session length").selectOption("3");
+  await page.getByRole("button", { name: "Start adaptive practice" }).click();
+  await expect(page).toHaveURL(/\/practice\/[a-f0-9-]+\?item=1/);
+
+  for (let position = 1; position <= 3; position += 1) {
+    await expect(page.getByText(/Adaptive practice ·/)).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: `Question ${position} of 3` }),
+    ).toBeVisible();
+    const selectionDetails = page.locator("details");
+    await expect(selectionDetails).toHaveAttribute("open", "");
+    await expect(
+      selectionDetails.getByText(
+        /adaptive-baseline-v1; adaptive score \d\.\d{3}/,
+      ),
+    ).toBeVisible();
+    await answerDiagnosticQuestion(page);
+    await page.getByLabel("Confidence (optional)").selectOption("3");
+    await page.getByRole("button", { name: "Check answer" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Worked solution" }),
+    ).toBeVisible();
+    await page
+      .getByRole("link", {
+        name:
+          position === 3
+            ? "View session summary"
+            : "Continue to next question →",
+      })
+      .click();
+  }
+
+  const evidence = page
+    .locator("section")
+    .filter({ hasText: "Session evidence" });
+  await expect(evidence.getByText("adaptive", { exact: true })).toBeVisible();
 });
 
 async function answerDiagnosticQuestion(page: import("@playwright/test").Page) {

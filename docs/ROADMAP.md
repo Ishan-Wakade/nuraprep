@@ -41,9 +41,9 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 - [x] Assemble a short diagnostic with explicit published-skill coverage and stopping rules.
 - [x] Capture optional confidence and return conservative per-skill signals with an explicit uncertainty warning.
-- [ ] Implement prerequisite graph traversal and evidence-weighted mastery estimates.
-- Implement inspectable adaptive priorities and spaced-review scheduling.
-- Add selection-reason logs and tests against starvation, repetition, and abrupt difficulty jumps.
+- [x] Implement prerequisite graph traversal and evidence-weighted mastery estimates.
+- [x] Implement inspectable adaptive priorities and spaced-review scheduling.
+- [x] Add versioned selection-reason logs and tests against starvation, repetition, and abrupt difficulty jumps.
 
 **Exit:** diagnostic results produce a clear starting point; adaptive practice reacts predictably to seeded learner histories.
 

@@ -97,6 +97,8 @@ The initial adaptive selector is rules-based and inspectable:
 
 The algorithm will be evaluated for learning outcomes and subgroup behavior before more complex ML is considered.
 
+The exact current rules, constants, and limitations are recorded in [Adaptive model](ADAPTIVE_MODEL.md). They are internal product hypotheses, not ATI scoring rules, and must be changed under a new model version with regression tests.
+
 ## Score-estimation baseline
 
 The first estimator combines reviewed practice-test performance by content domain and internal difficulty band. Timed attempts receive a separate pacing feature rather than an arbitrary penalty. Bootstrap resampling provides an uncertainty interval when enough attempts exist; sparse histories receive a wider interval and an explicit low-evidence label.

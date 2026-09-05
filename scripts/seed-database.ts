@@ -11,6 +11,7 @@ import {
   questions,
   questionVersionSources,
   questionVersions,
+  skillPrerequisites,
   skills,
   sourceArtifacts,
   validationRuns,
@@ -509,6 +510,84 @@ async function main() {
         .onConflictDoNothing();
 
       await transaction
+        .insert(skillPrerequisites)
+        .values([
+          prerequisite(
+            ids.fractionsDecimalsPercent,
+            ids.arithmetic,
+            3,
+            "Internal learning hypothesis: arithmetic fluency supports fraction and decimal conversion.",
+          ),
+          prerequisite(
+            ids.ratiosProportions,
+            ids.fractionsDecimalsPercent,
+            2,
+            "Internal learning hypothesis: equivalent fractions support proportional reasoning.",
+          ),
+          prerequisite(
+            ids.conversions,
+            ids.ratiosProportions,
+            2,
+            "Internal learning hypothesis: proportional reasoning supports unit-conversion factors.",
+          ),
+          prerequisite(
+            ids.algebraicExpressions,
+            ids.arithmetic,
+            2,
+            "Internal learning hypothesis: arithmetic fluency supports simplifying expressions.",
+          ),
+          prerequisite(
+            ids.linearEquations,
+            ids.algebraicExpressions,
+            3,
+            "Internal learning hypothesis: expression fluency supports solving linear equations.",
+          ),
+          prerequisite(
+            ids.inequalities,
+            ids.linearEquations,
+            2,
+            "Internal learning hypothesis: equation-solving steps support inequality solving.",
+          ),
+          prerequisite(
+            ids.wordProblems,
+            ids.arithmetic,
+            2,
+            "Internal learning hypothesis: arithmetic fluency supports quantitative word problems.",
+          ),
+          prerequisite(
+            ids.measurement,
+            ids.conversions,
+            2,
+            "Internal learning hypothesis: unit conversion supports measurement reasoning.",
+          ),
+          prerequisite(
+            ids.geometry,
+            ids.arithmetic,
+            2,
+            "Internal learning hypothesis: arithmetic fluency supports geometric calculation.",
+          ),
+          prerequisite(
+            ids.dataInterpretation,
+            ids.arithmetic,
+            1,
+            "Internal learning hypothesis: basic operations support interpreting quantitative displays.",
+          ),
+          prerequisite(
+            ids.probabilityStatistics,
+            ids.fractionsDecimalsPercent,
+            2,
+            "Internal learning hypothesis: fraction and percent reasoning supports probability.",
+          ),
+          prerequisite(
+            ids.probabilityStatistics,
+            ids.dataInterpretation,
+            1,
+            "Internal learning hypothesis: data interpretation supports introductory statistics.",
+          ),
+        ])
+        .onConflictDoNothing();
+
+      await transaction
         .insert(sourceArtifacts)
         .values([
           {
@@ -698,6 +777,15 @@ function skill(id: string, code: string, title: string, parentSkillId: string) {
     alignmentNotes:
       "Internal taxonomy label; alignment requires documented review against public objectives.",
   };
+}
+
+function prerequisite(
+  skillId: string,
+  prerequisiteSkillId: string,
+  strength: number,
+  rationale: string,
+) {
+  return { skillId, prerequisiteSkillId, strength, rationale };
 }
 
 function validatorDescription(

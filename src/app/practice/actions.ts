@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { ensureLearnerProfile } from "@/data/practice";
+import { buildAdaptivePlanForLearner } from "@/data/adaptive";
 import { getDatabase } from "@/db/client";
 import {
   attempts,
@@ -41,6 +42,10 @@ const startSessionInputSchema = z.object({
   questionType: z.string(),
   questionCount: z.string(),
   timingMode: z.string(),
+});
+
+const startAdaptiveInputSchema = z.object({
+  questionCount: z.coerce.number().int().min(1).max(10),
 });
 
 export async function startPracticeSession(
@@ -265,6 +270,65 @@ export async function startDiagnosticSession(
         position: index + 1,
         selectionReason:
           "Diagnostic coverage sample: one current published item per available Math skill.",
+      })),
+    );
+    return session.id;
+  });
+
+  redirect(`/practice/${sessionId}?item=1`);
+}
+
+export async function startAdaptiveSession(
+  _previousState: PracticeActionState,
+  formData: FormData,
+): Promise<PracticeActionState> {
+  void _previousState;
+  const identity = requireLearner();
+  const parsed = startAdaptiveInputSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) {
+    return { status: "error", message: "Choose a valid session length." };
+  }
+
+  const database = getDatabase();
+  const learner = await ensureLearnerProfile(identity);
+  const plan = await buildAdaptivePlanForLearner(
+    learner.id,
+    parsed.data.questionCount,
+  );
+  if (!plan.selected.length) {
+    return {
+      status: "error",
+      message:
+        "No current published question fits the adaptive safety rules. Publish more reviewed coverage or complete a focused session first.",
+    };
+  }
+
+  const sessionId = await database.transaction(async (transaction) => {
+    const [session] = await transaction
+      .insert(practiceSessions)
+      .values({
+        learnerId: learner.id,
+        mode: "ADAPTIVE",
+        timingMode: "UNTIMED",
+        requestedQuestionCount: parsed.data.questionCount,
+        filters: {
+          questionCount: parsed.data.questionCount,
+          timingMode: "UNTIMED",
+          newOnly: false,
+          missedOnly: false,
+        },
+      })
+      .returning({ id: practiceSessions.id });
+    if (!session) throw new Error("Failed to create the adaptive session.");
+
+    await transaction.insert(practiceSessionItems).values(
+      plan.selected.map((candidate, index) => ({
+        sessionId: session.id,
+        questionVersionId: candidate.questionVersionId,
+        position: index + 1,
+        selectionReason: candidate.selectionReason,
       })),
     );
     return session.id;

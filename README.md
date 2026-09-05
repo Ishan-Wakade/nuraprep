@@ -11,7 +11,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 ## Project status
 
-**Diagnostic and adaptive-practice phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, persisted topic practice, and a coverage-aware diagnostic with conservative starting signals. Practice includes server-controlled Socratic hints, reviewer-authored misconception attribution, version-linked learner reports, and owner triage. The six seed candidates remain deliberately unapproved; browser tests publish disposable, explicitly test-only fixtures in the local/test database. There is no approved production question bank, adaptive scheduler, or validated score predictor yet.
+**Timed-simulation phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, persisted topic practice, a coverage-aware diagnostic, and a versioned rules-based adaptive scheduler. Practice includes server-controlled Socratic hints, reviewer-authored misconception attribution, version-linked learner reports, and owner triage. The six seed candidates remain deliberately unapproved; browser tests publish disposable, explicitly test-only fixtures in the local/test database. There is no approved production question bank, full Math simulation, or validated score predictor yet.
 
 | Area                                        | Status                                                           |
 | ------------------------------------------- | ---------------------------------------------------------------- |
@@ -20,7 +20,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 | Reviewer and provenance workflow            | Review, publication, reports, and pattern search working locally |
 | Topic practice                              | Working local multi-format vertical slice                        |
 | Diagnostic                                  | Working local flow with explicit coverage and starting signals   |
-| Adaptive mode                               | In development                                                   |
+| Adaptive mode                               | Working local, inspectable rules baseline                        |
 | Timed Math practice test                    | Planned                                                          |
 | Score estimate and study plan               | Planned                                                          |
 | Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works                 |
@@ -86,7 +86,7 @@ Important boundaries:
 - Adaptive recommendations and score estimates retain their inputs, model version, explanation, and uncertainty.
 - Authentication and billing are deferred so the practice and review loops can be validated first.
 
-See [Architecture](docs/ARCHITECTURE.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), and [Roadmap](docs/ROADMAP.md).
+See [Architecture](docs/ARCHITECTURE.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), and [Roadmap](docs/ROADMAP.md).
 
 ## Technology
 
