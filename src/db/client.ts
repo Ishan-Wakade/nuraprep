@@ -1,6 +1,6 @@
 import "server-only";
 
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
 import { getServerEnvironment } from "@/lib/env/server";
@@ -8,6 +8,7 @@ import { getServerEnvironment } from "@/lib/env/server";
 import * as schema from "./schema";
 
 const globalForDatabase = globalThis as unknown as {
+  database?: NodePgDatabase<typeof schema>;
   databasePool?: Pool;
 };
 
@@ -24,10 +25,18 @@ function createPool() {
   });
 }
 
-export const databasePool = globalForDatabase.databasePool ?? createPool();
+export function getDatabasePool() {
+  if (!globalForDatabase.databasePool) {
+    globalForDatabase.databasePool = createPool();
+  }
 
-if (process.env.NODE_ENV !== "production") {
-  globalForDatabase.databasePool = databasePool;
+  return globalForDatabase.databasePool;
 }
 
-export const database = drizzle({ client: databasePool, schema });
+export function getDatabase() {
+  if (!globalForDatabase.database) {
+    globalForDatabase.database = drizzle({ client: getDatabasePool(), schema });
+  }
+
+  return globalForDatabase.database;
+}

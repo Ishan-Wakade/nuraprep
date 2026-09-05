@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 
+import { config } from "dotenv";
 import { Pool } from "pg";
+
+config({ path: ".env.local", quiet: true });
 
 const databaseUrl = process.env.DATABASE_URL;
 
