@@ -39,8 +39,9 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 ## 3. Diagnostic and adaptive practice
 
-- Assemble a short diagnostic with explicit coverage and stopping rules.
-- Implement prerequisite graph traversal, mastery estimates, confidence input, and uncertainty.
+- [x] Assemble a short diagnostic with explicit published-skill coverage and stopping rules.
+- [x] Capture optional confidence and return conservative per-skill signals with an explicit uncertainty warning.
+- [ ] Implement prerequisite graph traversal and evidence-weighted mastery estimates.
 - Implement inspectable adaptive priorities and spaced-review scheduling.
 - Add selection-reason logs and tests against starvation, repetition, and abrupt difficulty jumps.
 

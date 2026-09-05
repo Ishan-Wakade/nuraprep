@@ -4,8 +4,18 @@ import { getPracticeSetupData } from "@/data/practice";
 
 import { PracticeSetupForm } from "./practice-setup-form";
 
-export default async function PracticeSetupPage() {
+export default async function PracticeSetupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ skill?: string }>;
+}) {
+  const { skill } = await searchParams;
   const data = await getPracticeSetupData();
+  const defaultSkillCode = data.availability.some(
+    (item) => item.skillCode === skill,
+  )
+    ? skill
+    : undefined;
 
   return (
     <div>
@@ -22,10 +32,32 @@ export default async function PracticeSetupPage() {
             published question versions can enter a learner session.
           </p>
 
+          <Link
+            href="/practice/diagnostic"
+            className="mt-7 grid gap-4 rounded-2xl border border-[#9fc9bd] bg-[#e8f2ee] p-5 shadow-sm transition hover:border-[#4f9185] sm:grid-cols-[1fr_auto] sm:items-center sm:p-6"
+          >
+            <span>
+              <span className="text-xs font-bold tracking-[0.12em] text-[#116b65] uppercase">
+                New learner
+              </span>
+              <strong className="mt-2 block font-serif text-2xl">
+                Take the Math diagnostic
+              </strong>
+              <span className="mt-2 block text-sm leading-6 text-[#47615f]">
+                Sample the current skill coverage and get a conservative
+                starting recommendation.
+              </span>
+            </span>
+            <span className="text-sm font-bold text-[#116b65]">
+              Start check-in →
+            </span>
+          </Link>
+
           <div className="mt-8 rounded-2xl border border-[#d6ddd7] bg-[#fffdf8] p-5 shadow-sm sm:p-7">
             <PracticeSetupForm
               skills={data.availability}
               totalAvailable={data.totalAvailable}
+              defaultSkillCode={defaultSkillCode}
             />
           </div>
 
@@ -71,8 +103,8 @@ export default async function PracticeSetupPage() {
                     >
                       <strong>{label(session.status)}</strong>
                       <span className="mt-1 block text-[#637679]">
-                        {session.requestedQuestionCount} requested ·{" "}
-                        {label(session.timingMode)}
+                        {label(session.mode)} · {session.requestedQuestionCount}{" "}
+                        requested · {label(session.timingMode)}
                       </span>
                     </Link>
                   </li>

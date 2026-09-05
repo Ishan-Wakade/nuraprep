@@ -16,6 +16,7 @@ import {
   tutorInteractions,
 } from "@/db/schema";
 import { requireLearner, type LearnerIdentity } from "@/lib/auth/learner";
+import { summarizeDiagnostic } from "@/lib/practice/diagnostic";
 
 export async function ensureLearnerProfile(identity: LearnerIdentity) {
   const [profile] = await getDatabase()
@@ -64,6 +65,7 @@ export async function getPracticeSetupData() {
     database
       .select({
         id: practiceSessions.id,
+        mode: practiceSessions.mode,
         status: practiceSessions.status,
         timingMode: practiceSessions.timingMode,
         requestedQuestionCount: practiceSessions.requestedQuestionCount,
@@ -106,6 +108,7 @@ export async function getPracticeSessionView(
   const [session] = await database
     .select({
       id: practiceSessions.id,
+      mode: practiceSessions.mode,
       status: practiceSessions.status,
       timingMode: practiceSessions.timingMode,
       filters: practiceSessions.filters,
@@ -272,6 +275,7 @@ export async function getPracticeSessionSummary(sessionId: string) {
       skillTitle: skills.title,
       correct: attempts.correct,
       elapsedMilliseconds: attempts.elapsedMilliseconds,
+      confidence: attempts.confidence,
     })
     .from(practiceSessionItems)
     .innerJoin(
@@ -300,6 +304,35 @@ export async function getPracticeSessionSummary(sessionId: string) {
     skillsByCode.set(row.skillCode, summary);
   }
 
+  const diagnostic =
+    view.session.mode === "DIAGNOSTIC"
+      ? summarizeDiagnostic(
+          [...skillsByCode.values()].map((skill) => {
+            const matchingRows = skillRows.filter(
+              (row) => row.skillCode === skill.skillCode,
+            );
+            const answeredRows = matchingRows.filter(
+              (row) => row.correct !== null,
+            );
+            const confidenceValues = answeredRows.flatMap((row) =>
+              row.confidence === null ? [] : [row.confidence],
+            );
+
+            return {
+              ...skill,
+              averageConfidence: confidenceValues.length
+                ? confidenceValues.reduce((total, value) => total + value, 0) /
+                  confidenceValues.length
+                : null,
+              elapsedMilliseconds: matchingRows.reduce(
+                (total, row) => total + (row.elapsedMilliseconds ?? 0),
+                0,
+              ),
+            };
+          }),
+        )
+      : null;
+
   return {
     session: view.session,
     totalElapsedMilliseconds: skillRows.reduce(
@@ -307,6 +340,7 @@ export async function getPracticeSessionSummary(sessionId: string) {
       0,
     ),
     skillBreakdown: [...skillsByCode.values()],
+    diagnostic,
   };
 }
 

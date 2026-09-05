@@ -35,7 +35,10 @@ export default async function PracticeSessionPage({
             ← Practice home
           </Link>
           <p className="mt-5 text-xs font-bold tracking-[0.12em] text-[#607477] uppercase">
-            {question.skillTitle} · {label(question.difficulty)}
+            {session.mode === "DIAGNOSTIC"
+              ? "Math diagnostic"
+              : "Topic practice"}{" "}
+            · {question.skillTitle} · {label(question.difficulty)}
           </p>
           <h1 className="mt-2 font-serif text-3xl sm:text-4xl">
             Question {question.position} of {session.actualQuestionCount}

@@ -85,6 +85,8 @@ PostgreSQL triggers reject updates and deletes on question versions, validation 
 
 ## Adaptive baseline
 
+The diagnostic is the first implemented input to this layer. It assembles at most one current published question per available skill, requires at least four skills, stores the exact immutable item manifest, and derives a starting recommendation from saved correctness, confidence, and time evidence. A one-item result is deliberately called an early signal rather than mastery.
+
 The initial adaptive selector is rules-based and inspectable:
 
 1. estimate skill mastery with a recency-weighted beta-binomial score;

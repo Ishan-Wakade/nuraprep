@@ -1,4 +1,8 @@
 import { expect, test as setup } from "@playwright/test";
+import { config } from "dotenv";
+import { Pool } from "pg";
+
+config({ path: ".env.local", quiet: true });
 
 const firstVersionId = "14000000-0000-4000-8000-000000000001";
 
@@ -109,4 +113,93 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
   await expect(
     publishedPage.getByRole("button", { name: "Currently published" }),
   ).toBeDisabled();
+
+  await publishAdditionalDiagnosticFixtures();
 });
+
+async function publishAdditionalDiagnosticFixtures() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error("DATABASE_URL is required for E2E setup.");
+
+  const pool = new Pool({ connectionString: databaseUrl });
+  const client = await pool.connect();
+  const versionIds = [2, 3, 4, 5, 6].map(
+    (value) => `14000000-0000-4000-8000-${String(value).padStart(12, "0")}`,
+  );
+
+  try {
+    await client.query("BEGIN");
+    const rules = await client.query<{ id: string; key: string }>(
+      "SELECT id, key FROM validator_rules WHERE active = true",
+    );
+
+    for (const versionId of versionIds) {
+      const version = await client.query<{ question_id: string }>(
+        `SELECT qv.question_id
+         FROM question_versions qv
+         WHERE qv.id = $1`,
+        [versionId],
+      );
+      const questionId = version.rows[0]?.question_id;
+      if (!questionId) throw new Error(`Missing E2E fixture ${versionId}.`);
+
+      const current = await client.query(
+        `SELECT 1 FROM question_publications
+         WHERE question_id = $1 AND retired_at IS NULL`,
+        [questionId],
+      );
+      if (current.rowCount) continue;
+
+      for (const rule of rules.rows) {
+        await client.query(
+          `INSERT INTO validation_runs
+           (question_version_id, validator_rule_id, outcome, evidence)
+           VALUES ($1, $2, 'PASS', $3::jsonb)`,
+          [
+            versionId,
+            rule.id,
+            JSON.stringify({
+              method: "e2e-diagnostic-fixture",
+              note: "Test-only evidence; not a production content approval.",
+              validatorKey: rule.key,
+            }),
+          ],
+        );
+      }
+      await client.query(
+        `INSERT INTO review_decisions
+         (question_version_id, reviewer_id, decision, rubric_scores, notes)
+         VALUES ($1, 'e2e-fixture-reviewer', 'APPROVED', $2::jsonb, $3)`,
+        [
+          versionId,
+          JSON.stringify({
+            mathematicalCorrectness: 4,
+            clarity: 4,
+            alignment: 4,
+            accessibility: 4,
+            originality: 4,
+          }),
+          "E2E-only fixture approval for diagnostic assembly tests; not production approval.",
+        ],
+      );
+      await client.query(
+        "UPDATE questions SET lifecycle = 'ACTIVE', updated_at = now() WHERE id = $1",
+        [questionId],
+      );
+      await client.query(
+        `INSERT INTO question_publications
+         (question_id, question_version_id, published_by)
+         VALUES ($1, $2, 'e2e-fixture-reviewer')`,
+        [questionId, versionId],
+      );
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+    await pool.end();
+  }
+}

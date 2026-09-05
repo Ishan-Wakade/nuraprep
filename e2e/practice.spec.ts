@@ -10,8 +10,15 @@ test("completes a published topic-practice question with feedback", async ({
   await expect(
     page.getByRole("heading", { name: "Build a focused Math session." }),
   ).toBeVisible();
-  await expect(page.getByText(/1 published question available/)).toBeVisible();
+  await expect(page.getByText(/6 published questions available/)).toBeVisible();
 
+  const arithmeticValue = await page
+    .getByLabel("Topic")
+    .locator("option")
+    .filter({ hasText: "Arithmetic" })
+    .getAttribute("value");
+  expect(arithmeticValue).toBeTruthy();
+  await page.getByLabel("Topic").selectOption(arithmeticValue!);
   await page.getByLabel("Number of questions").selectOption("1");
   await page.getByRole("button", { name: "Start practice" }).click();
   await expect(page).toHaveURL(/\/practice\/[a-f0-9-]+\?item=1/);
@@ -109,3 +116,102 @@ test("uses a responsive practice setup without horizontal overflow", async ({
   }));
   expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
 });
+
+test("completes a coverage-aware diagnostic and recommends a starting skill", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1200 });
+  await page.goto("/practice/diagnostic");
+
+  await expect(
+    page.getByRole("heading", { name: "Find a defensible starting point." }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("5 published skills · 6 published questions"),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Start diagnostic" }).click();
+  await expect(page).toHaveURL(/\/practice\/[a-f0-9-]+\?item=1/);
+
+  for (let position = 1; position <= 5; position += 1) {
+    await expect(
+      page.getByRole("heading", { name: `Question ${position} of 5` }),
+    ).toBeVisible();
+    await answerDiagnosticQuestion(page);
+    await page.getByLabel("Confidence (optional)").selectOption("4");
+    await page.getByRole("button", { name: "Check answer" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Worked solution" }),
+    ).toBeVisible();
+
+    await page
+      .getByRole("link", {
+        name:
+          position === 5
+            ? "View session summary"
+            : "Continue to next question →",
+      })
+      .click();
+  }
+
+  await expect(page.getByText("Diagnostic results")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "4 of 5 correct" }),
+  ).toBeVisible();
+  await expect(page.getByText("Personalized starting point")).toBeVisible();
+  await expect(
+    page
+      .locator("section")
+      .filter({ hasText: "Personalized starting point" })
+      .getByRole("heading", { name: "Arithmetic" }),
+  ).toBeVisible();
+  await expect(page.getByText(/not proof of mastery/i)).toBeVisible();
+  await page.evaluate(() => {
+    document.querySelectorAll("nextjs-portal").forEach((portal) => {
+      portal.remove();
+    });
+  });
+  await page.screenshot({
+    path: "public/screenshots/diagnostic-results.png",
+    fullPage: true,
+  });
+  await page.getByRole("link", { name: "Practice this skill" }).click();
+  await expect(page.getByLabel("Topic").locator("option:checked")).toHaveText(
+    /Arithmetic/,
+  );
+});
+
+async function answerDiagnosticQuestion(page: import("@playwright/test").Page) {
+  const prompt = (await page.locator("h2").first().textContent()) ?? "";
+
+  if (prompt.includes("volunteer team fills 24 cartons")) {
+    await page.locator('input[name="choiceId"][value="a"]').check();
+    return;
+  }
+  if (prompt.includes("Write 7/8 as a decimal")) {
+    await page.getByLabel("Numeric answer").fill("0.875");
+    return;
+  }
+  if (prompt.includes("equivalent to 3:5")) {
+    await page.locator('input[name="choiceId"][value="a"]').check();
+    await page.locator('input[name="choiceId"][value="c"]').check();
+    return;
+  }
+  if (prompt.includes("Arrange the values")) {
+    await page.getByRole("button", { name: "Move 0.206 up" }).click();
+    await page.getByRole("button", { name: "Move 0.206 up" }).click();
+    await page.getByRole("button", { name: "Move 0.26 up" }).click();
+    await page.getByRole("button", { name: "Move 0.26 up" }).click();
+    await page.getByRole("button", { name: "Move 0.602 up" }).click();
+    return;
+  }
+  if (prompt.includes("median number of books")) {
+    await page.locator('input[name="choiceId"][value="b"]').check();
+    return;
+  }
+  if (prompt.includes("garden has a perimeter")) {
+    await page.locator('input[name="choiceId"][value="a"]').check();
+    return;
+  }
+
+  throw new Error(`Unhandled diagnostic fixture: ${prompt}`);
+}

@@ -9,9 +9,11 @@ const initialState = { status: "idle" as const, message: "" };
 export function PracticeSetupForm({
   skills,
   totalAvailable,
+  defaultSkillCode,
 }: {
   skills: { skillCode: string; skillTitle: string; availableCount: number }[];
   totalAvailable: number;
+  defaultSkillCode?: string;
 }) {
   const [state, action, pending] = useActionState(
     startPracticeSession,
@@ -22,7 +24,11 @@ export function PracticeSetupForm({
     <form action={action} className="space-y-6">
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Topic">
-          <select name="skillCode" defaultValue="" className={controlClass}>
+          <select
+            name="skillCode"
+            defaultValue={defaultSkillCode ?? ""}
+            className={controlClass}
+          >
             <option value="">All published topics</option>
             {skills.map((skill) => (
               <option value={skill.skillCode} key={skill.skillCode}>

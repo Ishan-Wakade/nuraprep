@@ -194,6 +194,85 @@ export async function startPracticeSession(
   redirect(`/practice/${sessionId}?item=1`);
 }
 
+export async function startDiagnosticSession(
+  _previousState: PracticeActionState,
+  _formData: FormData,
+): Promise<PracticeActionState> {
+  void _previousState;
+  void _formData;
+  const identity = requireLearner();
+  const database = getDatabase();
+  const learner = await ensureLearnerProfile(identity);
+  const candidates = await database
+    .select({
+      questionVersionId: questionVersions.id,
+      skillCode: skills.code,
+    })
+    .from(questionPublications)
+    .innerJoin(
+      questionVersions,
+      eq(questionVersions.id, questionPublications.questionVersionId),
+    )
+    .innerJoin(questions, eq(questions.id, questionPublications.questionId))
+    .innerJoin(skills, eq(skills.id, questionVersions.primarySkillId))
+    .where(
+      and(
+        isNull(questionPublications.retiredAt),
+        eq(questions.lifecycle, "ACTIVE"),
+      ),
+    )
+    .orderBy(sql`random()`);
+
+  const selected: typeof candidates = [];
+  const coveredSkills = new Set<string>();
+  for (const candidate of candidates) {
+    if (coveredSkills.has(candidate.skillCode)) continue;
+    coveredSkills.add(candidate.skillCode);
+    selected.push(candidate);
+    if (selected.length === 6) break;
+  }
+
+  if (selected.length < 4) {
+    return {
+      status: "error",
+      message:
+        "The diagnostic needs published questions across at least four Math skills. Review and publish more coverage first.",
+    };
+  }
+
+  const sessionId = await database.transaction(async (transaction) => {
+    const [session] = await transaction
+      .insert(practiceSessions)
+      .values({
+        learnerId: learner.id,
+        mode: "DIAGNOSTIC",
+        timingMode: "UNTIMED",
+        requestedQuestionCount: selected.length,
+        filters: {
+          questionCount: selected.length,
+          timingMode: "UNTIMED",
+          newOnly: false,
+          missedOnly: false,
+        },
+      })
+      .returning({ id: practiceSessions.id });
+    if (!session) throw new Error("Failed to create the diagnostic session.");
+
+    await transaction.insert(practiceSessionItems).values(
+      selected.map((candidate, index) => ({
+        sessionId: session.id,
+        questionVersionId: candidate.questionVersionId,
+        position: index + 1,
+        selectionReason:
+          "Diagnostic coverage sample: one current published item per available Math skill.",
+      })),
+    );
+    return session.id;
+  });
+
+  redirect(`/practice/${sessionId}?item=1`);
+}
+
 const answerSubmissionSchema = z.object({
   sessionId: z.uuid(),
   sessionItemId: z.uuid(),

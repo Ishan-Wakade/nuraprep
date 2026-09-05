@@ -11,15 +11,16 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 ## Project status
 
-**Topic-practice phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, and a persisted topic-practice vertical slice with server-controlled Socratic hints, reviewer-authored misconception attribution, version-linked learner reports, and owner triage. The six seed candidates remain deliberately unapproved; browser tests publish a disposable gated fixture in the local/test database. There is no approved production question bank or validated score predictor yet.
+**Diagnostic and adaptive-practice phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, persisted topic practice, and a coverage-aware diagnostic with conservative starting signals. Practice includes server-controlled Socratic hints, reviewer-authored misconception attribution, version-linked learner reports, and owner triage. The six seed candidates remain deliberately unapproved; browser tests publish disposable, explicitly test-only fixtures in the local/test database. There is no approved production question bank, adaptive scheduler, or validated score predictor yet.
 
 | Area                                        | Status                                                           |
 | ------------------------------------------- | ---------------------------------------------------------------- |
 | Public repository and engineering standards | Complete                                                         |
 | Math taxonomy and question data model       | Implemented with migrations and seed data                        |
 | Reviewer and provenance workflow            | Review, publication, reports, and pattern search working locally |
-| Topic practice                              | Working local vertical slice; diagnostic next                    |
-| Diagnostic and adaptive mode                | Planned                                                          |
+| Topic practice                              | Working local multi-format vertical slice                        |
+| Diagnostic                                  | Working local flow with explicit coverage and starting signals   |
+| Adaptive mode                               | In development                                                   |
 | Timed Math practice test                    | Planned                                                          |
 | Score estimate and study plan               | Planned                                                          |
 | Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works                 |
@@ -36,7 +37,9 @@ The interface shown is a product-direction preview. The example readiness state 
 
 ![NuraPrep answer feedback with a worked solution, deterministic misconception guidance, and distractor-specific explanations](public/screenshots/answer-feedback.png)
 
-These screens are backed by the local PostgreSQL practice flow. A learner can also report an answered item, and the owner can append an auditable triage decision against that exact question version and attempt. The owner workspace searches learner and reviewer evidence together and summarizes recurring categories or stable issue codes without erasing source attribution. The displayed item is a disposable browser-test fixture that passed the development validation and publication workflow; it is not production-approved content.
+![NuraPrep diagnostic results with conservative skill signals and a personalized starting point](public/screenshots/diagnostic-results.png)
+
+These screens are backed by the local PostgreSQL practice flow. The diagnostic samples one current published item per available skill and labels every result as preliminary; it does not infer mastery from one answer. A learner can also report an answered item, and the owner can append an auditable triage decision against that exact question version and attempt. The owner workspace searches learner and reviewer evidence together and summarizes recurring categories or stable issue codes without erasing source attribution. Displayed items are disposable browser-test fixtures; they are not production-approved content.
 
 ## Product direction
 
@@ -117,7 +120,7 @@ pnpm db:seed
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Local topic practice is at [http://localhost:3000/practice](http://localhost:3000/practice), and the owner review queue is at [http://localhost:3000/review](http://localhost:3000/review). Their temporary development identities are rejected whenever `APP_ENV=production`.
+Open [http://localhost:3000](http://localhost:3000). Local topic practice is at [http://localhost:3000/practice](http://localhost:3000/practice), the diagnostic starts at [http://localhost:3000/practice/diagnostic](http://localhost:3000/practice/diagnostic), and the owner review queue is at [http://localhost:3000/review](http://localhost:3000/review). Their temporary development identities are rejected whenever `APP_ENV=production`.
 
 ## Environment variables
 
