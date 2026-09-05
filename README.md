@@ -74,7 +74,7 @@ Important boundaries:
 - Adaptive recommendations and score estimates retain their inputs, model version, explanation, and uncertainty.
 - Authentication and billing are deferred so the practice and review loops can be validated first.
 
-See [Architecture](docs/ARCHITECTURE.md), [Question model](docs/QUESTION_MODEL.md), [Content governance](docs/CONTENT_GOVERNANCE.md), and [Roadmap](docs/ROADMAP.md).
+See [Architecture](docs/ARCHITECTURE.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), and [Roadmap](docs/ROADMAP.md).
 
 ## Technology
 

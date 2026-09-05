@@ -4,7 +4,14 @@ import type { ReactNode } from "react";
 
 import { getQuestionReviewDetail } from "@/data/reviewer";
 
-import { DecisionForm, FeedbackForm, RevisionForm } from "./review-forms";
+import {
+  AutomatedValidationForm,
+  DecisionForm,
+  FeedbackForm,
+  PublishForm,
+  ReviewerValidationForm,
+  RevisionForm,
+} from "./review-forms";
 
 export default async function QuestionReviewPage({
   params,
@@ -112,6 +119,9 @@ export default async function QuestionReviewPage({
             <KeyValue label="Answer contract">
               <CodeBlock value={question.answerSpec} />
             </KeyValue>
+            <KeyValue label="Deterministic math verification">
+              <CodeBlock value={question.verificationSpec} />
+            </KeyValue>
             <KeyValue label="Worked explanation">
               <p className="leading-7">{question.explanation}</p>
             </KeyValue>
@@ -122,6 +132,22 @@ export default async function QuestionReviewPage({
 
           <Panel title="Review decision" eyebrow="Immutable audit event">
             <DecisionForm versionId={question.versionId} />
+          </Panel>
+          <Panel title="Automated validation" eyebrow="Reproducible evidence">
+            <AutomatedValidationForm versionId={question.versionId} />
+          </Panel>
+          <Panel title="Reviewer validation" eyebrow="Human-only checks">
+            <ReviewerValidationForm versionId={question.versionId} />
+          </Panel>
+          <Panel title="Publication" eyebrow="Explicit release gate">
+            <PublishForm
+              versionId={question.versionId}
+              disabled={!question.publicationReadiness.publishable}
+              alreadyPublished={
+                question.currentPublication?.questionVersionId ===
+                question.versionId
+              }
+            />
           </Panel>
           <Panel
             title="Structured feedback"
@@ -135,6 +161,7 @@ export default async function QuestionReviewPage({
               prompt={question.prompt}
               choices={question.choices ?? null}
               answerSpec={question.answerSpec}
+              verificationSpec={question.verificationSpec ?? null}
               explanation={question.explanation}
               distractorRationales={question.distractorRationales}
               difficulty={question.difficulty}
@@ -185,6 +212,22 @@ export default async function QuestionReviewPage({
                 term="Authoring"
                 value={`${label(question.authoringMode)} · ${question.authorId ?? question.generationRunId ?? "unknown"}`}
               />
+              {question.generationRunId && (
+                <>
+                  <Meta
+                    term="Generation model"
+                    value={`${question.generationProvider ?? "unknown provider"} · ${question.generationModel ?? "unknown model"}`}
+                  />
+                  <Meta
+                    term="Template"
+                    value={`${question.generationTemplateKey ?? "unknown"} v${question.generationTemplateVersion ?? "?"}`}
+                  />
+                  <Meta
+                    term="Prompt hash"
+                    value={question.generationPromptHash ?? "unknown"}
+                  />
+                </>
+              )}
             </dl>
           </SidePanel>
           <SidePanel title="Validation evidence">
@@ -251,6 +294,31 @@ export default async function QuestionReviewPage({
                 </Link>
               ))}
             </div>
+          </SidePanel>
+          <SidePanel title="Publication history">
+            {question.publications.length ? (
+              <ul className="space-y-2 text-xs">
+                {question.publications.map((publication) => (
+                  <li
+                    key={publication.id}
+                    className="rounded-lg border border-[#e2e6e2] px-3 py-2"
+                  >
+                    <strong>
+                      {publication.retiredAt ? "Retired" : "Current"}
+                    </strong>
+                    <p className="mt-1 text-[#687a7c]">
+                      {publication.questionVersionId === question.versionId
+                        ? `This version · ${publication.publishedAt}`
+                        : publication.publishedAt}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-[#687a7c]">
+                No version in this family has been published.
+              </p>
+            )}
           </SidePanel>
           <SidePanel title="Audit history">
             <p className="text-xs text-[#687a7c]">

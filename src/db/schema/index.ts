@@ -19,6 +19,7 @@ import {
 import type {
   AnswerSpec,
   DistractorRationales,
+  MathVerificationSpec,
   QuestionChoice,
   QuestionStimulus,
 } from "@/lib/questions/contracts";
@@ -390,6 +391,7 @@ export const questionVersions = pgTable(
     distractorRationales: jsonb("distractor_rationales")
       .$type<DistractorRationales>()
       .notNull(),
+    verificationSpec: jsonb("verification_spec").$type<MathVerificationSpec>(),
     primarySkillId: uuid("primary_skill_id")
       .notNull()
       .references(() => skills.id, { onDelete: "restrict" }),
@@ -571,5 +573,39 @@ export const reviewerFeedback = pgTable(
       table.recurringIssueCode,
     ),
     index("feedback_question_idx").on(table.questionVersionId),
+  ],
+);
+
+export const questionPublications = pgTable(
+  "question_publications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    questionId: uuid("question_id")
+      .notNull()
+      .references(() => questions.id, { onDelete: "restrict" }),
+    questionVersionId: uuid("question_version_id")
+      .notNull()
+      .references(() => questionVersions.id, { onDelete: "restrict" }),
+    publishedBy: varchar("published_by", { length: 160 }).notNull(),
+    publishedAt: timestamp("published_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    retiredAt: timestamp("retired_at", { withTimezone: true }),
+    retiredBy: varchar("retired_by", { length: 160 }),
+    retirementReason: text("retirement_reason"),
+  },
+  (table) => [
+    uniqueIndex("question_publication_version_idx").on(table.questionVersionId),
+    uniqueIndex("question_publication_current_idx")
+      .on(table.questionId)
+      .where(sql`${table.retiredAt} IS NULL`),
+    check(
+      "question_publication_retirement_check",
+      sql`(${table.retiredAt} IS NULL AND ${table.retiredBy} IS NULL AND ${table.retirementReason} IS NULL) OR (${table.retiredAt} IS NOT NULL AND ${table.retiredBy} IS NOT NULL AND ${table.retirementReason} IS NOT NULL)`,
+    ),
+    check(
+      "question_publication_time_check",
+      sql`${table.retiredAt} IS NULL OR ${table.retiredAt} >= ${table.publishedAt}`,
+    ),
   ],
 );

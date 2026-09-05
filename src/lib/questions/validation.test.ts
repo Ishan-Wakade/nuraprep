@@ -6,6 +6,7 @@ import {
   evaluatePublicationGate,
   parseNumericInput,
   REQUIRED_PUBLICATION_VALIDATORS,
+  validateMathVerification,
   validateQuestionContent,
 } from "./validation";
 
@@ -144,6 +145,113 @@ describe("parseNumericInput", () => {
 
   it.each(["", "3/0", "2 + 2", "infinity", "1/2/3"])("rejects %s", (input) => {
     expect(parseNumericInput(input)).toBeUndefined();
+  });
+});
+
+describe("validateMathVerification", () => {
+  it("recomputes the keyed value from a safe arithmetic expression", () => {
+    expect(
+      validateMathVerification(validSingleChoiceQuestion, {
+        kind: "numeric_result",
+        expression: [24, 18, "multiply"],
+        tolerance: 0,
+      }),
+    ).toMatchObject({
+      valid: true,
+      evidence: { computedValue: 432, keyedValue: 432 },
+    });
+  });
+
+  it("reads a leading numeric value when a choice includes units", () => {
+    const content: QuestionContent = {
+      ...validSingleChoiceQuestion,
+      choices: [
+        { id: "a", content: "9 feet" },
+        { id: "b", content: "11 feet" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "b" },
+      distractorRationales: { a: "This subtracts one paired side." },
+    };
+
+    expect(
+      validateMathVerification(content, {
+        kind: "numeric_result",
+        expression: [54, 2, 16, "multiply", "subtract", 2, "divide"],
+        tolerance: 0,
+      }),
+    ).toMatchObject({ valid: true });
+  });
+
+  it("derives every equivalent-ratio choice rather than trusting the key", () => {
+    const content: QuestionContent = {
+      questionType: "MULTIPLE_SELECT",
+      prompt: "Which ratios are equivalent to 3:5?",
+      choices: [
+        { id: "a", content: "6:10" },
+        { id: "b", content: "9:12" },
+        { id: "c", content: "12:20" },
+      ],
+      answerSpec: { type: "multiple_select", choiceIds: ["a", "c"] },
+      explanation: "Both terms must be scaled by the same factor.",
+      distractorRationales: { b: "This simplifies to 3:4." },
+    };
+
+    expect(
+      validateMathVerification(content, {
+        kind: "choice_equivalence",
+        target: [3, 5, "divide"],
+        candidates: {
+          a: [6, 10, "divide"],
+          b: [9, 12, "divide"],
+          c: [12, 20, "divide"],
+        },
+        tolerance: 1e-9,
+      }),
+    ).toMatchObject({ valid: true });
+  });
+
+  it("derives ordered-response positions from stored numeric values", () => {
+    const content: QuestionContent = {
+      questionType: "ORDERED_RESPONSE",
+      prompt: "Order the values.",
+      choices: [
+        { id: "a", content: "0.62" },
+        { id: "b", content: "0.602" },
+        { id: "c", content: "0.206" },
+      ],
+      answerSpec: { type: "ordered_response", itemIds: ["c", "b", "a"] },
+      explanation: "Compare equal place values.",
+      distractorRationales: {},
+    };
+
+    expect(
+      validateMathVerification(content, {
+        kind: "ordered_values",
+        values: { a: 0.62, b: 0.602, c: 0.206 },
+        direction: "ascending",
+      }),
+    ).toMatchObject({ valid: true });
+  });
+
+  it("detects a mismatched key and malformed arithmetic", () => {
+    expect(
+      validateMathVerification(validSingleChoiceQuestion, {
+        kind: "numeric_result",
+        expression: [24, 10, "multiply"],
+        tolerance: 0,
+      }),
+    ).toMatchObject({ valid: false, failureCode: "KEYED_ANSWER_MISMATCH" });
+
+    expect(
+      validateMathVerification(validSingleChoiceQuestion, {
+        kind: "numeric_result",
+        expression: [24, "multiply"],
+        tolerance: 0,
+      }),
+    ).toMatchObject({
+      valid: false,
+      failureCode: "VERIFICATION_EVALUATION_ERROR",
+    });
   });
 });
 

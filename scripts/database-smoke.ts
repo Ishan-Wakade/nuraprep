@@ -92,6 +92,68 @@ async function main() {
       );
     }
 
+    const publicationId = randomUUID();
+    await client.query(
+      `INSERT INTO question_publications
+       (id, question_id, question_version_id, published_by)
+       VALUES ($1, $2, $3, 'ci-smoke-test')`,
+      [publicationId, questionId, versionId],
+    );
+
+    await client.query("SAVEPOINT publication_identity_check");
+    let publicationMutationWasBlocked = false;
+    try {
+      await client.query(
+        "UPDATE question_publications SET published_by = 'mutated' WHERE id = $1",
+        [publicationId],
+      );
+    } catch (error) {
+      publicationMutationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query("ROLLBACK TO SAVEPOINT publication_identity_check");
+    }
+
+    if (!publicationMutationWasBlocked) {
+      throw new Error(
+        "The publication-history trigger allowed immutable attribution to change.",
+      );
+    }
+
+    await client.query(
+      `UPDATE question_publications
+       SET retired_at = now(), retired_by = 'ci-smoke-test',
+           retirement_reason = 'Verify the controlled retirement path.'
+       WHERE id = $1`,
+      [publicationId],
+    );
+
+    await client.query("SAVEPOINT retired_publication_check");
+    let retiredMutationWasBlocked = false;
+    try {
+      await client.query(
+        "UPDATE question_publications SET retirement_reason = 'mutated' WHERE id = $1",
+        [publicationId],
+      );
+    } catch (error) {
+      retiredMutationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query("ROLLBACK TO SAVEPOINT retired_publication_check");
+    }
+
+    if (!retiredMutationWasBlocked) {
+      throw new Error(
+        "The publication-history trigger allowed a retired record to change.",
+      );
+    }
+
     const result = await client.query<{ version_count: number }>(
       `SELECT count(*)::int AS version_count
      FROM question_versions qv

@@ -6,12 +6,16 @@ import type {
   QuestionChoice,
   AnswerSpec,
   DistractorRationales,
+  MathVerificationSpec,
 } from "@/lib/questions/contracts";
 
 import {
   createQuestionRevision,
+  publishQuestionVersion,
+  runDeterministicValidation,
   submitReviewDecision,
   submitReviewerFeedback,
+  submitReviewerValidation,
 } from "../../actions";
 
 const initialReviewerActionState = {
@@ -142,11 +146,136 @@ export function FeedbackForm({ versionId }: { versionId: string }) {
   );
 }
 
+export function AutomatedValidationForm({ versionId }: { versionId: string }) {
+  const [state, action, pending] = useActionState(
+    runDeterministicValidation,
+    initialReviewerActionState,
+  );
+
+  return (
+    <form action={action}>
+      <input type="hidden" name="versionId" value={versionId} />
+      <p className="mb-4 text-sm leading-6 text-[#52676a]">
+        Re-run the answer-contract and mathematical-correctness checks against
+        this exact immutable version. Results are appended, never overwritten.
+      </p>
+      <ActionFooter
+        state={state}
+        pending={pending}
+        label="Run deterministic checks"
+      />
+    </form>
+  );
+}
+
+export function ReviewerValidationForm({ versionId }: { versionId: string }) {
+  const [state, action, pending] = useActionState(
+    submitReviewerValidation,
+    initialReviewerActionState,
+  );
+
+  return (
+    <form action={action} className="space-y-4">
+      <input type="hidden" name="versionId" value={versionId} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="text-xs font-bold text-[#52676a]">
+          Review check
+          <select
+            name="validatorKey"
+            className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
+          >
+            <option value="explanation-consistency">
+              Explanation consistency
+            </option>
+            <option value="accessibility">Accessibility</option>
+            <option value="topic-alignment">Topic alignment</option>
+            <option value="originality">Originality</option>
+          </select>
+        </label>
+        <label className="text-xs font-bold text-[#52676a]">
+          Outcome
+          <select
+            name="outcome"
+            className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
+          >
+            <option value="PASS">Pass</option>
+            <option value="FAIL">Fail</option>
+          </select>
+        </label>
+      </div>
+      <label className="block text-xs font-bold text-[#52676a]">
+        Evidence
+        <textarea
+          name="evidence"
+          required
+          minLength={10}
+          rows={4}
+          className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
+          placeholder="Describe exactly what you inspected and why this check passes or fails."
+        />
+      </label>
+      <label className="block text-xs font-bold text-[#52676a]">
+        Failure code <span className="font-normal">(required on failure)</span>
+        <input
+          name="failureCode"
+          className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm uppercase"
+          placeholder="E.G. EXPLANATION_SKIPS_STEP"
+        />
+      </label>
+      <ActionFooter
+        state={state}
+        pending={pending}
+        label="Append review evidence"
+      />
+    </form>
+  );
+}
+
+export function PublishForm({
+  versionId,
+  disabled,
+  alreadyPublished,
+}: {
+  versionId: string;
+  disabled: boolean;
+  alreadyPublished: boolean;
+}) {
+  const [state, action, pending] = useActionState(
+    publishQuestionVersion,
+    initialReviewerActionState,
+  );
+
+  return (
+    <form action={action}>
+      <input type="hidden" name="versionId" value={versionId} />
+      <p className="mb-4 text-sm leading-6 text-[#52676a]">
+        Publication is separate from approval. It activates this exact version
+        for learner selection and retires any previously published version.
+      </p>
+      <button
+        disabled={pending || disabled || alreadyPublished}
+        type="submit"
+        className="rounded-lg bg-[#15383a] px-5 py-2.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-45"
+      >
+        {pending
+          ? "Publishing…"
+          : alreadyPublished
+            ? "Currently published"
+            : "Publish approved version"}
+      </button>
+      <p aria-live="polite" className="mt-3 text-xs text-emerald-700">
+        {state.message}
+      </p>
+    </form>
+  );
+}
+
 export function RevisionForm({
   versionId,
   prompt,
   choices,
   answerSpec,
+  verificationSpec,
   explanation,
   distractorRationales,
   difficulty,
@@ -157,6 +286,7 @@ export function RevisionForm({
   prompt: string;
   choices: QuestionChoice[] | null;
   answerSpec: AnswerSpec;
+  verificationSpec: MathVerificationSpec | null;
   explanation: string;
   distractorRationales: DistractorRationales;
   difficulty: string;
@@ -196,6 +326,11 @@ export function RevisionForm({
           name="answerSpecJson"
           label="Answer specification JSON"
           value={answerSpec}
+        />
+        <JsonField
+          name="verificationSpecJson"
+          label="Math verification specification JSON"
+          value={verificationSpec}
         />
       </div>
       <label className="block text-xs font-bold text-[#52676a]">

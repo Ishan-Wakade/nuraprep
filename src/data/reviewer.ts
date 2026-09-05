@@ -5,6 +5,9 @@ import { connection } from "next/server";
 
 import { getDatabase } from "@/db/client";
 import {
+  generationRuns,
+  generationTemplates,
+  questionPublications,
   questions,
   questionVersionSources,
   questionVersions,
@@ -200,6 +203,7 @@ export async function getQuestionReviewDetail(versionId: string) {
       answerSpec: questionVersions.answerSpec,
       explanation: questionVersions.explanation,
       distractorRationales: questionVersions.distractorRationales,
+      verificationSpec: questionVersions.verificationSpec,
       skillCode: skills.code,
       skillTitle: skills.title,
       primarySkillId: questionVersions.primarySkillId,
@@ -213,18 +217,31 @@ export async function getQuestionReviewDetail(versionId: string) {
       authoringMode: questionVersions.authoringMode,
       authorId: questionVersions.authorId,
       generationRunId: questionVersions.generationRunId,
+      generationProvider: generationRuns.provider,
+      generationModel: generationRuns.model,
+      generationPromptHash: generationRuns.promptHash,
+      generationTemplateKey: generationTemplates.templateKey,
+      generationTemplateVersion: generationTemplates.version,
       provenanceSummary: questionVersions.provenanceSummary,
       createdAt: questionVersions.createdAt,
     })
     .from(questionVersions)
     .innerJoin(questions, eq(questions.id, questionVersions.questionId))
     .innerJoin(skills, eq(skills.id, questionVersions.primarySkillId))
+    .leftJoin(
+      generationRuns,
+      eq(generationRuns.id, questionVersions.generationRunId),
+    )
+    .leftJoin(
+      generationTemplates,
+      eq(generationTemplates.id, generationRuns.templateId),
+    )
     .where(eq(questionVersions.id, versionId))
     .limit(1);
 
   if (!question) return undefined;
 
-  const [sources, validations, decisions, feedback, versions] =
+  const [sources, validations, decisions, feedback, versions, publications] =
     await Promise.all([
       database
         .select({
@@ -280,6 +297,11 @@ export async function getQuestionReviewDetail(versionId: string) {
         .from(questionVersions)
         .where(eq(questionVersions.questionId, question.questionId))
         .orderBy(desc(questionVersions.version)),
+      database
+        .select()
+        .from(questionPublications)
+        .where(eq(questionPublications.questionId, question.questionId))
+        .orderBy(desc(questionPublications.publishedAt)),
     ]);
 
   const latestValidationByKey: Record<
@@ -298,6 +320,17 @@ export async function getQuestionReviewDetail(versionId: string) {
     latestReviewDecision: decisions[0]?.decision,
     latestValidationByKey,
   });
+  const publicationReadiness = evaluatePublicationGate({
+    lifecycle: "ACTIVE",
+    provenanceCount: sources.length,
+    latestReviewDecision: decisions[0]?.decision,
+    latestValidationByKey,
+  });
+  const serializedPublications = publications.map((item) => ({
+    ...item,
+    publishedAt: item.publishedAt.toISOString(),
+    retiredAt: item.retiredAt?.toISOString() ?? null,
+  }));
 
   return {
     ...question,
@@ -321,6 +354,10 @@ export async function getQuestionReviewDetail(versionId: string) {
       ...item,
       createdAt: item.createdAt.toISOString(),
     })),
+    publications: serializedPublications,
+    currentPublication:
+      serializedPublications.find((item) => item.retiredAt === null) ?? null,
     publicationGate,
+    publicationReadiness,
   };
 }

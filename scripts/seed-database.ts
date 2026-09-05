@@ -1,9 +1,13 @@
+import { createHash } from "node:crypto";
+
 import { drizzle } from "drizzle-orm/node-postgres";
 import { config } from "dotenv";
 import { Pool } from "pg";
 
 import {
   examSpecifications,
+  generationRuns,
+  generationTemplates,
   questions,
   questionVersionSources,
   questionVersions,
@@ -12,9 +16,13 @@ import {
   validationRuns,
   validatorRules,
 } from "../src/db/schema";
-import { type QuestionContent } from "../src/lib/questions/contracts";
+import type {
+  MathVerificationSpec,
+  QuestionContent,
+} from "../src/lib/questions/contracts";
 import {
   REQUIRED_PUBLICATION_VALIDATORS,
+  validateMathVerification,
   validateQuestionContent,
 } from "../src/lib/questions/validation";
 
@@ -58,6 +66,7 @@ type SeedQuestion = {
   calculatorPolicy: "ALLOWED" | "NOT_ALLOWED" | "NOT_NEEDED";
   misconceptions: string[];
   content: QuestionContent;
+  verificationSpec: MathVerificationSpec;
 };
 
 const seedQuestions: SeedQuestion[] = [
@@ -92,6 +101,11 @@ const seedQuestions: SeedQuestion[] = [
         d: "This reflects a place-value error in the multiplication.",
       },
     },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [24, 18, "multiply"],
+      tolerance: 0,
+    },
   },
   {
     questionId: "13000000-0000-4000-8000-000000000002",
@@ -117,6 +131,11 @@ const seedQuestions: SeedQuestion[] = [
       },
       explanation: "Divide the numerator by the denominator: 7 ÷ 8 = 0.875.",
       distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [7, 8, "divide"],
+      tolerance: 0,
     },
   },
   {
@@ -151,6 +170,17 @@ const seedQuestions: SeedQuestion[] = [
         d: "15:30 simplifies to 1:2, not 3:5.",
       },
     },
+    verificationSpec: {
+      kind: "choice_equivalence",
+      target: [3, 5, "divide"],
+      candidates: {
+        a: [6, 10, "divide"],
+        b: [9, 12, "divide"],
+        c: [12, 20, "divide"],
+        d: [15, 30, "divide"],
+      },
+      tolerance: 1e-9,
+    },
   },
   {
     questionId: "13000000-0000-4000-8000-000000000004",
@@ -177,6 +207,11 @@ const seedQuestions: SeedQuestion[] = [
       explanation:
         "Write each value to the thousandths place: 0.620, 0.602, 0.206, and 0.260. Then compare from left to right.",
       distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "ordered_values",
+      values: { a: 0.62, b: 0.602, c: 0.206, d: 0.26 },
+      direction: "ascending",
     },
   },
   {
@@ -221,6 +256,12 @@ const seedQuestions: SeedQuestion[] = [
         d: "15 does not represent the middle value and may result from an averaging error.",
       },
     },
+    verificationSpec: {
+      kind: "data_result",
+      operation: "median",
+      values: [14, 9, 18, 11, 13],
+      tolerance: 0,
+    },
   },
   {
     questionId: "13000000-0000-4000-8000-000000000006",
@@ -253,6 +294,11 @@ const seedQuestions: SeedQuestion[] = [
         d: "This subtracts one length from the perimeter and stops before accounting for paired sides.",
       },
     },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [54, 2, 16, "multiply", "subtract", 2, "divide"],
+      tolerance: 0,
+    },
   },
 ];
 
@@ -268,6 +314,16 @@ async function main() {
           `Seed question ${candidate.slug} is invalid: ${validation.issues
             .map((issue) => issue.code)
             .join(", ")}`,
+        );
+      }
+
+      const mathValidation = validateMathVerification(
+        candidate.content,
+        candidate.verificationSpec,
+      );
+      if (!mathValidation.valid) {
+        throw new Error(
+          `Seed question ${candidate.slug} has an invalid verification specification: ${mathValidation.failureCode}`,
         );
       }
     }
@@ -442,6 +498,61 @@ async function main() {
         .onConflictDoNothing();
 
       for (const [index, candidate] of seedQuestions.entries()) {
+        const templateId = `17000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`;
+        const runId = `18000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`;
+        const instructions =
+          `Draft one original ${candidate.difficulty.toLocaleLowerCase("en-US")} ` +
+          `${candidate.content.questionType.toLocaleLowerCase("en-US")} development candidate for ${candidate.learningObjective} ` +
+          "Do not use source-question wording, values, choices, or distinctive structures.";
+
+        await transaction
+          .insert(generationTemplates)
+          .values({
+            id: templateId,
+            templateKey: `bootstrap.${candidate.slug}`,
+            version: 1,
+            status: "DRAFT",
+            targetSkillId: candidate.primarySkillId,
+            questionType: candidate.content.questionType,
+            difficulty: candidate.difficulty,
+            instructions,
+            parameterConstraints: {
+              candidatePurpose: "development-fixture",
+              sourceQuestionTextProvided: false,
+            },
+            prohibitedPatterns: [
+              "copied wording",
+              "numbers-only variation",
+              "unreviewed production publication",
+            ],
+            validatorContract: {
+              required: REQUIRED_PUBLICATION_VALIDATORS,
+            },
+            authoredBy: "codex-engineering-session",
+          })
+          .onConflictDoNothing();
+
+        await transaction
+          .insert(generationRuns)
+          .values({
+            id: runId,
+            templateId,
+            provider: "OpenAI",
+            model: "codex-session-model-not-exported",
+            promptHash: createHash("sha256").update(instructions).digest("hex"),
+            parameters: {
+              provenanceNotice:
+                "The exact runtime model identifier was unavailable to the repository process.",
+              sourceQuestionTextProvided: false,
+            },
+            randomSeed: `bootstrap-${index + 1}`,
+            status: "SUCCEEDED",
+            completedAt: new Date("2026-09-05T00:00:00Z"),
+          })
+          .onConflictDoNothing();
+      }
+
+      for (const [index, candidate] of seedQuestions.entries()) {
         await transaction
           .insert(questions)
           .values({
@@ -465,6 +576,7 @@ async function main() {
             answerSpec: candidate.content.answerSpec,
             explanation: candidate.content.explanation,
             distractorRationales: candidate.content.distractorRationales,
+            verificationSpec: candidate.verificationSpec,
             primarySkillId: candidate.primarySkillId,
             learningObjective: candidate.learningObjective,
             difficulty: candidate.difficulty,
@@ -472,10 +584,10 @@ async function main() {
             estimatedSeconds: candidate.estimatedSeconds,
             calculatorPolicy: candidate.calculatorPolicy,
             commonMisconceptions: candidate.misconceptions,
-            authoringMode: "HUMAN",
-            authorId: "bootstrap-development-fixture",
+            authoringMode: "GENERATED",
+            generationRunId: `18000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
             provenanceSummary:
-              "Original NuraPrep development candidate aligned only to high-level public objectives. Not human-reviewed or production-approved.",
+              "Original NuraPrep development candidate created without source-question text and aligned only to high-level public objectives. Exact runtime model metadata was unavailable. Not human-reviewed or production-approved.",
           })
           .onConflictDoNothing();
 

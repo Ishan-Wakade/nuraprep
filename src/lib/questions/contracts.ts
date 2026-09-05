@@ -99,8 +99,47 @@ export const questionContentSchema = z.object({
   distractorRationales: distractorRationaleSchema,
 });
 
+export const arithmeticOperatorSchema = z.enum([
+  "add",
+  "subtract",
+  "multiply",
+  "divide",
+]);
+
+export const rpnExpressionSchema = z
+  .array(z.union([z.number().finite(), arithmeticOperatorSchema]))
+  .min(1)
+  .max(100);
+
+export const mathVerificationSpecSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("numeric_result"),
+    expression: rpnExpressionSchema,
+    tolerance: z.number().finite().nonnegative().default(0),
+  }),
+  z.object({
+    kind: z.literal("choice_equivalence"),
+    target: rpnExpressionSchema,
+    candidates: z.record(stableIdSchema, rpnExpressionSchema),
+    tolerance: z.number().finite().nonnegative().default(0),
+  }),
+  z.object({
+    kind: z.literal("ordered_values"),
+    values: z.record(stableIdSchema, z.number().finite()),
+    direction: z.enum(["ascending", "descending"]),
+  }),
+  z.object({
+    kind: z.literal("data_result"),
+    operation: z.enum(["mean", "median", "range"]),
+    values: z.array(z.number().finite()).min(1).max(1_000),
+    tolerance: z.number().finite().nonnegative().default(0),
+  }),
+]);
+
 export type AnswerSpec = z.infer<typeof answerSpecSchema>;
 export type QuestionChoice = z.infer<typeof questionChoiceSchema>;
 export type QuestionStimulus = z.infer<typeof stimulusSchema>;
 export type DistractorRationales = z.infer<typeof distractorRationaleSchema>;
 export type QuestionContent = z.infer<typeof questionContentSchema>;
+export type RpnExpression = z.infer<typeof rpnExpressionSchema>;
+export type MathVerificationSpec = z.infer<typeof mathVerificationSpecSchema>;

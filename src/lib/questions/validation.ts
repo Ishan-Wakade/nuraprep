@@ -1,7 +1,10 @@
 import {
+  mathVerificationSpecSchema,
   questionContentSchema,
   type AnswerSpec,
+  type MathVerificationSpec,
   type QuestionContent,
+  type RpnExpression,
 } from "./contracts";
 
 export const REQUIRED_PUBLICATION_VALIDATORS = [
@@ -12,6 +15,18 @@ export const REQUIRED_PUBLICATION_VALIDATORS = [
   "topic-alignment",
   "originality",
 ] as const;
+
+export const AUTOMATED_PUBLICATION_VALIDATORS = [
+  "answer-contract",
+  "mathematical-correctness",
+] as const satisfies readonly (typeof REQUIRED_PUBLICATION_VALIDATORS)[number][];
+
+export const REVIEWER_PUBLICATION_VALIDATORS = [
+  "explanation-consistency",
+  "accessibility",
+  "topic-alignment",
+  "originality",
+] as const satisfies readonly (typeof REQUIRED_PUBLICATION_VALIDATORS)[number][];
 
 export type ValidationIssue = {
   code: string;
@@ -308,6 +323,235 @@ function equalSets(left: string[], right: string[]) {
 
 function normalizeUnit(unit: string) {
   return unit.trim().toLocaleLowerCase("en-US").replaceAll(/\s+/g, " ");
+}
+
+export type DeterministicMathValidation =
+  | {
+      valid: true;
+      evidence: Record<string, unknown>;
+    }
+  | {
+      valid: false;
+      failureCode: string;
+      evidence: Record<string, unknown>;
+    };
+
+export function validateMathVerification(
+  contentInput: unknown,
+  specificationInput: unknown,
+): DeterministicMathValidation {
+  const contentResult = questionContentSchema.safeParse(contentInput);
+  if (!contentResult.success) {
+    return failure("CONTENT_SCHEMA_INVALID", {
+      issueCount: contentResult.error.issues.length,
+    });
+  }
+
+  const specificationResult =
+    mathVerificationSpecSchema.safeParse(specificationInput);
+  if (!specificationResult.success) {
+    return failure("VERIFICATION_SPEC_INVALID", {
+      issueCount: specificationResult.error.issues.length,
+    });
+  }
+
+  const content = contentResult.data;
+  const specification = specificationResult.data;
+
+  try {
+    switch (specification.kind) {
+      case "numeric_result":
+        return validateNumericResult(
+          content,
+          evaluateRpn(specification.expression),
+          specification.tolerance,
+          specification,
+        );
+      case "data_result":
+        return validateNumericResult(
+          content,
+          evaluateDataOperation(specification.operation, specification.values),
+          specification.tolerance,
+          specification,
+        );
+      case "choice_equivalence":
+        return validateChoiceEquivalence(content, specification);
+      case "ordered_values":
+        return validateOrderedValues(content, specification);
+    }
+  } catch (error) {
+    return failure("VERIFICATION_EVALUATION_ERROR", {
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+}
+
+function validateNumericResult(
+  content: QuestionContent,
+  expectedValue: number,
+  tolerance: number,
+  specification: MathVerificationSpec,
+): DeterministicMathValidation {
+  const keyedValue = getKeyedNumericValue(content);
+  if (keyedValue === undefined) {
+    return failure("KEYED_NUMERIC_VALUE_UNAVAILABLE", {
+      answerType: content.answerSpec.type,
+    });
+  }
+
+  const difference = Math.abs(keyedValue - expectedValue);
+  const evidence = {
+    method: "deterministic-verification-spec",
+    specification,
+    computedValue: expectedValue,
+    keyedValue,
+    tolerance,
+    difference,
+  };
+
+  return difference <= tolerance
+    ? { valid: true, evidence }
+    : failure("KEYED_ANSWER_MISMATCH", evidence);
+}
+
+function validateChoiceEquivalence(
+  content: QuestionContent,
+  specification: Extract<MathVerificationSpec, { kind: "choice_equivalence" }>,
+): DeterministicMathValidation {
+  if (content.answerSpec.type !== "multiple_select") {
+    return failure("ANSWER_TYPE_NOT_MULTIPLE_SELECT", {
+      answerType: content.answerSpec.type,
+    });
+  }
+
+  const target = evaluateRpn(specification.target);
+  const computedChoiceIds = Object.entries(specification.candidates)
+    .filter(
+      ([, expression]) =>
+        Math.abs(evaluateRpn(expression) - target) <= specification.tolerance,
+    )
+    .map(([choiceId]) => choiceId)
+    .sort();
+  const keyedChoiceIds = [...content.answerSpec.choiceIds].sort();
+  const evidence = {
+    method: "deterministic-choice-equivalence",
+    target,
+    computedChoiceIds,
+    keyedChoiceIds,
+    tolerance: specification.tolerance,
+  };
+
+  return equalOrdered(computedChoiceIds, keyedChoiceIds)
+    ? { valid: true, evidence }
+    : failure("KEYED_CHOICE_SET_MISMATCH", evidence);
+}
+
+function validateOrderedValues(
+  content: QuestionContent,
+  specification: Extract<MathVerificationSpec, { kind: "ordered_values" }>,
+): DeterministicMathValidation {
+  if (content.answerSpec.type !== "ordered_response") {
+    return failure("ANSWER_TYPE_NOT_ORDERED", {
+      answerType: content.answerSpec.type,
+    });
+  }
+
+  const multiplier = specification.direction === "ascending" ? 1 : -1;
+  const computedItemIds = Object.entries(specification.values)
+    .sort((left, right) => multiplier * (left[1] - right[1]))
+    .map(([itemId]) => itemId);
+  const keyedItemIds = content.answerSpec.itemIds;
+  const evidence = {
+    method: "deterministic-ordering",
+    direction: specification.direction,
+    computedItemIds,
+    keyedItemIds,
+  };
+
+  return equalOrdered(computedItemIds, keyedItemIds)
+    ? { valid: true, evidence }
+    : failure("KEYED_ORDER_MISMATCH", evidence);
+}
+
+function getKeyedNumericValue(content: QuestionContent) {
+  if (content.answerSpec.type === "numeric") return content.answerSpec.value;
+  if (content.answerSpec.type !== "single_choice") return undefined;
+
+  const keyedChoiceId = content.answerSpec.choiceId;
+  const keyedChoice = content.choices?.find(
+    (choice) => choice.id === keyedChoiceId,
+  );
+  if (!keyedChoice) return undefined;
+
+  const leadingNumber = keyedChoice.content.match(
+    /^[\s]*([+-]?(?:(?:\d+\s+)?\d+\/\d+|(?:\d+\.?\d*|\.\d+)))/,
+  )?.[1];
+  return leadingNumber ? parseNumericInput(leadingNumber) : undefined;
+}
+
+function evaluateRpn(expression: RpnExpression) {
+  const stack: number[] = [];
+  for (const token of expression) {
+    if (typeof token === "number") {
+      stack.push(token);
+      continue;
+    }
+
+    const right = stack.pop();
+    const left = stack.pop();
+    if (left === undefined || right === undefined) {
+      throw new Error("Arithmetic expression is missing an operand.");
+    }
+
+    if (token === "divide" && right === 0) {
+      throw new Error("Arithmetic expression divides by zero.");
+    }
+
+    stack.push(
+      token === "add"
+        ? left + right
+        : token === "subtract"
+          ? left - right
+          : token === "multiply"
+            ? left * right
+            : left / right,
+    );
+  }
+
+  if (stack.length !== 1 || !Number.isFinite(stack[0])) {
+    throw new Error("Arithmetic expression does not resolve to one value.");
+  }
+  return stack[0];
+}
+
+function evaluateDataOperation(
+  operation: "mean" | "median" | "range",
+  values: number[],
+) {
+  const ordered = [...values].sort((left, right) => left - right);
+  if (operation === "range") return ordered.at(-1)! - ordered[0];
+  if (operation === "mean") {
+    return values.reduce((total, value) => total + value, 0) / values.length;
+  }
+
+  const middle = Math.floor(ordered.length / 2);
+  return ordered.length % 2
+    ? ordered[middle]
+    : (ordered[middle - 1] + ordered[middle]) / 2;
+}
+
+function failure(
+  failureCode: string,
+  evidence: Record<string, unknown>,
+): DeterministicMathValidation {
+  return { valid: false, failureCode, evidence };
+}
+
+function equalOrdered(left: string[], right: string[]) {
+  return (
+    left.length === right.length &&
+    left.every((value, index) => value === right[index])
+  );
 }
 
 type PublicationGateInput = {

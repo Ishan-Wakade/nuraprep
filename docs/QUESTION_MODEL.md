@@ -60,6 +60,7 @@ A generation run records provider, model, template version, prompt hash, sanitiz
 - prompt and optional accessible stimulus/table/graph specification;
 - response type: single choice, multiple select, numeric, ordered response, or supported visual response;
 - choices when applicable and a typed answer specification;
+- a safe, structured mathematical verification recipe when deterministic recomputation is supported;
 - worked explanation and per-distractor rationale;
 - primary skill, secondary skills, prerequisites, and learning objective;
 - internal difficulty rubric and rationale;
@@ -93,6 +94,8 @@ Each validator result is immutable and records validator name/version, execution
 
 Editing creates a new `QuestionVersion`. Approval never mutates an older version.
 
+`QuestionPublication` identifies the one current learner-eligible version in a question family and retains retired publication history. Approval alone does not publish content.
+
 ## Learner entities
 
 - **PracticeSession:** mode, filters, timing policy, start/end state, and specification version.
@@ -107,7 +110,7 @@ Editing creates a new `QuestionVersion`. Approval never mutates an older version
 
 ## Publication invariants
 
-1. A learner receives only an active `QuestionVersion` with an approved review and all required validation checks passing.
+1. A learner receives only the current explicitly published version of an active question family. Publication requires an approved review and the latest run of every required validator to pass.
 2. Every published question has provenance records even when it was authored entirely in-house.
 3. Attempts always reference the exact presented version; later corrections do not rewrite history.
 4. Retraction removes an item from future selection but preserves audit records and affected-attempt analysis.

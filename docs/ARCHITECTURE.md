@@ -81,7 +81,7 @@ flowchart LR
 
 No generated item bypasses the human gate in the first release. Failed checks are retained as structured validation results, not overwritten.
 
-PostgreSQL triggers reject updates and deletes on question versions, validation runs, and review decisions. A revision copies the source and skill links into a new version but intentionally carries over neither validation evidence nor approval. The publication evaluator requires an active question family, provenance, a latest approval, and a passing latest run for every required validator.
+PostgreSQL triggers reject updates and deletes on question versions, validation runs, and review decisions. A revision copies the source and skill links into a new version but intentionally carries over neither validation evidence nor approval. Publication is a separate attributed ledger record; its trigger permits one controlled retirement and rejects identity changes or later history rewrites. The publication evaluator requires provenance, a latest approval, and a passing latest run for every required validator.
 
 ## Adaptive baseline
 
