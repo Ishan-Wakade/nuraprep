@@ -1,17 +1,21 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
 import { and, count, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { ensureLearnerProfile } from "@/data/practice";
 import { buildAdaptivePlanForLearner } from "@/data/adaptive";
+import { ensureLearnerProfile } from "@/data/practice";
+import { buildPracticeTest } from "@/data/practice-test";
 import { getDatabase } from "@/db/client";
 import {
   attempts,
   learnerQuestionReports,
   learnerProfiles,
+  practiceItemReviewEvents,
   practiceSessionItems,
   practiceSessions,
   questionPublications,
@@ -337,6 +341,66 @@ export async function startAdaptiveSession(
   redirect(`/practice/${sessionId}?item=1`);
 }
 
+export async function startPracticeTestSession(
+  _previousState: PracticeActionState,
+  _formData: FormData,
+): Promise<PracticeActionState> {
+  void _previousState;
+  void _formData;
+  const identity = requireLearner();
+  const database = getDatabase();
+  const learner = await ensureLearnerProfile(identity);
+  const test = await buildPracticeTest(randomUUID());
+  if (!test) {
+    return {
+      status: "error",
+      message: "No verified Math exam specification is available.",
+    };
+  }
+  if (!test.assembly.ready) {
+    const deficit = test.assembly.readiness
+      .filter((domain) => domain.deficit > 0)
+      .map((domain) => `${domain.domainTitle}: ${domain.deficit} more`)
+      .join("; ");
+    return {
+      status: "error",
+      message: `The reviewed bank is not ready for a full test. ${deficit}`,
+    };
+  }
+
+  const sessionId = await database.transaction(async (transaction) => {
+    const [session] = await transaction
+      .insert(practiceSessions)
+      .values({
+        learnerId: learner.id,
+        mode: "PRACTICE_TEST",
+        timingMode: "TIMED",
+        requestedQuestionCount: test.specification.totalQuestions,
+        filters: {
+          questionCount: test.specification.totalQuestions,
+          timingMode: "TIMED",
+          newOnly: false,
+          missedOnly: false,
+        },
+        timeLimitSeconds: test.specification.durationMinutes * 60,
+      })
+      .returning({ id: practiceSessions.id });
+    if (!session) throw new Error("Failed to create the practice test.");
+
+    await transaction.insert(practiceSessionItems).values(
+      test.assembly.selections.map((selection) => ({
+        sessionId: session.id,
+        questionVersionId: selection.questionVersionId,
+        position: selection.position,
+        selectionReason: selection.selectionReason,
+      })),
+    );
+    return session.id;
+  });
+
+  redirect(`/practice/${sessionId}?item=1`);
+}
+
 const answerSubmissionSchema = z.object({
   sessionId: z.uuid(),
   sessionItemId: z.uuid(),
@@ -367,6 +431,7 @@ export async function submitPracticeAnswer(
       position: practiceSessionItems.position,
       sessionId: practiceSessions.id,
       status: practiceSessions.status,
+      mode: practiceSessions.mode,
       timingMode: practiceSessions.timingMode,
       timeLimitSeconds: practiceSessions.timeLimitSeconds,
       startedAt: practiceSessions.startedAt,
@@ -406,7 +471,7 @@ export async function submitPracticeAnswer(
   if (
     item.timingMode === "TIMED" &&
     item.timeLimitSeconds &&
-    Date.now() > item.startedAt.getTime() + item.timeLimitSeconds * 1_000
+    Date.now() >= item.startedAt.getTime() + item.timeLimitSeconds * 1_000
   ) {
     await database
       .update(practiceSessions)
@@ -429,7 +494,7 @@ export async function submitPracticeAnswer(
     item.misconceptionRules,
   );
 
-  const inserted = await database.transaction(async (transaction) => {
+  const result = await database.transaction(async (transaction) => {
     const [attempt] = await transaction
       .insert(attempts)
       .values({
@@ -443,7 +508,7 @@ export async function submitPracticeAnswer(
       })
       .onConflictDoNothing({ target: attempts.sessionItemId })
       .returning({ id: attempts.id });
-    if (!attempt) return false;
+    if (!attempt) return { inserted: false, completed: false };
 
     const [totals] = await transaction
       .select({
@@ -453,7 +518,10 @@ export async function submitPracticeAnswer(
       .from(practiceSessionItems)
       .leftJoin(attempts, eq(attempts.sessionItemId, practiceSessionItems.id))
       .where(eq(practiceSessionItems.sessionId, item.sessionId));
-    if (totals && totals.itemCount === totals.attemptCount) {
+    const completed = Boolean(
+      totals && totals.itemCount === totals.attemptCount,
+    );
+    if (completed) {
       await transaction
         .update(practiceSessions)
         .set({
@@ -463,17 +531,173 @@ export async function submitPracticeAnswer(
         })
         .where(eq(practiceSessions.id, item.sessionId));
     }
-    return true;
+    return { inserted: true, completed };
   });
 
-  if (!inserted) {
+  if (!result.inserted) {
     return {
       status: "error",
       message: "This question was already answered. Your first answer is kept.",
     };
   }
 
+  if (item.mode === "PRACTICE_TEST") {
+    if (result.completed) {
+      redirect(`/practice/${item.sessionId}/summary`);
+    }
+    const [nextItem] = await database
+      .select({ position: practiceSessionItems.position })
+      .from(practiceSessionItems)
+      .leftJoin(attempts, eq(attempts.sessionItemId, practiceSessionItems.id))
+      .where(
+        and(
+          eq(practiceSessionItems.sessionId, item.sessionId),
+          isNull(attempts.id),
+        ),
+      )
+      .orderBy(practiceSessionItems.position)
+      .limit(1);
+    if (nextItem) {
+      redirect(`/practice/${item.sessionId}?item=${nextItem.position}`);
+    }
+  }
+
   redirect(`/practice/${item.sessionId}?item=${item.position}&result=1`);
+}
+
+const sessionMutationSchema = z.object({ sessionId: z.uuid() });
+const reviewFlagSchema = sessionMutationSchema.extend({
+  sessionItemId: z.uuid(),
+  flagged: z.enum(["true", "false"]),
+});
+
+export async function setPracticeItemReviewFlag(
+  _previousState: PracticeActionState,
+  formData: FormData,
+): Promise<PracticeActionState> {
+  void _previousState;
+  const identity = requireLearner();
+  const parsed = reviewFlagSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { status: "error", message: "Invalid review-flag request." };
+  }
+
+  const database = getDatabase();
+  const [item] = await database
+    .select({ id: practiceSessionItems.id })
+    .from(practiceSessionItems)
+    .innerJoin(
+      practiceSessions,
+      eq(practiceSessions.id, practiceSessionItems.sessionId),
+    )
+    .innerJoin(
+      learnerProfiles,
+      eq(learnerProfiles.id, practiceSessions.learnerId),
+    )
+    .where(
+      and(
+        eq(practiceSessionItems.id, parsed.data.sessionItemId),
+        eq(practiceSessions.id, parsed.data.sessionId),
+        eq(practiceSessions.mode, "PRACTICE_TEST"),
+        eq(practiceSessions.status, "IN_PROGRESS"),
+        eq(learnerProfiles.authSubject, identity.subject),
+      ),
+    )
+    .limit(1);
+  if (!item) {
+    return { status: "error", message: "Practice-test item not found." };
+  }
+
+  const flagged = parsed.data.flagged === "true";
+  await database.insert(practiceItemReviewEvents).values({
+    sessionItemId: item.id,
+    flagged,
+    recordedBy: identity.subject,
+  });
+  revalidatePath(`/practice/${parsed.data.sessionId}`);
+  return {
+    status: "success",
+    message: flagged ? "Question marked for review." : "Review mark removed.",
+  };
+}
+
+export async function finishPracticeTestSession(
+  _previousState: PracticeActionState,
+  formData: FormData,
+): Promise<PracticeActionState> {
+  void _previousState;
+  return endPracticeTest(formData, false);
+}
+
+export async function expirePracticeTestSession(
+  _previousState: PracticeActionState,
+  formData: FormData,
+): Promise<PracticeActionState> {
+  void _previousState;
+  return endPracticeTest(formData, true);
+}
+
+async function endPracticeTest(
+  formData: FormData,
+  requireExpired: boolean,
+): Promise<PracticeActionState> {
+  const identity = requireLearner();
+  const parsed = sessionMutationSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { status: "error", message: "Invalid practice-test request." };
+  }
+
+  const database = getDatabase();
+  const [session] = await database
+    .select({
+      id: practiceSessions.id,
+      status: practiceSessions.status,
+      startedAt: practiceSessions.startedAt,
+      timeLimitSeconds: practiceSessions.timeLimitSeconds,
+    })
+    .from(practiceSessions)
+    .innerJoin(
+      learnerProfiles,
+      eq(learnerProfiles.id, practiceSessions.learnerId),
+    )
+    .where(
+      and(
+        eq(practiceSessions.id, parsed.data.sessionId),
+        eq(practiceSessions.mode, "PRACTICE_TEST"),
+        eq(learnerProfiles.authSubject, identity.subject),
+      ),
+    )
+    .limit(1);
+  if (!session) {
+    return { status: "error", message: "Practice test not found." };
+  }
+  if (session.status !== "IN_PROGRESS") {
+    redirect(`/practice/${session.id}/summary`);
+  }
+  if (requireExpired) {
+    if (session.timeLimitSeconds === null) {
+      return { status: "error", message: "This test has no valid timer." };
+    }
+    if (
+      Date.now() <
+      session.startedAt.getTime() + session.timeLimitSeconds * 1_000
+    ) {
+      return { status: "error", message: "The test still has time remaining." };
+    }
+  }
+
+  await database
+    .update(practiceSessions)
+    .set({ status: "COMPLETED", endedAt: new Date(), updatedAt: new Date() })
+    .where(
+      and(
+        eq(practiceSessions.id, session.id),
+        eq(practiceSessions.status, "IN_PROGRESS"),
+      ),
+    );
+  redirect(
+    `/practice/${session.id}/summary${requireExpired ? "?expired=1" : ""}`,
+  );
 }
 
 export async function submitQuestionReport(

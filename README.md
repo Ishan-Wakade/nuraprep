@@ -11,7 +11,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 ## Project status
 
-**Timed-simulation phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, persisted topic practice, a coverage-aware diagnostic, and a versioned rules-based adaptive scheduler. Practice includes server-controlled Socratic hints, reviewer-authored misconception attribution, version-linked learner reports, and owner triage. The six seed candidates remain deliberately unapproved; browser tests publish disposable, explicitly test-only fixtures in the local/test database. There is no approved production question bank, full Math simulation, or validated score predictor yet.
+**Score-estimation phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, persisted topic practice, a coverage-aware diagnostic, a versioned rules-based adaptive scheduler, and full timed-test mechanics. Practice includes server-controlled Socratic hints, reviewer-authored misconception attribution, version-linked learner reports, and owner triage. The six seed candidates remain deliberately unapproved; browser tests add disposable, explicitly test-only fixtures to verify a complete 38-question simulation. There is no approved production question bank or validated score predictor yet.
 
 | Area                                        | Status                                                           |
 | ------------------------------------------- | ---------------------------------------------------------------- |
@@ -21,7 +21,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 | Topic practice                              | Working local multi-format vertical slice                        |
 | Diagnostic                                  | Working local flow with explicit coverage and starting signals   |
 | Adaptive mode                               | Working local, inspectable rules baseline                        |
-| Timed Math practice test                    | Planned                                                          |
+| Timed Math practice test                    | Mechanics verified; production bank lacks 38 approved families   |
 | Score estimate and study plan               | Planned                                                          |
 | Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works                 |
 
@@ -86,7 +86,7 @@ Important boundaries:
 - Adaptive recommendations and score estimates retain their inputs, model version, explanation, and uncertainty.
 - Authentication and billing are deferred so the practice and review loops can be validated first.
 
-See [Architecture](docs/ARCHITECTURE.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), and [Roadmap](docs/ROADMAP.md).
+See [Architecture](docs/ARCHITECTURE.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Practice-test blueprint](docs/PRACTICE_TEST.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), and [Roadmap](docs/ROADMAP.md).
 
 ## Technology
 
@@ -120,7 +120,7 @@ pnpm db:seed
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Local topic practice is at [http://localhost:3000/practice](http://localhost:3000/practice), the diagnostic starts at [http://localhost:3000/practice/diagnostic](http://localhost:3000/practice/diagnostic), and the owner review queue is at [http://localhost:3000/review](http://localhost:3000/review). Their temporary development identities are rejected whenever `APP_ENV=production`.
+Open [http://localhost:3000](http://localhost:3000). Local topic practice is at [http://localhost:3000/practice](http://localhost:3000/practice); diagnostic, adaptive, and timed-test entry points are nested beneath it. The owner review queue is at [http://localhost:3000/review](http://localhost:3000/review). Temporary development identities are rejected whenever `APP_ENV=production`.
 
 ## Environment variables
 

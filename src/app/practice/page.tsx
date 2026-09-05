@@ -74,6 +74,27 @@ export default async function PracticeSetupPage({
             </span>
           </Link>
 
+          <Link
+            href="/practice/test"
+            className="mt-4 grid gap-4 rounded-2xl border border-[#d6ddd7] bg-[#fffdf8] p-5 shadow-sm transition hover:border-[#85afa6] sm:grid-cols-[1fr_auto] sm:items-center sm:p-6"
+          >
+            <span>
+              <span className="text-xs font-bold tracking-[0.12em] text-[#116b65] uppercase">
+                Exam rehearsal
+              </span>
+              <strong className="mt-2 block font-serif text-2xl">
+                Take a full timed Math test
+              </strong>
+              <span className="mt-2 block text-sm leading-6 text-[#47615f]">
+                Check the reviewed bank against the versioned 38-question,
+                57-minute blueprint before starting.
+              </span>
+            </span>
+            <span className="text-sm font-bold text-[#116b65]">
+              Check readiness →
+            </span>
+          </Link>
+
           <div className="mt-8 rounded-2xl border border-[#d6ddd7] bg-[#fffdf8] p-5 shadow-sm sm:p-7">
             <PracticeSetupForm
               skills={data.availability}

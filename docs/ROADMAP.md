@@ -49,12 +49,12 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 ## 4. Timed Math simulation
 
-- Add a versioned 38-question, 57-minute specification based on currently verified official public details.
-- Build blueprint-constrained assembly with no repeated question family.
-- Implement timer recovery, navigation, review flags, submission, pacing analytics, and topic results.
-- Label distribution and difficulty as internal approximations where official detail is unavailable.
+- [x] Add a versioned 38-question, 57-minute specification based on currently verified official public details.
+- [x] Build blueprint-constrained assembly with no repeated question family.
+- [x] Implement timer recovery, navigation, append-only review flags, submission, pacing analytics, and topic results.
+- [x] Label distribution and difficulty as internal approximations where official detail is unavailable.
 
-**Exit:** at least one full test can be assembled from approved items and completed without repeats under tested timer behavior.
+**Exit status:** the complete flow is verified with disposable browser-test fixtures. Production exit remains open until at least 38 genuinely reviewed question families satisfy the same blueprint; test-only fixture approvals do not count as production content review.
 
 ## 5. Transparent score estimate and study plan
 

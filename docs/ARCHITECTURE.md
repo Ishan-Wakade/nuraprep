@@ -99,6 +99,10 @@ The algorithm will be evaluated for learning outcomes and subgroup behavior befo
 
 The exact current rules, constants, and limitations are recorded in [Adaptive model](ADAPTIVE_MODEL.md). They are internal product hypotheses, not ATI scoring rules, and must be changed under a new model version with regression tests.
 
+## Timed simulation boundary
+
+The practice-test assembler reads a versioned exam specification and only current learner-safe question publications. It blocks on domain deficits, stores a seeded immutable 38-item manifest without repeated families, and withholds answer feedback until completion. Timer recovery uses the persisted server start time; review marks are separate append-only events. See [Practice-test blueprint](PRACTICE_TEST.md) for official-versus-internal boundaries and test-fixture isolation.
+
 ## Score-estimation baseline
 
 The first estimator combines reviewed practice-test performance by content domain and internal difficulty band. Timed attempts receive a separate pacing feature rather than an arbitrary penalty. Bootstrap resampling provides an uncertainty interval when enough attempts exist; sparse histories receive a wider interval and an explicit low-evidence label.

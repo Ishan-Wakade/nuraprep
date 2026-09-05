@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getPracticeSessionView } from "@/data/practice";
 
 import { AnswerForm } from "./answer-form";
+import { PracticeTestControls } from "./practice-test-controls";
 import { ProblemReportForm } from "./problem-report-form";
 import { SessionTimer } from "./session-timer";
 import { TutorPanel } from "./tutor-panel";
@@ -31,7 +32,9 @@ export default async function PracticeSessionPage({
       ? "Math diagnostic"
       : session.mode === "ADAPTIVE"
         ? "Adaptive practice"
-        : "Topic practice";
+        : session.mode === "PRACTICE_TEST"
+          ? "Timed Math test"
+          : "Topic practice";
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -51,6 +54,8 @@ export default async function PracticeSessionPage({
         <SessionTimer
           startedAt={session.startedAt}
           timeLimitSeconds={session.timeLimitSeconds}
+          sessionId={session.id}
+          expireOnZero={session.mode === "PRACTICE_TEST"}
         />
       </div>
 
@@ -62,20 +67,33 @@ export default async function PracticeSessionPage({
             aria-current={
               position.position === question.position ? "step" : undefined
             }
+            aria-label={`Question ${position.position}${position.flagged ? ", marked for review" : ""}`}
             className={`grid h-9 w-9 place-items-center rounded-lg border text-xs font-bold ${
               position.position === question.position
                 ? "border-[#116b65] bg-[#116b65] text-white"
-                : position.correct === true
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-                  : position.correct === false
-                    ? "border-orange-300 bg-orange-50 text-orange-800"
-                    : "border-[#cfd8d1] bg-[#fffdf8]"
+                : position.flagged
+                  ? "border-amber-400 bg-amber-50 text-amber-900"
+                  : position.correct === true
+                    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                    : position.correct === false
+                      ? "border-orange-300 bg-orange-50 text-orange-800"
+                      : "border-[#cfd8d1] bg-[#fffdf8]"
             }`}
           >
             {position.position}
           </Link>
         ))}
       </nav>
+
+      {session.mode === "PRACTICE_TEST" && session.status === "IN_PROGRESS" && (
+        <PracticeTestControls
+          sessionId={session.id}
+          sessionItemId={question.itemId}
+          flagged={question.flagged}
+          answeredCount={session.answeredCount}
+          questionCount={session.actualQuestionCount}
+        />
+      )}
 
       <section className="mt-6 rounded-2xl border border-[#d6ddd7] bg-[#fffdf8] p-5 shadow-sm sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -115,9 +133,14 @@ export default async function PracticeSessionPage({
             questionVersionId={question.versionId}
             reflectionPrompt={question.tutor?.reflectionPrompt ?? null}
           />
+        ) : session.mode === "PRACTICE_TEST" && question.answered ? (
+          <div className="mt-7 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
+            Answer saved. Correctness and explanations stay hidden until the
+            test is submitted.
+          </div>
         ) : session.status === "IN_PROGRESS" ? (
           <>
-            {question.tutor && (
+            {question.tutor && session.mode !== "PRACTICE_TEST" && (
               <TutorPanel
                 sessionId={session.id}
                 sessionItemId={question.itemId}
@@ -131,6 +154,11 @@ export default async function PracticeSessionPage({
               questionType={question.questionType}
               choices={question.choices ?? null}
               unitRequired={question.unitRequired}
+              submitLabel={
+                session.mode === "PRACTICE_TEST"
+                  ? "Save answer and continue"
+                  : "Check answer"
+              }
             />
           </>
         ) : (

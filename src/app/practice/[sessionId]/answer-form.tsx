@@ -14,6 +14,7 @@ export function AnswerForm({
   questionType,
   choices,
   unitRequired,
+  submitLabel = "Check answer",
 }: {
   sessionId: string;
   sessionItemId: string;
@@ -21,6 +22,7 @@ export function AnswerForm({
     "SINGLE_CHOICE" | "MULTIPLE_SELECT" | "NUMERIC" | "ORDERED_RESPONSE";
   choices: QuestionChoice[] | null;
   unitRequired: boolean;
+  submitLabel?: string;
 }) {
   const [state, action, pending] = useActionState(
     submitPracticeAnswer,
@@ -176,7 +178,7 @@ export function AnswerForm({
             type="submit"
             className="rounded-xl bg-[#116b65] px-6 py-3 text-sm font-bold text-white shadow-sm disabled:cursor-wait disabled:opacity-50"
           >
-            {pending ? "Checking…" : "Check answer"}
+            {pending ? "Saving…" : submitLabel}
           </button>
           <p aria-live="polite" className="text-xs text-red-700">
             {state.message}

@@ -1,12 +1,13 @@
 import "server-only";
 
-import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { connection } from "next/server";
 
 import { getDatabase } from "@/db/client";
 import {
   attempts,
   learnerProfiles,
+  practiceItemReviewEvents,
   practiceSessionItems,
   practiceSessions,
   questionPublications,
@@ -178,6 +179,29 @@ export async function getPracticeSessionView(
   const selected = rows.find((row) => row.position === position);
   if (!selected) return undefined;
 
+  const reviewEvents = rows.length
+    ? await database
+        .select({
+          sessionItemId: practiceItemReviewEvents.sessionItemId,
+          flagged: practiceItemReviewEvents.flagged,
+          createdAt: practiceItemReviewEvents.createdAt,
+        })
+        .from(practiceItemReviewEvents)
+        .where(
+          inArray(
+            practiceItemReviewEvents.sessionItemId,
+            rows.map((row) => row.itemId),
+          ),
+        )
+        .orderBy(desc(practiceItemReviewEvents.createdAt))
+    : [];
+  const latestFlagByItem = new Map<string, boolean>();
+  for (const event of reviewEvents) {
+    if (!latestFlagByItem.has(event.sessionItemId)) {
+      latestFlagByItem.set(event.sessionItemId, event.flagged);
+    }
+  }
+
   const revealedTutorInteractions = selected.tutorGuidance
     ? await database
         .select({
@@ -196,24 +220,26 @@ export async function getPracticeSessionView(
   );
 
   const answeredCount = rows.filter((row) => row.attemptId).length;
-  const feedback = selected.attemptId
-    ? {
-        attemptId: selected.attemptId,
-        correct: selected.correct ?? false,
-        answerPayload: selected.answerPayload,
-        evaluationReason: selected.evaluationReason,
-        explanation: selected.explanation,
-        distractorRationales: selected.distractorRationales,
-        correctAnswer: formatCorrectAnswer(
-          selected.answerSpec,
-          selected.choices ?? [],
-        ),
-        elapsedMilliseconds: selected.elapsedMilliseconds ?? 0,
-        confidence: selected.confidence,
-        misconceptionAttributions: selected.misconceptionAttributions ?? [],
-        submittedAt: selected.submittedAt?.toISOString() ?? null,
-      }
-    : null;
+  const feedback =
+    selected.attemptId &&
+    (session.mode !== "PRACTICE_TEST" || session.status !== "IN_PROGRESS")
+      ? {
+          attemptId: selected.attemptId,
+          correct: selected.correct ?? false,
+          answerPayload: selected.answerPayload,
+          evaluationReason: selected.evaluationReason,
+          explanation: selected.explanation,
+          distractorRationales: selected.distractorRationales,
+          correctAnswer: formatCorrectAnswer(
+            selected.answerSpec,
+            selected.choices ?? [],
+          ),
+          elapsedMilliseconds: selected.elapsedMilliseconds ?? 0,
+          confidence: selected.confidence,
+          misconceptionAttributions: selected.misconceptionAttributions ?? [],
+          submittedAt: selected.submittedAt?.toISOString() ?? null,
+        }
+      : null;
 
   return {
     session: {
@@ -242,6 +268,8 @@ export async function getPracticeSessionView(
         selected.answerSpec.type === "numeric" &&
         selected.answerSpec.unitRequired,
       selectionReason: selected.selectionReason,
+      answered: Boolean(selected.attemptId),
+      flagged: latestFlagByItem.get(selected.itemId) ?? false,
       tutor: selected.tutorGuidance
         ? {
             revealedSteps: revealedTutorSteps,
@@ -260,6 +288,7 @@ export async function getPracticeSessionView(
       position: row.position,
       answered: Boolean(row.attemptId),
       correct: row.attemptId ? Boolean(row.correct) : null,
+      flagged: latestFlagByItem.get(row.itemId) ?? false,
     })),
   };
 }
@@ -276,6 +305,7 @@ export async function getPracticeSessionSummary(sessionId: string) {
       correct: attempts.correct,
       elapsedMilliseconds: attempts.elapsedMilliseconds,
       confidence: attempts.confidence,
+      estimatedSeconds: questionVersions.estimatedSeconds,
     })
     .from(practiceSessionItems)
     .innerJoin(
@@ -332,15 +362,42 @@ export async function getPracticeSessionSummary(sessionId: string) {
           }),
         )
       : null;
+  const answeredRows = skillRows.filter(
+    (row) => row.elapsedMilliseconds !== null,
+  );
+  const totalElapsedMilliseconds = answeredRows.reduce(
+    (total, row) => total + (row.elapsedMilliseconds ?? 0),
+    0,
+  );
+  const pacing =
+    view.session.mode === "PRACTICE_TEST"
+      ? {
+          averageAnswerMilliseconds: answeredRows.length
+            ? Math.round(totalElapsedMilliseconds / answeredRows.length)
+            : 0,
+          overTargetCount: answeredRows.filter(
+            (row) =>
+              (row.elapsedMilliseconds ?? 0) > row.estimatedSeconds * 1_000,
+          ).length,
+          targetMilliseconds: skillRows.reduce(
+            (total, row) => total + row.estimatedSeconds * 1_000,
+            0,
+          ),
+          wallClockMilliseconds: Math.max(
+            0,
+            new Date(
+              view.session.endedAt ?? new Date().toISOString(),
+            ).getTime() - new Date(view.session.startedAt).getTime(),
+          ),
+        }
+      : null;
 
   return {
     session: view.session,
-    totalElapsedMilliseconds: skillRows.reduce(
-      (total, row) => total + (row.elapsedMilliseconds ?? 0),
-      0,
-    ),
+    totalElapsedMilliseconds,
     skillBreakdown: [...skillsByCode.values()],
     diagnostic,
+    pacing,
   };
 }
 

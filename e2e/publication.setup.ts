@@ -1,6 +1,6 @@
 import { expect, test as setup } from "@playwright/test";
 import { config } from "dotenv";
-import { Pool } from "pg";
+import { Pool, type PoolClient } from "pg";
 
 config({ path: ".env.local", quiet: true });
 
@@ -194,6 +194,8 @@ async function publishAdditionalDiagnosticFixtures() {
       );
     }
 
+    await publishPracticeTestFixtures(client, rules.rows);
+
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -201,5 +203,115 @@ async function publishAdditionalDiagnosticFixtures() {
   } finally {
     client.release();
     await pool.end();
+  }
+}
+
+async function publishPracticeTestFixtures(
+  client: PoolClient,
+  rules: { id: string; key: string }[],
+) {
+  const arithmeticSkillId = "11000000-0000-4000-8000-000000000010";
+  const geometrySkillId = "11000000-0000-4000-8000-000000000021";
+  const difficulties = ["FOUNDATIONAL", "DEVELOPING", "PROFICIENT", "ADVANCED"];
+
+  for (let index = 1; index <= 32; index += 1) {
+    const suffix = String(index).padStart(12, "0");
+    const questionId = `23000000-0000-4000-8000-${suffix}`;
+    const versionId = `24000000-0000-4000-8000-${suffix}`;
+    const left = index + 10;
+    const right = index + 11;
+    const answer = left + right;
+    const skillId = index <= 16 ? arithmeticSkillId : geometrySkillId;
+
+    await client.query(
+      `INSERT INTO questions
+       (id, internal_slug, section, lifecycle)
+       VALUES ($1, $2, 'MATH', 'ACTIVE')
+       ON CONFLICT (id) DO NOTHING`,
+      [questionId, `e2e-practice-test-${index}`],
+    );
+    await client.query(
+      `INSERT INTO question_versions
+       (id, question_id, version, question_type, prompt, answer_spec,
+        explanation, distractor_rationales, verification_spec,
+        primary_skill_id, learning_objective, difficulty,
+        difficulty_rationale, estimated_seconds, calculator_policy,
+        common_misconceptions, authoring_mode, author_id, provenance_summary)
+       VALUES
+       ($1, $2, 1, 'NUMERIC', $3, $4::jsonb, $5, '{}'::jsonb, $6::jsonb,
+        $7, $8, $9::difficulty, $10, 90, 'NOT_NEEDED', '[]'::jsonb,
+        'HUMAN', 'e2e-fixture-author', $11)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        versionId,
+        questionId,
+        `E2E-only Math fixture ${index}: What is ${left} + ${right}?`,
+        JSON.stringify({
+          type: "numeric",
+          value: answer,
+          tolerance: 0,
+          toleranceMode: "absolute",
+          acceptedUnits: [],
+          unitRequired: false,
+        }),
+        `${left} + ${right} = ${answer}. This item exists only in the disposable browser-test database.`,
+        JSON.stringify({
+          kind: "numeric_result",
+          expression: [left, right, "add"],
+          tolerance: 0,
+        }),
+        skillId,
+        "Verify full-length test assembly and completion in a disposable test database.",
+        difficulties[(index - 1) % difficulties.length],
+        "Test-only fixture band used to exercise stratified assembly; not a calibrated learner difficulty.",
+        "Synthetic E2E-only fixture authored without external source material. It must never be treated as production-approved educational content.",
+      ],
+    );
+
+    const current = await client.query(
+      `SELECT 1 FROM question_publications
+       WHERE question_id = $1 AND retired_at IS NULL`,
+      [questionId],
+    );
+    if (current.rowCount) continue;
+
+    for (const rule of rules) {
+      await client.query(
+        `INSERT INTO validation_runs
+         (question_version_id, validator_rule_id, outcome, evidence)
+         VALUES ($1, $2, 'PASS', $3::jsonb)`,
+        [
+          versionId,
+          rule.id,
+          JSON.stringify({
+            method: "e2e-practice-test-fixture",
+            note: "Test-only evidence; not a production content approval.",
+            validatorKey: rule.key,
+          }),
+        ],
+      );
+    }
+    await client.query(
+      `INSERT INTO review_decisions
+       (question_version_id, reviewer_id, decision, rubric_scores, notes)
+       VALUES ($1, 'e2e-fixture-reviewer', 'APPROVED', $2::jsonb, $3)`,
+      [
+        versionId,
+        JSON.stringify({
+          mathematicalCorrectness: 4,
+          clarity: 4,
+          alignment: 4,
+          accessibility: 4,
+          originality: 4,
+        }),
+        "E2E-only fixture approval for full-test mechanics; not production approval.",
+      ],
+    );
+    await client.query(
+      `INSERT INTO question_publications
+       (question_id, question_version_id, published_by)
+       VALUES ($1, $2, 'e2e-fixture-reviewer')`,
+      [questionId, versionId],
+    );
   }
 }

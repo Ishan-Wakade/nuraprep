@@ -20,6 +20,7 @@ export default async function PracticeSummaryPage({
     ? Math.round((session.correctCount / session.answeredCount) * 100)
     : 0;
   const isDiagnostic = session.mode === "DIAGNOSTIC";
+  const isPracticeTest = session.mode === "PRACTICE_TEST";
   const displayedSkills = data.diagnostic
     ? data.diagnostic.signals.map((skill) => ({
         ...skill,
@@ -34,7 +35,11 @@ export default async function PracticeSummaryPage({
       </Link>
       <div className="mt-6 rounded-3xl bg-[#15383a] p-6 text-white shadow-sm sm:p-9">
         <p className="text-xs font-bold tracking-[0.14em] text-[#acd7cc] uppercase">
-          {isDiagnostic ? "Diagnostic results" : "Session summary"}
+          {isDiagnostic
+            ? "Diagnostic results"
+            : isPracticeTest
+              ? "Timed Math test results"
+              : "Session summary"}
         </p>
         <div className="mt-4 grid gap-6 sm:grid-cols-[1fr_auto] sm:items-end">
           <div>
@@ -44,7 +49,9 @@ export default async function PracticeSummaryPage({
             <p className="mt-3 max-w-xl text-sm leading-6 text-[#d1e2dd]">
               {isDiagnostic
                 ? "This is an early signal from one sampled item per available skill. It is not proof of mastery, an official ATI score, or a validated TEAS prediction."
-                : "This is practice accuracy on a small internal question set. It is not an official ATI score or a validated TEAS prediction."}
+                : isPracticeTest
+                  ? "Accuracy uses answered questions only; unanswered questions remain unscored. This independent simulation is not an official ATI score or a validated TEAS prediction."
+                  : "This is practice accuracy on a small internal question set. It is not an official ATI score or a validated TEAS prediction."}
             </p>
           </div>
           <div className="grid h-28 w-28 place-items-center rounded-full border-8 border-[#4e8c83] bg-[#fffdf8] text-[#15383a]">
@@ -81,6 +88,33 @@ export default async function PracticeSummaryPage({
             </Link>
           </section>
         )}
+
+      {isPracticeTest && data.pacing && (
+        <section className="mt-6 rounded-2xl border border-[#d6ddd7] bg-[#edf3ef] p-6 shadow-sm">
+          <p className="text-xs font-bold tracking-[0.12em] text-[#116b65] uppercase">
+            Pacing analytics
+          </p>
+          <h2 className="mt-2 font-serif text-3xl">How the time was used</h2>
+          <dl className="mt-5 grid gap-4 sm:grid-cols-3">
+            <Metric
+              label="Average saved answer time"
+              value={formatDuration(data.pacing.averageAnswerMilliseconds)}
+            />
+            <Metric
+              label="Over internal item target"
+              value={`${data.pacing.overTargetCount} questions`}
+            />
+            <Metric
+              label="Wall-clock test time"
+              value={formatDuration(data.pacing.wallClockMilliseconds)}
+            />
+          </dl>
+          <p className="mt-4 text-xs leading-5 text-[#607477]">
+            Item targets are internal reviewer estimates, not official ATI
+            pacing requirements.
+          </p>
+        </section>
+      )}
 
       <div className="mt-6 grid gap-5 md:grid-cols-2">
         <section className="rounded-2xl border border-[#d6ddd7] bg-[#fffdf8] p-6 shadow-sm">
@@ -139,6 +173,14 @@ export default async function PracticeSummaryPage({
         <Link href="/practice" className="button button-primary">
           {isDiagnostic ? "Choose focused practice" : "Build another session"}
         </Link>
+        {isPracticeTest && session.status === "COMPLETED" && (
+          <Link
+            href={`/practice/${session.id}?item=1`}
+            className="rounded-xl border border-[#bdcbc4] bg-[#fffdf8] px-6 py-3 text-sm font-bold"
+          >
+            Review test answers
+          </Link>
+        )}
         {session.answeredCount < session.actualQuestionCount &&
           session.status === "IN_PROGRESS" && (
             <Link

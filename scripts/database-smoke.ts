@@ -184,6 +184,35 @@ async function main() {
        VALUES ($1, $2, $3, 1, 'CI migration smoke test')`,
       [sessionItemId, sessionId, versionId],
     );
+    const reviewEventId = randomUUID();
+    await client.query(
+      `INSERT INTO practice_item_review_events
+       (id, session_item_id, flagged, recorded_by)
+       VALUES ($1, $2, true, 'ci-smoke-test')`,
+      [reviewEventId, sessionItemId],
+    );
+    await client.query("SAVEPOINT review_event_immutability_check");
+    let reviewEventMutationWasBlocked = false;
+    try {
+      await client.query(
+        "UPDATE practice_item_review_events SET flagged = false WHERE id = $1",
+        [reviewEventId],
+      );
+    } catch (error) {
+      reviewEventMutationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query(
+        "ROLLBACK TO SAVEPOINT review_event_immutability_check",
+      );
+    }
+    if (!reviewEventMutationWasBlocked) {
+      throw new Error("The review-flag event trigger allowed an update.");
+    }
+
     await client.query(
       `INSERT INTO attempts
        (id, session_item_id, answer_payload, correct, elapsed_milliseconds)

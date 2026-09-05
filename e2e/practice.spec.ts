@@ -10,7 +10,9 @@ test("completes a published topic-practice question with feedback", async ({
   await expect(
     page.getByRole("heading", { name: "Build a focused Math session." }),
   ).toBeVisible();
-  await expect(page.getByText(/6 published questions available/)).toBeVisible();
+  await expect(
+    page.getByText(/38 published questions available/),
+  ).toBeVisible();
 
   const arithmeticValue = await page
     .getByLabel("Topic")
@@ -19,6 +21,7 @@ test("completes a published topic-practice question with feedback", async ({
     .getAttribute("value");
   expect(arithmeticValue).toBeTruthy();
   await page.getByLabel("Topic").selectOption(arithmeticValue!);
+  await page.getByLabel("Question type").selectOption("SINGLE_CHOICE");
   await page.getByLabel("Number of questions").selectOption("1");
   await page.getByRole("button", { name: "Start practice" }).click();
   await expect(page).toHaveURL(/\/practice\/[a-f0-9-]+\?item=1/);
@@ -127,7 +130,7 @@ test("completes a coverage-aware diagnostic and recommends a starting skill", as
     page.getByRole("heading", { name: "Find a defensible starting point." }),
   ).toBeVisible();
   await expect(
-    page.getByText("5 published skills · 6 published questions"),
+    page.getByText("5 published skills · 38 published questions"),
   ).toBeVisible();
   await page.getByRole("button", { name: "Start diagnostic" }).click();
   await expect(page).toHaveURL(/\/practice\/[a-f0-9-]+\?item=1/);
@@ -136,7 +139,7 @@ test("completes a coverage-aware diagnostic and recommends a starting skill", as
     await expect(
       page.getByRole("heading", { name: `Question ${position} of 5` }),
     ).toBeVisible();
-    await answerDiagnosticQuestion(page);
+    await answerDiagnosticQuestion(page, { missArithmetic: true });
     await page.getByLabel("Confidence (optional)").selectOption("4");
     await page.getByRole("button", { name: "Check answer" }).click();
     await expect(
@@ -198,7 +201,7 @@ test("builds and completes an inspectable adaptive session", async ({
     await expect(selectionDetails).toHaveAttribute("open", "");
     await expect(
       selectionDetails.getByText(
-        /adaptive-baseline-v1; adaptive score \d\.\d{3}/,
+        /adaptive-baseline-v1; adaptive score -?\d\.\d{3}/,
       ),
     ).toBeVisible();
     await answerDiagnosticQuestion(page);
@@ -223,8 +226,86 @@ test("builds and completes an inspectable adaptive session", async ({
   await expect(evidence.getByText("adaptive", { exact: true })).toBeVisible();
 });
 
-async function answerDiagnosticQuestion(page: import("@playwright/test").Page) {
+test("completes a 38-question timed Math simulation without answer leakage", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  await page.goto("/practice/test");
+
+  await expect(
+    page.getByRole("heading", { name: "Rehearse the complete Math section." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Reviewed bank ready" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/38 unique current question families/),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Start timed Math test" }).click();
+  await expect(page).toHaveURL(/\/practice\/[a-f0-9-]+\?item=1/);
+
+  await page.getByRole("button", { name: "Mark for review" }).click();
+  await expect(page.getByText("Question marked for review.")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Question 1, marked for review" }),
+  ).toBeVisible();
+
+  for (let position = 1; position <= 38; position += 1) {
+    await expect(
+      page.getByRole("heading", { name: `Question ${position} of 38` }),
+    ).toBeVisible();
+    await answerDiagnosticQuestion(page);
+    await page
+      .getByRole("button", { name: "Save answer and continue" })
+      .click();
+    if (position < 38) {
+      await expect(
+        page.getByRole("heading", { name: "Worked solution" }),
+      ).toBeHidden();
+    }
+  }
+
+  await expect(page.getByText("Timed Math test results")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "37 of 38 correct" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "How the time was used" }),
+  ).toBeVisible();
+  await expect(page.getByText(/not an official ATI score/i)).toBeVisible();
+
+  await page.getByRole("link", { name: "Review test answers" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Worked solution" }),
+  ).toBeVisible();
+});
+
+test("submits a timed Math simulation early without fabricating answers", async ({
+  page,
+}) => {
+  await page.goto("/practice/test");
+  await page.getByRole("button", { name: "Start timed Math test" }).click();
+  await expect(page).toHaveURL(/\/practice\/[a-f0-9-]+\?item=1/);
+
+  await page.getByText("Submit test", { exact: true }).click();
+  await expect(page.getByText("0 of 38 answers are saved.")).toBeVisible();
+  await page.getByRole("button", { name: "Confirm submission" }).click();
+
+  await expect(page.getByText("Timed Math test results")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "0 of 0 correct" }),
+  ).toBeVisible();
+  await expect(page.getByText("0 of 38", { exact: true })).toBeVisible();
+});
+
+async function answerDiagnosticQuestion(
+  page: import("@playwright/test").Page,
+  options: { missArithmetic?: boolean } = {},
+) {
   const prompt = (await page.locator("h2").first().textContent()) ?? "";
+  const shouldMissArithmetic =
+    options.missArithmetic === true &&
+    (await page.getByText(/Math diagnostic · Arithmetic ·/i).isVisible());
 
   if (prompt.includes("volunteer team fills 24 cartons")) {
     await page.locator('input[name="choiceId"][value="a"]').check();
@@ -253,6 +334,14 @@ async function answerDiagnosticQuestion(page: import("@playwright/test").Page) {
   }
   if (prompt.includes("garden has a perimeter")) {
     await page.locator('input[name="choiceId"][value="a"]').check();
+    return;
+  }
+  const fixtureAddition = prompt.match(/What is (\d+) \+ (\d+)\?/);
+  if (fixtureAddition) {
+    const expected = Number(fixtureAddition[1]) + Number(fixtureAddition[2]);
+    await page
+      .getByLabel("Numeric answer")
+      .fill(String(shouldMissArithmetic ? expected + 1 : expected));
     return;
   }
 

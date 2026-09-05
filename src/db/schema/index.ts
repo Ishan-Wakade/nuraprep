@@ -673,7 +673,7 @@ export const practiceSessions = pgTable(
     ),
     check(
       "practice_session_question_count_check",
-      sql`${table.requestedQuestionCount} BETWEEN 1 AND 20`,
+      sql`${table.requestedQuestionCount} BETWEEN 1 AND 50`,
     ),
     check(
       "practice_session_timing_check",
@@ -712,6 +712,27 @@ export const practiceSessionItems = pgTable(
       table.questionVersionId,
     ),
     check("practice_item_position_check", sql`${table.position} > 0`),
+  ],
+);
+
+export const practiceItemReviewEvents = pgTable(
+  "practice_item_review_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionItemId: uuid("session_item_id")
+      .notNull()
+      .references(() => practiceSessionItems.id, { onDelete: "restrict" }),
+    flagged: boolean("flagged").notNull(),
+    recordedBy: varchar("recorded_by", { length: 240 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("practice_item_review_event_idx").on(
+      table.sessionItemId,
+      table.createdAt,
+    ),
   ],
 );
 
