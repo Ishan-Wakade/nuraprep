@@ -105,9 +105,9 @@ export default function Home() {
               answer, and makes progress honest and understandable.
             </p>
             <div className="hero-actions">
-              <a className="button button-primary" href="#approach">
-                See how it works <ArrowIcon />
-              </a>
+              <Link className="button button-primary" href="/practice">
+                Open Math practice <ArrowIcon />
+              </Link>
               <a
                 className="button button-secondary"
                 href="https://github.com/Ishan-Wakade/nuraprep"

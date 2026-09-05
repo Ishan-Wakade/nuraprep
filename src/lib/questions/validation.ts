@@ -2,6 +2,7 @@ import {
   mathVerificationSpecSchema,
   questionContentSchema,
   type AnswerSpec,
+  type LearnerAnswer,
   type MathVerificationSpec,
   type QuestionContent,
   type RpnExpression,
@@ -199,12 +200,6 @@ function getCorrectIds(answer: AnswerSpec): string[] {
   if (answer.type === "ordered_response") return answer.itemIds;
   return [];
 }
-
-export type LearnerAnswer =
-  | { type: "single_choice"; choiceId: string }
-  | { type: "multiple_select"; choiceIds: string[] }
-  | { type: "numeric"; value: string; unit?: string }
-  | { type: "ordered_response"; itemIds: string[] };
 
 export type AnswerEvaluation = {
   correct: boolean;

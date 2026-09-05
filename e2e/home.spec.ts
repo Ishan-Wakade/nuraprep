@@ -15,6 +15,9 @@ test("presents the product accurately", async ({ page }) => {
   await expect(
     page.getByRole("link", { name: /view on github/i }),
   ).toHaveAttribute("href", "https://github.com/Ishan-Wakade/nuraprep");
+  await expect(
+    page.getByRole("link", { name: /open math practice/i }),
+  ).toHaveAttribute("href", "/practice");
 });
 
 test("has no horizontal overflow on a mobile viewport", async ({ page }) => {

@@ -154,6 +154,67 @@ async function main() {
       );
     }
 
+    const learnerId = randomUUID();
+    const sessionId = randomUUID();
+    const sessionItemId = randomUUID();
+    const attemptId = randomUUID();
+    await client.query(
+      `INSERT INTO learner_profiles (id, auth_subject, display_name)
+       VALUES ($1, $2, 'CI smoke learner')`,
+      [learnerId, `ci-smoke-${learnerId}`],
+    );
+    await client.query(
+      `INSERT INTO practice_sessions
+       (id, learner_id, mode, status, timing_mode, requested_question_count, filters)
+       VALUES ($1, $2, 'TOPIC_PRACTICE', 'IN_PROGRESS', 'UNTIMED', 1, $3::jsonb)`,
+      [
+        sessionId,
+        learnerId,
+        JSON.stringify({
+          questionCount: 1,
+          timingMode: "UNTIMED",
+          newOnly: false,
+          missedOnly: false,
+        }),
+      ],
+    );
+    await client.query(
+      `INSERT INTO practice_session_items
+       (id, session_id, question_version_id, position, selection_reason)
+       VALUES ($1, $2, $3, 1, 'CI migration smoke test')`,
+      [sessionItemId, sessionId, versionId],
+    );
+    await client.query(
+      `INSERT INTO attempts
+       (id, session_item_id, answer_payload, correct, elapsed_milliseconds)
+       VALUES ($1, $2, $3::jsonb, true, 1200)`,
+      [
+        attemptId,
+        sessionItemId,
+        JSON.stringify({ type: "single_choice", choiceId: "b" }),
+      ],
+    );
+
+    await client.query("SAVEPOINT attempt_immutability_check");
+    let attemptMutationWasBlocked = false;
+    try {
+      await client.query("UPDATE attempts SET correct = false WHERE id = $1", [
+        attemptId,
+      ]);
+    } catch (error) {
+      attemptMutationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query("ROLLBACK TO SAVEPOINT attempt_immutability_check");
+    }
+
+    if (!attemptMutationWasBlocked) {
+      throw new Error("The attempt append-only trigger allowed an update.");
+    }
+
     const result = await client.query<{ version_count: number }>(
       `SELECT count(*)::int AS version_count
      FROM question_versions qv

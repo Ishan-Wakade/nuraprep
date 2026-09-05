@@ -98,8 +98,10 @@ Editing creates a new `QuestionVersion`. Approval never mutates an older version
 
 ## Learner entities
 
-- **PracticeSession:** mode, filters, timing policy, start/end state, and specification version.
-- **Attempt:** presented question version, answer payload, correctness, duration, confidence, hints, and client/server timestamps.
+The topic-practice slice now implements `learner_profiles`, `practice_sessions`, immutable `practice_session_items`, and immutable `attempts`. The remaining entities below are added with their owning milestone.
+
+- **PracticeSession:** mode, filters, timing policy, start/end state, and a reproducible item manifest.
+- **Attempt:** exact session item, answer payload, correctness, duration, confidence, evaluator version, and server timestamp.
 - **AttemptEvaluation:** validator version, misconception classification, awarded credit, and explanation shown.
 - **SkillEstimate:** user, skill, estimator version, evidence count, mastery estimate, uncertainty, and calculation timestamp.
 - **ReviewSchedule:** user, skill/question family, due date, spacing state, and reason.

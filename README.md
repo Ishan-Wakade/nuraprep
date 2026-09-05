@@ -11,14 +11,15 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 ## Project status
 
-**Content-foundation phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer-contract checks, six deliberately unapproved Math candidates, and a local owner-review workflow. It does not yet contain an approved production question bank, learner practice flow, or validated score predictor.
+**Topic-practice phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, and a persisted topic-practice vertical slice. The six seed candidates remain deliberately unapproved; browser tests publish a disposable gated fixture in the local/test database. There is no approved production question bank or validated score predictor yet.
 
 | Area                                        | Status                                            |
 | ------------------------------------------- | ------------------------------------------------- |
 | Public repository and engineering standards | Complete                                          |
 | Math taxonomy and question data model       | Implemented with migrations and seed data         |
 | Reviewer and provenance workflow            | Working local vertical slice; authentication next |
-| Topic practice, diagnostic, adaptive mode   | Planned                                           |
+| Topic practice                              | Working local vertical slice; reports/tutor next  |
+| Diagnostic and adaptive mode                | Planned                                           |
 | Timed Math practice test                    | Planned                                           |
 | Score estimate and study plan               | Planned                                           |
 | Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works  |
@@ -28,6 +29,14 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 ![NuraPrep landing page showing the illustrative learner plan](public/screenshots/landing-page.jpg)
 
 The interface shown is a product-direction preview. The example readiness state and learning plan are illustrative, not live learner results or an ATI score.
+
+### Working local flow
+
+![NuraPrep topic-practice setup with topic, difficulty, response-format, pacing, and history filters](public/screenshots/topic-practice.png)
+
+![NuraPrep answer feedback with a worked solution and distractor-specific explanations](public/screenshots/answer-feedback.png)
+
+These screens are backed by the local PostgreSQL practice flow. The displayed item is a disposable browser-test fixture that passed the development validation and publication workflow; it is not production-approved content.
 
 ## Product direction
 
@@ -108,7 +117,7 @@ pnpm db:seed
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The owner review queue is available at [http://localhost:3000/review](http://localhost:3000/review) only when `DEV_REVIEWER_ENABLED=true`. That temporary bypass is rejected whenever `APP_ENV=production`.
+Open [http://localhost:3000](http://localhost:3000). Local topic practice is at [http://localhost:3000/practice](http://localhost:3000/practice), and the owner review queue is at [http://localhost:3000/review](http://localhost:3000/review). Their temporary development identities are rejected whenever `APP_ENV=production`.
 
 ## Environment variables
 

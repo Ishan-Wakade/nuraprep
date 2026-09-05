@@ -10,6 +10,10 @@ const serverEnvironmentSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((value) => value === "true"),
+  DEV_LEARNER_ENABLED: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
 });
 
 export type ServerEnvironment = z.infer<typeof serverEnvironmentSchema>;
@@ -22,9 +26,12 @@ export function getServerEnvironment(): ServerEnvironment {
 
     if (
       cachedEnvironment.APP_ENV === "production" &&
-      cachedEnvironment.DEV_REVIEWER_ENABLED
+      (cachedEnvironment.DEV_REVIEWER_ENABLED ||
+        cachedEnvironment.DEV_LEARNER_ENABLED)
     ) {
-      throw new Error("DEV_REVIEWER_ENABLED cannot be enabled in production.");
+      throw new Error(
+        "Development identity bypasses cannot be enabled in production.",
+      );
     }
   }
 

@@ -19,5 +19,8 @@ describe("Home", () => {
     expect(
       screen.getByRole("link", { name: /view on github/i }),
     ).toHaveAttribute("href", "https://github.com/Ishan-Wakade/nuraprep");
+    expect(
+      screen.getByRole("link", { name: /open math practice/i }),
+    ).toHaveAttribute("href", "/practice");
   });
 });

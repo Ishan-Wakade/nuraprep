@@ -23,6 +23,7 @@ jobs:
       DATABASE_URL: postgresql://nuraprep:nuraprep@localhost:5432/nuraprep
       DIRECT_URL: postgresql://nuraprep:nuraprep@localhost:5432/nuraprep
       DEV_REVIEWER_ENABLED: true
+      DEV_LEARNER_ENABLED: true
 
     services:
       postgres:

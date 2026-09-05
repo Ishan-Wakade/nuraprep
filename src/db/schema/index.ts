@@ -19,10 +19,12 @@ import {
 import type {
   AnswerSpec,
   DistractorRationales,
+  LearnerAnswer,
   MathVerificationSpec,
   QuestionChoice,
   QuestionStimulus,
 } from "@/lib/questions/contracts";
+import type { PracticeSessionFilters } from "@/lib/practice/contracts";
 
 const auditColumns = {
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -125,6 +127,18 @@ export const feedbackStatusEnum = pgEnum("feedback_status", [
   "RESOLVED",
   "WONT_FIX",
 ]);
+export const practiceModeEnum = pgEnum("practice_mode", [
+  "TOPIC_PRACTICE",
+  "DIAGNOSTIC",
+  "ADAPTIVE",
+  "PRACTICE_TEST",
+]);
+export const practiceSessionStatusEnum = pgEnum("practice_session_status", [
+  "IN_PROGRESS",
+  "COMPLETED",
+  "ABANDONED",
+]);
+export const timingModeEnum = pgEnum("timing_mode", ["UNTIMED", "TIMED"]);
 
 export const examSpecifications = pgTable(
   "exam_specifications",
@@ -606,6 +620,122 @@ export const questionPublications = pgTable(
     check(
       "question_publication_time_check",
       sql`${table.retiredAt} IS NULL OR ${table.retiredAt} >= ${table.publishedAt}`,
+    ),
+  ],
+);
+
+export const learnerProfiles = pgTable(
+  "learner_profiles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    authSubject: varchar("auth_subject", { length: 240 }).notNull(),
+    displayName: varchar("display_name", { length: 160 }).notNull(),
+    email: varchar("email", { length: 320 }),
+    ...auditColumns,
+  },
+  (table) => [uniqueIndex("learner_auth_subject_idx").on(table.authSubject)],
+);
+
+export const practiceSessions = pgTable(
+  "practice_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    learnerId: uuid("learner_id")
+      .notNull()
+      .references(() => learnerProfiles.id, { onDelete: "restrict" }),
+    mode: practiceModeEnum("mode").notNull().default("TOPIC_PRACTICE"),
+    status: practiceSessionStatusEnum("status")
+      .notNull()
+      .default("IN_PROGRESS"),
+    timingMode: timingModeEnum("timing_mode").notNull().default("UNTIMED"),
+    requestedQuestionCount: integer("requested_question_count").notNull(),
+    filters: jsonb("filters").$type<PracticeSessionFilters>().notNull(),
+    timeLimitSeconds: integer("time_limit_seconds"),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    ...auditColumns,
+  },
+  (table) => [
+    index("practice_session_learner_status_idx").on(
+      table.learnerId,
+      table.status,
+      table.startedAt,
+    ),
+    check(
+      "practice_session_question_count_check",
+      sql`${table.requestedQuestionCount} BETWEEN 1 AND 20`,
+    ),
+    check(
+      "practice_session_timing_check",
+      sql`(${table.timingMode} = 'UNTIMED' AND ${table.timeLimitSeconds} IS NULL) OR (${table.timingMode} = 'TIMED' AND ${table.timeLimitSeconds} > 0)`,
+    ),
+    check(
+      "practice_session_end_check",
+      sql`(${table.status} = 'IN_PROGRESS' AND ${table.endedAt} IS NULL) OR (${table.status} <> 'IN_PROGRESS' AND ${table.endedAt} IS NOT NULL)`,
+    ),
+  ],
+);
+
+export const practiceSessionItems = pgTable(
+  "practice_session_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => practiceSessions.id, { onDelete: "restrict" }),
+    questionVersionId: uuid("question_version_id")
+      .notNull()
+      .references(() => questionVersions.id, { onDelete: "restrict" }),
+    position: integer("position").notNull(),
+    selectionReason: text("selection_reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("practice_item_position_idx").on(
+      table.sessionId,
+      table.position,
+    ),
+    uniqueIndex("practice_item_question_idx").on(
+      table.sessionId,
+      table.questionVersionId,
+    ),
+    check("practice_item_position_check", sql`${table.position} > 0`),
+  ],
+);
+
+export const attempts = pgTable(
+  "attempts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionItemId: uuid("session_item_id")
+      .notNull()
+      .references(() => practiceSessionItems.id, { onDelete: "restrict" }),
+    answerPayload: jsonb("answer_payload").$type<LearnerAnswer>().notNull(),
+    correct: boolean("correct").notNull(),
+    evaluationReason: varchar("evaluation_reason", { length: 80 }),
+    evaluatorVersion: varchar("evaluator_version", { length: 80 })
+      .notNull()
+      .default("answer-evaluator-v1"),
+    elapsedMilliseconds: integer("elapsed_milliseconds").notNull(),
+    confidence: integer("confidence"),
+    submittedAt: timestamp("submitted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("attempt_session_item_idx").on(table.sessionItemId),
+    index("attempt_submitted_at_idx").on(table.submittedAt),
+    check(
+      "attempt_elapsed_check",
+      sql`${table.elapsedMilliseconds} BETWEEN 0 AND 86400000`,
+    ),
+    check(
+      "attempt_confidence_check",
+      sql`${table.confidence} IS NULL OR ${table.confidence} BETWEEN 1 AND 5`,
     ),
   ],
 );

@@ -143,3 +143,9 @@ export type DistractorRationales = z.infer<typeof distractorRationaleSchema>;
 export type QuestionContent = z.infer<typeof questionContentSchema>;
 export type RpnExpression = z.infer<typeof rpnExpressionSchema>;
 export type MathVerificationSpec = z.infer<typeof mathVerificationSpecSchema>;
+
+export type LearnerAnswer =
+  | { type: "single_choice"; choiceId: string }
+  | { type: "multiple_select"; choiceIds: string[] }
+  | { type: "numeric"; value: string; unit?: string }
+  | { type: "ordered_response"; itemIds: string[] };

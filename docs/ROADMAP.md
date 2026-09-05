@@ -26,10 +26,11 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 ## 2. Topic-practice vertical slice
 
-- Add development identity and learner profile.
-- Implement session assembly by topic, subtopic, difficulty, item type, missed/new, and timed/untimed filters.
-- Build accessible question renderers and keyboard navigation.
-- Show correctness, worked solution, per-choice rationales, skill, misconception, and problem reporting.
+- [x] Add development identity and learner profile.
+- [x] Implement persisted session assembly by topic, difficulty, item type, missed/new, and timed/untimed filters.
+- [x] Build accessible renderers for choice, multiple-select, numeric, ordered, and table/graph content.
+- [x] Show correctness, worked solution, per-choice rationales, and the underlying skill.
+- [ ] Add learner problem reporting and misconception attribution.
 - Add hint-first tutor contracts with answer-reveal controls and safety logging.
 
 **Exit:** a learner completes a reviewed multi-format practice session end to end and reports an issue.
