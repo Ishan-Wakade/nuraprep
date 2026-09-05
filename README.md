@@ -23,6 +23,12 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 | Score estimate and study plan               | Planned                                          |
 | Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works |
 
+## Product preview
+
+![NuraPrep landing page showing the illustrative learner plan](public/screenshots/landing-page.jpg)
+
+The interface shown is a product-direction preview. The example readiness state and learning plan are illustrative, not live learner results or an ATI score.
+
 ## Product direction
 
 The first shippable Math release will let a learner:
