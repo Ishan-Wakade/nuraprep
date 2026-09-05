@@ -18,6 +18,25 @@ jobs:
     name: Quality
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      APP_ENV: test
+      DATABASE_URL: postgresql://nuraprep:nuraprep@localhost:5432/nuraprep
+      DIRECT_URL: postgresql://nuraprep:nuraprep@localhost:5432/nuraprep
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: nuraprep
+          POSTGRES_PASSWORD: nuraprep
+          POSTGRES_USER: nuraprep
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nuraprep -d nuraprep"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Check out repository
@@ -43,6 +62,12 @@ jobs:
 
       - name: Type-check
         run: pnpm typecheck
+
+      - name: Validate database migrations
+        run: pnpm db:migrate
+
+      - name: Run database smoke test
+        run: pnpm test:db
 
       - name: Run unit tests
         run: pnpm test
