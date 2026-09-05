@@ -15,7 +15,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 | Area                                        | Status                                           |
 | ------------------------------------------- | ------------------------------------------------ |
-| Public repository and engineering standards | In progress                                      |
+| Public repository and engineering standards | Complete                                         |
 | Math taxonomy and question data model       | Designed; implementation next                    |
 | Reviewer and provenance workflow            | Designed; implementation next                    |
 | Topic practice, diagnostic, adaptive mode   | Planned                                          |

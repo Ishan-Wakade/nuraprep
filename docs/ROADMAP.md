@@ -2,7 +2,7 @@
 
 Each milestone ends with formatted code, passing lint/type/tests/build, updated documentation, recorded assumptions, and one or more coherent commits. Dates are intentionally omitted until velocity is measured.
 
-## 0. Public foundation — in progress
+## 0. Public foundation — complete
 
 - Create the public repository, project identity, governance files, CI, dependency updates, and issue templates.
 - Publish architecture, data model, content-provenance policy, security posture, and this roadmap.
