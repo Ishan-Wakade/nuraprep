@@ -1,0 +1,107 @@
+# Architecture
+
+## Decision summary
+
+NuraPrep will begin as a **modular monolith** built with Next.js, React, TypeScript, PostgreSQL, and a typed database layer. Learner pages, reviewer pages, APIs, and background-job orchestration live in one deployable repository. Modules communicate through typed application services rather than reaching into one another's tables.
+
+This is the smallest architecture that supports transactional question approval, learner progress, and authorization without creating distributed-system overhead. Generation workers can be extracted later because jobs use explicit payloads and idempotency keys.
+
+## Runtime view
+
+```mermaid
+flowchart TB
+    Browser[Browser]
+    CDN[CDN and load balancer]
+    App[Next.js application]
+    Auth[Authentication module]
+    Learning[Learning module]
+    Content[Content and review module]
+    Prediction[Prediction module]
+    Queue[Job adapter]
+    Worker[Generation and evaluation worker]
+    DB[(PostgreSQL)]
+    Objects[(Object storage)]
+    LLM[Approved LLM provider]
+
+    Browser --> CDN --> App
+    App --> Auth
+    App --> Learning
+    App --> Content
+    App --> Prediction
+    Auth --> DB
+    Learning --> DB
+    Content --> DB
+    Prediction --> DB
+    Content --> Queue --> Worker
+    Worker --> DB
+    Worker --> Objects
+    Worker --> LLM
+```
+
+For local development, the job adapter may execute synchronously or poll PostgreSQL. Redis is not required for the first release. If queue latency, retries, or throughput become operational constraints, the adapter can move to SQS without changing domain logic.
+
+## Modules
+
+| Module     | Owns                                                                    | Must not own                          |
+| ---------- | ----------------------------------------------------------------------- | ------------------------------------- |
+| Identity   | users, sessions, roles, account deletion                                | question logic or billing truth       |
+| Content    | taxonomy, sources, templates, questions, versions, validation, review   | learner ability estimates             |
+| Practice   | sessions, answers, timing, reports                                      | source acquisition or question edits  |
+| Learning   | skill estimates, prerequisites, scheduling, adaptive selection          | official-score claims                 |
+| Assessment | diagnostic and test assembly, pacing, section rules                     | mutable question text                 |
+| Prediction | versioned baseline models, estimates, uncertainty, calibration outcomes | access control                        |
+| Billing    | Stripe customer/subscription synchronization, entitlements              | raw card details                      |
+| Operations | jobs, audit events, error reports, monitoring                           | business rules embedded in dashboards |
+
+## Request and data boundaries
+
+- Server Components read through application services.
+- Mutations use server actions or route handlers with the same authorization and validation layer.
+- External webhooks use dedicated route handlers, signature verification, idempotency keys, and replay-safe transactions.
+- Provider APIs are wrapped in interfaces. Prompts and model identifiers are stored with generation runs, while secrets remain outside the database.
+- Published question payloads are selected from immutable approved versions. Draft content is unavailable to learner routes.
+
+## Quality gates
+
+```mermaid
+flowchart LR
+    Draft --> Schema[Schema validation]
+    Schema --> Math[Deterministic math checks]
+    Math --> Policy[Format, accessibility, and policy checks]
+    Policy --> Similarity[Similarity and provenance checks]
+    Similarity --> Eval[Rubric evaluation]
+    Eval --> Human[Human review]
+    Human -->|approve| Published
+    Human -->|revise| NewVersion[New immutable version]
+    NewVersion --> Schema
+    Human -->|reject| Rejected
+```
+
+No generated item bypasses the human gate in the first release. Failed checks are retained as structured validation results, not overwritten.
+
+## Adaptive baseline
+
+The initial adaptive selector is rules-based and inspectable:
+
+1. estimate skill mastery with a recency-weighted beta-binomial score;
+2. raise priority for prerequisite gaps, repeated misconception codes, and overdue spaced-review items;
+3. require coverage across item formats and avoid recently seen question families;
+4. constrain difficulty changes to one rubric level at a time unless evidence is strong; and
+5. log candidate scores and the final selection reason.
+
+The algorithm will be evaluated for learning outcomes and subgroup behavior before more complex ML is considered.
+
+## Score-estimation baseline
+
+The first estimator combines reviewed practice-test performance by content domain and internal difficulty band. Timed attempts receive a separate pacing feature rather than an arbitrary penalty. Bootstrap resampling provides an uncertainty interval when enough attempts exist; sparse histories receive a wider interval and an explicit low-evidence label.
+
+This estimate is not an ATI score conversion. Model versions, features, predictions, intervals, and eventual self-reported outcomes are retained for calibration analysis using mean absolute error, interval coverage, calibration curves, and threshold classification metrics.
+
+## Deployment evolution
+
+1. **Local:** Next.js plus PostgreSQL in Docker; local object-storage emulator only when required.
+2. **Preview:** ephemeral app preview with an isolated disposable database and synthetic content.
+3. **Staging:** AWS environment with non-production OAuth, Stripe test mode, monitored jobs, and sanitized content.
+4. **Production:** separate AWS account or strongly isolated environment, RDS backups, encrypted S3, least-privilege IAM, alarms, budget limits, and a tested restore path.
+
+Production infrastructure requires a reviewed threat model, cost estimate, data-retention policy, and explicit approval.
