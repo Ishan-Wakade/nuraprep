@@ -7,6 +7,9 @@ import { getDatabase } from "@/db/client";
 import {
   generationRuns,
   generationTemplates,
+  learnerProfiles,
+  learnerQuestionReportEvents,
+  learnerQuestionReports,
   questionPublications,
   questions,
   questionVersionSources,
@@ -77,51 +80,63 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
     .limit(200);
 
   const versionIds = rows.map((row) => row.versionId);
-  const [decisionRows, validationRows, sourceRows, skillRows] =
-    await Promise.all([
-      versionIds.length
-        ? database
-            .select({
-              questionVersionId: reviewDecisions.questionVersionId,
-              decision: reviewDecisions.decision,
-              decidedAt: reviewDecisions.decidedAt,
-            })
-            .from(reviewDecisions)
-            .where(inArray(reviewDecisions.questionVersionId, versionIds))
-            .orderBy(desc(reviewDecisions.decidedAt))
-        : [],
-      versionIds.length
-        ? database
-            .select({
-              questionVersionId: validationRuns.questionVersionId,
-              key: validatorRules.key,
-              outcome: validationRuns.outcome,
-              executedAt: validationRuns.executedAt,
-            })
-            .from(validationRuns)
-            .innerJoin(
-              validatorRules,
-              eq(validatorRules.id, validationRuns.validatorRuleId),
-            )
-            .where(inArray(validationRuns.questionVersionId, versionIds))
-            .orderBy(desc(validationRuns.executedAt))
-        : [],
-      versionIds.length
-        ? database
-            .select({
-              questionVersionId: questionVersionSources.questionVersionId,
-            })
-            .from(questionVersionSources)
-            .where(
-              inArray(questionVersionSources.questionVersionId, versionIds),
-            )
-        : [],
-      database
-        .select({ code: skills.code, title: skills.title })
-        .from(skills)
-        .where(eq(skills.active, true))
-        .orderBy(skills.title),
-    ]);
+  const [
+    decisionRows,
+    validationRows,
+    sourceRows,
+    learnerReportRows,
+    skillRows,
+  ] = await Promise.all([
+    versionIds.length
+      ? database
+          .select({
+            questionVersionId: reviewDecisions.questionVersionId,
+            decision: reviewDecisions.decision,
+            decidedAt: reviewDecisions.decidedAt,
+          })
+          .from(reviewDecisions)
+          .where(inArray(reviewDecisions.questionVersionId, versionIds))
+          .orderBy(desc(reviewDecisions.decidedAt))
+      : [],
+    versionIds.length
+      ? database
+          .select({
+            questionVersionId: validationRuns.questionVersionId,
+            key: validatorRules.key,
+            outcome: validationRuns.outcome,
+            executedAt: validationRuns.executedAt,
+          })
+          .from(validationRuns)
+          .innerJoin(
+            validatorRules,
+            eq(validatorRules.id, validationRuns.validatorRuleId),
+          )
+          .where(inArray(validationRuns.questionVersionId, versionIds))
+          .orderBy(desc(validationRuns.executedAt))
+      : [],
+    versionIds.length
+      ? database
+          .select({
+            questionVersionId: questionVersionSources.questionVersionId,
+          })
+          .from(questionVersionSources)
+          .where(inArray(questionVersionSources.questionVersionId, versionIds))
+      : [],
+    versionIds.length
+      ? database
+          .select({
+            id: learnerQuestionReports.id,
+            questionVersionId: learnerQuestionReports.questionVersionId,
+          })
+          .from(learnerQuestionReports)
+          .where(inArray(learnerQuestionReports.questionVersionId, versionIds))
+      : [],
+    database
+      .select({ code: skills.code, title: skills.title })
+      .from(skills)
+      .where(eq(skills.active, true))
+      .orderBy(skills.title),
+  ]);
 
   const latestDecision = new Map<string, (typeof decisionRows)[number]>();
   for (const decision of decisionRows) {
@@ -147,6 +162,14 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
     );
   }
 
+  const learnerReportCount = new Map<string, number>();
+  for (const report of learnerReportRows) {
+    learnerReportCount.set(
+      report.questionVersionId,
+      (learnerReportCount.get(report.questionVersionId) ?? 0) + 1,
+    );
+  }
+
   const items = rows
     .map((row) => {
       const decision =
@@ -162,6 +185,7 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
         passingValidatorCount,
         requiredValidatorCount: REQUIRED_PUBLICATION_VALIDATORS.length,
         provenanceCount: provenanceCount.get(row.versionId) ?? 0,
+        learnerReportCount: learnerReportCount.get(row.versionId) ?? 0,
       };
     })
     .filter(
@@ -181,6 +205,10 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
       ).length,
       approved: items.filter((item) => item.latestDecision === "APPROVED")
         .length,
+      learnerReports: items.reduce(
+        (total, item) => total + item.learnerReportCount,
+        0,
+      ),
     },
   };
 }
@@ -241,68 +269,116 @@ export async function getQuestionReviewDetail(versionId: string) {
 
   if (!question) return undefined;
 
-  const [sources, validations, decisions, feedback, versions, publications] =
-    await Promise.all([
-      database
-        .select({
-          id: sourceArtifacts.id,
-          title: sourceArtifacts.title,
-          publisher: sourceArtifacts.publisher,
-          canonicalUrl: sourceArtifacts.canonicalUrl,
-          decision: sourceArtifacts.decision,
-          allowModelInput: sourceArtifacts.allowModelInput,
-          relationship: questionVersionSources.relationship,
-          transformationNotes: questionVersionSources.transformationNotes,
-        })
-        .from(questionVersionSources)
-        .innerJoin(
-          sourceArtifacts,
-          eq(sourceArtifacts.id, questionVersionSources.sourceArtifactId),
+  const [
+    sources,
+    validations,
+    decisions,
+    feedback,
+    versions,
+    publications,
+    learnerReports,
+  ] = await Promise.all([
+    database
+      .select({
+        id: sourceArtifacts.id,
+        title: sourceArtifacts.title,
+        publisher: sourceArtifacts.publisher,
+        canonicalUrl: sourceArtifacts.canonicalUrl,
+        decision: sourceArtifacts.decision,
+        allowModelInput: sourceArtifacts.allowModelInput,
+        relationship: questionVersionSources.relationship,
+        transformationNotes: questionVersionSources.transformationNotes,
+      })
+      .from(questionVersionSources)
+      .innerJoin(
+        sourceArtifacts,
+        eq(sourceArtifacts.id, questionVersionSources.sourceArtifactId),
+      )
+      .where(eq(questionVersionSources.questionVersionId, versionId)),
+    database
+      .select({
+        id: validationRuns.id,
+        key: validatorRules.key,
+        version: validatorRules.version,
+        blocksPublication: validatorRules.blocksPublication,
+        outcome: validationRuns.outcome,
+        failureCode: validationRuns.failureCode,
+        evidence: validationRuns.evidence,
+        executedAt: validationRuns.executedAt,
+      })
+      .from(validationRuns)
+      .innerJoin(
+        validatorRules,
+        eq(validatorRules.id, validationRuns.validatorRuleId),
+      )
+      .where(eq(validationRuns.questionVersionId, versionId))
+      .orderBy(desc(validationRuns.executedAt)),
+    database
+      .select()
+      .from(reviewDecisions)
+      .where(eq(reviewDecisions.questionVersionId, versionId))
+      .orderBy(desc(reviewDecisions.decidedAt)),
+    database
+      .select()
+      .from(reviewerFeedback)
+      .where(eq(reviewerFeedback.questionVersionId, versionId))
+      .orderBy(desc(reviewerFeedback.createdAt)),
+    database
+      .select({
+        id: questionVersions.id,
+        version: questionVersions.version,
+        createdAt: questionVersions.createdAt,
+      })
+      .from(questionVersions)
+      .where(eq(questionVersions.questionId, question.questionId))
+      .orderBy(desc(questionVersions.version)),
+    database
+      .select()
+      .from(questionPublications)
+      .where(eq(questionPublications.questionId, question.questionId))
+      .orderBy(desc(questionPublications.publishedAt)),
+    database
+      .select({
+        id: learnerQuestionReports.id,
+        attemptId: learnerQuestionReports.attemptId,
+        category: learnerQuestionReports.category,
+        details: learnerQuestionReports.details,
+        learnerName: learnerProfiles.displayName,
+        createdAt: learnerQuestionReports.createdAt,
+      })
+      .from(learnerQuestionReports)
+      .innerJoin(
+        learnerProfiles,
+        eq(learnerProfiles.id, learnerQuestionReports.learnerId),
+      )
+      .where(eq(learnerQuestionReports.questionVersionId, versionId))
+      .orderBy(desc(learnerQuestionReports.createdAt)),
+  ]);
+
+  const learnerReportEvents = learnerReports.length
+    ? await database
+        .select()
+        .from(learnerQuestionReportEvents)
+        .where(
+          inArray(
+            learnerQuestionReportEvents.reportId,
+            learnerReports.map((report) => report.id),
+          ),
         )
-        .where(eq(questionVersionSources.questionVersionId, versionId)),
-      database
-        .select({
-          id: validationRuns.id,
-          key: validatorRules.key,
-          version: validatorRules.version,
-          blocksPublication: validatorRules.blocksPublication,
-          outcome: validationRuns.outcome,
-          failureCode: validationRuns.failureCode,
-          evidence: validationRuns.evidence,
-          executedAt: validationRuns.executedAt,
-        })
-        .from(validationRuns)
-        .innerJoin(
-          validatorRules,
-          eq(validatorRules.id, validationRuns.validatorRuleId),
+        .orderBy(
+          desc(learnerQuestionReportEvents.createdAt),
+          desc(learnerQuestionReportEvents.id),
         )
-        .where(eq(validationRuns.questionVersionId, versionId))
-        .orderBy(desc(validationRuns.executedAt)),
-      database
-        .select()
-        .from(reviewDecisions)
-        .where(eq(reviewDecisions.questionVersionId, versionId))
-        .orderBy(desc(reviewDecisions.decidedAt)),
-      database
-        .select()
-        .from(reviewerFeedback)
-        .where(eq(reviewerFeedback.questionVersionId, versionId))
-        .orderBy(desc(reviewerFeedback.createdAt)),
-      database
-        .select({
-          id: questionVersions.id,
-          version: questionVersions.version,
-          createdAt: questionVersions.createdAt,
-        })
-        .from(questionVersions)
-        .where(eq(questionVersions.questionId, question.questionId))
-        .orderBy(desc(questionVersions.version)),
-      database
-        .select()
-        .from(questionPublications)
-        .where(eq(questionPublications.questionId, question.questionId))
-        .orderBy(desc(questionPublications.publishedAt)),
-    ]);
+    : [];
+  const eventsByReport = new Map<
+    string,
+    (typeof learnerReportEvents)[number][]
+  >();
+  for (const event of learnerReportEvents) {
+    const events = eventsByReport.get(event.reportId) ?? [];
+    events.push(event);
+    eventsByReport.set(event.reportId, events);
+  }
 
   const latestValidationByKey: Record<
     string,
@@ -350,6 +426,18 @@ export async function getQuestionReviewDetail(versionId: string) {
       updatedAt: item.updatedAt.toISOString(),
       resolvedAt: item.resolvedAt?.toISOString() ?? null,
     })),
+    learnerReports: learnerReports.map((report) => {
+      const events = eventsByReport.get(report.id) ?? [];
+      return {
+        ...report,
+        createdAt: report.createdAt.toISOString(),
+        currentStatus: events[0]?.status ?? ("OPEN" as const),
+        events: events.map((event) => ({
+          ...event,
+          createdAt: event.createdAt.toISOString(),
+        })),
+      };
+    }),
     versions: versions.map((item) => ({
       ...item,
       createdAt: item.createdAt.toISOString(),

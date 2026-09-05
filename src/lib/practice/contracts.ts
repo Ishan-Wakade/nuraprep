@@ -1,5 +1,22 @@
 import { z } from "zod";
 
+export const LEARNER_REPORT_CATEGORIES = [
+  "MATHEMATICAL_ERROR",
+  "AMBIGUITY",
+  "DISTRACTOR_QUALITY",
+  "EXPLANATION_QUALITY",
+  "ACCESSIBILITY",
+  "FORMATTING",
+  "OTHER",
+] as const;
+
+export const learnerQuestionReportSchema = z.object({
+  questionVersionId: z.uuid(),
+  attemptId: z.uuid(),
+  category: z.enum(LEARNER_REPORT_CATEGORIES),
+  details: z.string().trim().min(10).max(5_000),
+});
+
 export const practiceSessionFiltersSchema = z
   .object({
     skillCode: z.string().trim().min(1).max(120).optional(),

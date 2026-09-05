@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getPracticeSessionView } from "@/data/practice";
 
 import { AnswerForm } from "./answer-form";
+import { ProblemReportForm } from "./problem-report-form";
 import { SessionTimer } from "./session-timer";
 
 export default async function PracticeSessionPage({
@@ -91,6 +92,7 @@ export default async function PracticeSessionPage({
             choices={question.choices ?? []}
             skillTitle={question.skillTitle}
             learningObjective={question.learningObjective}
+            questionVersionId={question.versionId}
           />
         ) : session.status === "IN_PROGRESS" ? (
           <AnswerForm
@@ -131,6 +133,7 @@ function Feedback({
   choices,
   skillTitle,
   learningObjective,
+  questionVersionId,
 }: {
   feedback: NonNullable<
     Awaited<ReturnType<typeof getPracticeSessionView>>
@@ -138,6 +141,7 @@ function Feedback({
   choices: { id: string; content: string }[];
   skillTitle: string;
   learningObjective: string;
+  questionVersionId: string;
 }) {
   if (!feedback) return null;
 
@@ -194,6 +198,11 @@ function Feedback({
         <strong>Skill: {skillTitle}</strong>
         <p className="mt-1 leading-6 text-[#47615f]">{learningObjective}</p>
       </div>
+
+      <ProblemReportForm
+        questionVersionId={questionVersionId}
+        attemptId={feedback.attemptId}
+      />
     </div>
   );
 }

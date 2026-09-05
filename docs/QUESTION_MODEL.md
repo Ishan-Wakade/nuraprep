@@ -1,6 +1,6 @@
 # Question and learning data model
 
-This document defines the domain model and its required invariants. The milestone-one PostgreSQL schema implements the content, provenance, validation, and review entities; learner entities remain planned for the practice milestone.
+This document defines the domain model and its required invariants. The PostgreSQL schema implements the content, provenance, validation, review, topic-practice, attempt, and learner-report entities described below; later learning-model entities remain planned.
 
 ## Core content entities
 
@@ -98,7 +98,7 @@ Editing creates a new `QuestionVersion`. Approval never mutates an older version
 
 ## Learner entities
 
-The topic-practice slice now implements `learner_profiles`, `practice_sessions`, immutable `practice_session_items`, and immutable `attempts`. The remaining entities below are added with their owning milestone.
+The topic-practice slice now implements `learner_profiles`, `practice_sessions`, immutable `practice_session_items`, immutable `attempts`, exact-version `learner_question_reports`, and append-only `learner_question_report_events`. The remaining entities below are added with their owning milestone.
 
 - **PracticeSession:** mode, filters, timing policy, start/end state, and a reproducible item manifest.
 - **Attempt:** exact session item, answer payload, correctness, duration, confidence, evaluator version, and server timestamp.
@@ -108,7 +108,7 @@ The topic-practice slice now implements `learner_profiles`, `practice_sessions`,
 - **TestForm:** reproducible assembly manifest with distribution rules and no repeated family.
 - **ScoreEstimate:** model version, evidence window, estimate, interval, calibration status, caveats, and feature snapshot.
 - **StudyPlan:** versioned goals and scheduled skill activities with user adjustments.
-- **ProblemReport:** learner report, question version, category, context, triage state, resolution, and notification status.
+- **ProblemReport:** implemented as immutable learner evidence linked to the exact attempt and question version; append-only reviewer events carry triage status and resolution evidence. Notification delivery remains planned.
 
 ## Publication invariants
 

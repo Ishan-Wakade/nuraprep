@@ -14,6 +14,8 @@ import {
   questionVersions,
   reviewDecisions,
   reviewerFeedback,
+  learnerQuestionReportEvents,
+  learnerQuestionReports,
   validationRuns,
   validatorRules,
 } from "@/db/schema";
@@ -311,6 +313,59 @@ export async function submitReviewerFeedback(
   return {
     status: "success",
     message: "Feedback saved for controlled batch analysis.",
+  };
+}
+
+const learnerReportTriageSchema = z.object({
+  reportId: z.uuid(),
+  questionVersionId: z.uuid(),
+  status: z.enum(["OPEN", "RESOLVED", "WONT_FIX"]),
+  notes: z.string().trim().min(5).max(5_000),
+});
+
+export async function triageLearnerQuestionReport(
+  _previousState: ReviewerActionState,
+  formData: FormData,
+): Promise<ReviewerActionState> {
+  const reviewer = requireReviewer();
+  const parsed = learnerReportTriageSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: parsed.error.issues[0]?.message ?? "Invalid report update.",
+    };
+  }
+
+  const report = await getDatabase()
+    .select({ id: learnerQuestionReports.id })
+    .from(learnerQuestionReports)
+    .where(
+      and(
+        eq(learnerQuestionReports.id, parsed.data.reportId),
+        eq(
+          learnerQuestionReports.questionVersionId,
+          parsed.data.questionVersionId,
+        ),
+      ),
+    )
+    .limit(1);
+  if (!report[0]) {
+    return { status: "error", message: "Learner report not found." };
+  }
+
+  await getDatabase().insert(learnerQuestionReportEvents).values({
+    reportId: parsed.data.reportId,
+    status: parsed.data.status,
+    reviewerId: reviewer.id,
+    notes: parsed.data.notes,
+  });
+
+  revalidatePath(`/review/questions/${parsed.data.questionVersionId}`);
+  return {
+    status: "success",
+    message: "Report triage event appended to immutable history.",
   };
 }
 

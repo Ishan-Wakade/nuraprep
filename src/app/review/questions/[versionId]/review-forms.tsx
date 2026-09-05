@@ -16,6 +16,7 @@ import {
   submitReviewDecision,
   submitReviewerFeedback,
   submitReviewerValidation,
+  triageLearnerQuestionReport,
 } from "../../actions";
 
 const initialReviewerActionState = {
@@ -266,6 +267,60 @@ export function PublishForm({
       <p aria-live="polite" className="mt-3 text-xs text-emerald-700">
         {state.message}
       </p>
+    </form>
+  );
+}
+
+export function LearnerReportTriageForm({
+  reportId,
+  questionVersionId,
+  currentStatus,
+}: {
+  reportId: string;
+  questionVersionId: string;
+  currentStatus: "OPEN" | "RESOLVED" | "WONT_FIX";
+}) {
+  const [state, action, pending] = useActionState(
+    triageLearnerQuestionReport,
+    initialReviewerActionState,
+  );
+
+  return (
+    <form
+      action={action}
+      className="mt-3 grid gap-3 border-t border-[#e2e6e2] pt-3"
+    >
+      <input type="hidden" name="reportId" value={reportId} />
+      <input type="hidden" name="questionVersionId" value={questionVersionId} />
+      <label className="text-xs font-bold text-[#52676a]">
+        Triage status
+        <select
+          name="status"
+          defaultValue={currentStatus}
+          className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
+        >
+          <option value="OPEN">Open</option>
+          <option value="RESOLVED">Resolved</option>
+          <option value="WONT_FIX">Won&apos;t fix</option>
+        </select>
+      </label>
+      <label className="text-xs font-bold text-[#52676a]">
+        Triage evidence
+        <textarea
+          name="notes"
+          required
+          minLength={5}
+          maxLength={5_000}
+          rows={3}
+          className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm leading-6"
+          placeholder="Record what was checked and why this status is appropriate."
+        />
+      </label>
+      <ActionFooter
+        state={state}
+        pending={pending}
+        label="Append triage event"
+      />
     </form>
   );
 }

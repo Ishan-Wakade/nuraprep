@@ -175,6 +175,7 @@ export async function getPracticeSessionView(
   const answeredCount = rows.filter((row) => row.attemptId).length;
   const feedback = selected.attemptId
     ? {
+        attemptId: selected.attemptId,
         correct: selected.correct ?? false,
         answerPayload: selected.answerPayload,
         evaluationReason: selected.evaluationReason,

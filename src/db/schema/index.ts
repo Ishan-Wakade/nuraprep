@@ -739,3 +739,62 @@ export const attempts = pgTable(
     ),
   ],
 );
+
+export const learnerQuestionReports = pgTable(
+  "learner_question_reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    questionVersionId: uuid("question_version_id")
+      .notNull()
+      .references(() => questionVersions.id, { onDelete: "restrict" }),
+    learnerId: uuid("learner_id")
+      .notNull()
+      .references(() => learnerProfiles.id, { onDelete: "restrict" }),
+    attemptId: uuid("attempt_id")
+      .notNull()
+      .references(() => attempts.id, { onDelete: "restrict" }),
+    category: feedbackCategoryEnum("category").notNull(),
+    details: text("details").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("learner_report_attempt_category_idx").on(
+      table.attemptId,
+      table.category,
+    ),
+    index("learner_report_question_created_idx").on(
+      table.questionVersionId,
+      table.createdAt,
+    ),
+    index("learner_report_learner_created_idx").on(
+      table.learnerId,
+      table.createdAt,
+    ),
+    check("learner_report_details_check", sql`length(${table.details}) >= 10`),
+  ],
+);
+
+export const learnerQuestionReportEvents = pgTable(
+  "learner_question_report_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reportId: uuid("report_id")
+      .notNull()
+      .references(() => learnerQuestionReports.id, { onDelete: "restrict" }),
+    status: feedbackStatusEnum("status").notNull(),
+    reviewerId: varchar("reviewer_id", { length: 160 }).notNull(),
+    notes: text("notes").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("learner_report_event_history_idx").on(
+      table.reportId,
+      table.createdAt,
+    ),
+    check("learner_report_event_notes_check", sql`length(${table.notes}) >= 5`),
+  ],
+);

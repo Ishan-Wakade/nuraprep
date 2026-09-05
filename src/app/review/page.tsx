@@ -66,7 +66,7 @@ export default async function ReviewQueuePage({
       </div>
 
       <section
-        className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4"
+        className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-5"
         aria-label="Queue summary"
       >
         <SummaryCard label="Visible" value={queue.summary.total} />
@@ -76,6 +76,10 @@ export default async function ReviewQueuePage({
           value={queue.summary.needsRevision}
         />
         <SummaryCard label="Approved" value={queue.summary.approved} />
+        <SummaryCard
+          label="Learner reports"
+          value={queue.summary.learnerReports}
+        />
       </section>
 
       <form className="mt-6 grid gap-3 rounded-2xl border border-[#d8ded9] bg-[#fffdf8] p-4 shadow-sm md:grid-cols-2 lg:grid-cols-5">
@@ -167,7 +171,7 @@ export default async function ReviewQueuePage({
                   {item.skillTitle} · <code>{item.slug}</code>
                 </p>
               </div>
-              <div className="flex items-center gap-5 border-t border-[#edf0ed] pt-4 text-xs text-[#52676a] lg:border-t-0 lg:pt-0">
+              <div className="flex flex-wrap items-center gap-5 border-t border-[#edf0ed] pt-4 text-xs text-[#52676a] lg:border-t-0 lg:pt-0">
                 <div>
                   <strong className="block text-lg text-[#123136]">
                     {item.passingValidatorCount}/{item.requiredValidatorCount}
@@ -179,6 +183,12 @@ export default async function ReviewQueuePage({
                     {item.provenanceCount}
                   </strong>
                   source record
+                </div>
+                <div>
+                  <strong className="block text-lg text-[#123136]">
+                    {item.learnerReportCount}
+                  </strong>
+                  learner reports
                 </div>
                 <span className="text-xl text-[#116b65]" aria-hidden="true">
                   →

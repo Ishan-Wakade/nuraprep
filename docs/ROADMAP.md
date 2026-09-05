@@ -30,7 +30,8 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Implement persisted session assembly by topic, difficulty, item type, missed/new, and timed/untimed filters.
 - [x] Build accessible renderers for choice, multiple-select, numeric, ordered, and table/graph content.
 - [x] Show correctness, worked solution, per-choice rationales, and the underlying skill.
-- [ ] Add learner problem reporting and misconception attribution.
+- [x] Add exact-version learner problem reporting and append-only owner triage.
+- [ ] Add deterministic misconception attribution.
 - Add hint-first tutor contracts with answer-reveal controls and safety logging.
 
 **Exit:** a learner completes a reviewed multi-format practice session end to end and reports an issue.

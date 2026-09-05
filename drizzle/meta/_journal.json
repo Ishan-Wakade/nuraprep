@@ -29,6 +29,13 @@
       "when": 1788639418525,
       "tag": "20260905201658_learner-practice-sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788640853340,
+      "tag": "20260905204053_polite_vision",
+      "breakpoints": true
     }
   ]
 }

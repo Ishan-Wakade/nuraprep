@@ -8,6 +8,7 @@ import {
   AutomatedValidationForm,
   DecisionForm,
   FeedbackForm,
+  LearnerReportTriageForm,
   PublishForm,
   ReviewerValidationForm,
   RevisionForm,
@@ -148,6 +149,54 @@ export default async function QuestionReviewPage({
                 question.versionId
               }
             />
+          </Panel>
+          <Panel
+            title="Learner problem reports"
+            eyebrow="Version-linked evidence"
+          >
+            {question.learnerReports.length ? (
+              <div className="space-y-4">
+                {question.learnerReports.map((report) => (
+                  <article
+                    key={report.id}
+                    className="rounded-xl border border-[#d8ded9] bg-white p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <strong className="text-sm">
+                        {label(report.category)}
+                      </strong>
+                      <span className="rounded-full bg-[#edf3ef] px-2.5 py-1 text-[11px] font-bold text-[#47615f]">
+                        {label(report.currentStatus)}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6">{report.details}</p>
+                    <p className="mt-2 text-xs text-[#687a7c]">
+                      {report.learnerName} · exact attempt {report.attemptId} ·{" "}
+                      {report.createdAt}
+                    </p>
+                    {report.events.length > 0 && (
+                      <ol className="mt-3 space-y-2 border-t border-[#e2e6e2] pt-3 text-xs">
+                        {report.events.slice(0, 3).map((event) => (
+                          <li key={event.id}>
+                            <strong>{label(event.status)}</strong> by{" "}
+                            {event.reviewerId}: {event.notes}
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                    <LearnerReportTriageForm
+                      reportId={report.id}
+                      questionVersionId={question.versionId}
+                      currentStatus={report.currentStatus}
+                    />
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-[#687a7c]">
+                No learner has reported this exact question version.
+              </p>
+            )}
           </Panel>
           <Panel
             title="Structured feedback"

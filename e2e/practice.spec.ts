@@ -36,6 +36,43 @@ test("completes a published topic-practice question with feedback", async ({
   await expect(
     page.getByText(/The total is the number of boxes/),
   ).toBeVisible();
+
+  await page
+    .getByText("Report a problem with this question", { exact: true })
+    .click();
+  await page.getByLabel("Issue category").selectOption("AMBIGUITY");
+  const reportDetails =
+    "The phrase about the volunteer team should be checked for unnecessary reading load.";
+  await page
+    .getByLabel("What should the reviewer inspect?")
+    .fill(reportDetails);
+  await page.getByRole("button", { name: "Send report to review" }).click();
+  await expect(
+    page.getByText("Report saved with this exact question version for review."),
+  ).toBeVisible();
+
+  const ownerPage = await page.context().newPage();
+  await ownerPage.goto("/review?q=volunteer");
+  await ownerPage
+    .getByRole("link")
+    .filter({ hasText: /volunteer team fills 24 cartons/i })
+    .first()
+    .click();
+  const reportCard = ownerPage.locator("article").filter({
+    hasText: reportDetails,
+  });
+  await expect(reportCard).toBeVisible();
+  await reportCard.getByLabel("Triage status").selectOption("RESOLVED");
+  await reportCard
+    .getByLabel("Triage evidence")
+    .fill(
+      "Reviewed in the end-to-end owner workflow and accepted for follow-up.",
+    );
+  await reportCard.getByRole("button", { name: "Append triage event" }).click();
+  await expect(
+    reportCard.getByText("Report triage event appended to immutable history."),
+  ).toBeVisible();
+
   await page.getByRole("link", { name: "View session summary" }).click();
 
   await expect(

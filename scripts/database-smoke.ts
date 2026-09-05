@@ -215,6 +215,64 @@ async function main() {
       throw new Error("The attempt append-only trigger allowed an update.");
     }
 
+    const reportId = randomUUID();
+    const reportEventId = randomUUID();
+    await client.query(
+      `INSERT INTO learner_question_reports
+       (id, question_version_id, learner_id, attempt_id, category, details)
+       VALUES ($1, $2, $3, $4, 'AMBIGUITY', $5)`,
+      [
+        reportId,
+        versionId,
+        learnerId,
+        attemptId,
+        "The CI smoke test records an exact-version learner report.",
+      ],
+    );
+    await client.query(
+      `INSERT INTO learner_question_report_events
+       (id, report_id, status, reviewer_id, notes)
+       VALUES ($1, $2, 'RESOLVED', 'ci-smoke-test', $3)`,
+      [
+        reportEventId,
+        reportId,
+        "The CI reviewer checked this temporary report.",
+      ],
+    );
+
+    for (const [savepoint, query, id, label] of [
+      [
+        "learner_report_immutability_check",
+        "UPDATE learner_question_reports SET details = 'mutated report' WHERE id = $1",
+        reportId,
+        "learner report",
+      ],
+      [
+        "learner_report_event_immutability_check",
+        "DELETE FROM learner_question_report_events WHERE id = $1",
+        reportEventId,
+        "learner report event",
+      ],
+    ] as const) {
+      await client.query(`SAVEPOINT ${savepoint}`);
+      let mutationBlocked = false;
+      try {
+        await client.query(query, [id]);
+      } catch (error) {
+        mutationBlocked =
+          typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          error.code === "55000";
+      } finally {
+        await client.query(`ROLLBACK TO SAVEPOINT ${savepoint}`);
+      }
+
+      if (!mutationBlocked) {
+        throw new Error(`The ${label} append-only trigger allowed a mutation.`);
+      }
+    }
+
     const result = await client.query<{ version_count: number }>(
       `SELECT count(*)::int AS version_count
      FROM question_versions qv

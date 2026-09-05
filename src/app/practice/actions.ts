@@ -1,6 +1,7 @@
 "use server";
 
 import { and, count, eq, inArray, isNull, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -8,6 +9,7 @@ import { ensureLearnerProfile } from "@/data/practice";
 import { getDatabase } from "@/db/client";
 import {
   attempts,
+  learnerQuestionReports,
   learnerProfiles,
   practiceSessionItems,
   practiceSessions,
@@ -19,10 +21,13 @@ import {
 import { requireLearner } from "@/lib/auth/learner";
 import type { LearnerAnswer } from "@/lib/questions/contracts";
 import { evaluateAnswer } from "@/lib/questions/validation";
-import { practiceSessionFiltersSchema } from "@/lib/practice/contracts";
+import {
+  learnerQuestionReportSchema,
+  practiceSessionFiltersSchema,
+} from "@/lib/practice/contracts";
 
 export type PracticeActionState = {
-  status: "idle" | "error";
+  status: "idle" | "error" | "success";
   message: string;
 };
 
@@ -315,6 +320,89 @@ export async function submitPracticeAnswer(
   }
 
   redirect(`/practice/${item.sessionId}?item=${item.position}&result=1`);
+}
+
+export async function submitQuestionReport(
+  _previousState: PracticeActionState,
+  formData: FormData,
+): Promise<PracticeActionState> {
+  const identity = requireLearner();
+  const parsed = learnerQuestionReportSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message:
+        parsed.error.issues[0]?.message ?? "Enter a valid problem report.",
+    };
+  }
+
+  const database = getDatabase();
+  const [context] = await database
+    .select({
+      learnerId: learnerProfiles.id,
+      sessionId: practiceSessions.id,
+    })
+    .from(attempts)
+    .innerJoin(
+      practiceSessionItems,
+      eq(practiceSessionItems.id, attempts.sessionItemId),
+    )
+    .innerJoin(
+      practiceSessions,
+      eq(practiceSessions.id, practiceSessionItems.sessionId),
+    )
+    .innerJoin(
+      learnerProfiles,
+      eq(learnerProfiles.id, practiceSessions.learnerId),
+    )
+    .where(
+      and(
+        eq(attempts.id, parsed.data.attemptId),
+        eq(
+          practiceSessionItems.questionVersionId,
+          parsed.data.questionVersionId,
+        ),
+        eq(learnerProfiles.authSubject, identity.subject),
+      ),
+    )
+    .limit(1);
+  if (!context) {
+    return {
+      status: "error",
+      message: "That answered question is not available to report.",
+    };
+  }
+
+  const inserted = await database
+    .insert(learnerQuestionReports)
+    .values({
+      questionVersionId: parsed.data.questionVersionId,
+      learnerId: context.learnerId,
+      attemptId: parsed.data.attemptId,
+      category: parsed.data.category,
+      details: parsed.data.details,
+    })
+    .onConflictDoNothing({
+      target: [
+        learnerQuestionReports.attemptId,
+        learnerQuestionReports.category,
+      ],
+    })
+    .returning({ id: learnerQuestionReports.id });
+
+  revalidatePath(`/practice/${context.sessionId}`);
+  revalidatePath(`/review/questions/${parsed.data.questionVersionId}`);
+  return inserted[0]
+    ? {
+        status: "success",
+        message: "Report saved with this exact question version for review.",
+      }
+    : {
+        status: "success",
+        message: "You already reported this issue category for this attempt.",
+      };
 }
 
 function buildLearnerAnswer(
