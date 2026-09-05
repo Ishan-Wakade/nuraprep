@@ -413,6 +413,7 @@ export const generationRuns = pgTable(
     inputTokens: integer("input_tokens"),
     outputTokens: integer("output_tokens"),
     estimatedCostMicros: integer("estimated_cost_micros"),
+    providerRequestId: varchar("provider_request_id", { length: 240 }),
     failureCode: varchar("failure_code", { length: 120 }),
     startedAt: timestamp("started_at", { withTimezone: true })
       .notNull()
@@ -436,6 +437,10 @@ export const generationRuns = pgTable(
     check(
       "generation_run_completion_check",
       sql`(${table.status} = 'PENDING' AND ${table.completedAt} IS NULL) OR (${table.status} <> 'PENDING' AND ${table.completedAt} IS NOT NULL)`,
+    ),
+    check(
+      "generation_run_usage_check",
+      sql`(${table.inputTokens} IS NULL OR ${table.inputTokens} >= 0) AND (${table.outputTokens} IS NULL OR ${table.outputTokens} >= 0)`,
     ),
   ],
 );
@@ -510,6 +515,9 @@ export const questionVersions = pgTable(
       table.primarySkillId,
       table.difficulty,
       table.questionType,
+    ),
+    uniqueIndex("question_version_generation_run_idx").on(
+      table.generationRunId,
     ),
     check("question_version_positive_check", sql`${table.version} > 0`),
     check("question_version_time_check", sql`${table.estimatedSeconds} > 0`),

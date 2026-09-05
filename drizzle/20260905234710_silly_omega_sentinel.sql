@@ -1,0 +1,1 @@
+ALTER TABLE "generation_runs" ADD CONSTRAINT "generation_run_usage_check" CHECK (("generation_runs"."input_tokens" IS NULL OR "generation_runs"."input_tokens" >= 0) AND ("generation_runs"."output_tokens" IS NULL OR "generation_runs"."output_tokens" >= 0));

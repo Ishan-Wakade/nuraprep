@@ -1,0 +1,1 @@
+ALTER TABLE "generation_runs" ADD COLUMN "provider_request_id" varchar(240);

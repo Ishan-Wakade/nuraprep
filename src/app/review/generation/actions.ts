@@ -121,6 +121,16 @@ export async function requestQuestionRegeneration(
         "Template skill and question type must match the source version.",
     };
   }
+  if (
+    parsed.data.requestKind === "DISTRACTORS_ONLY" &&
+    !["SINGLE_CHOICE", "MULTIPLE_SELECT"].includes(sourceVersion.questionType)
+  ) {
+    return {
+      status: "error",
+      message:
+        "Distractor-only regeneration requires a single-choice or multiple-select item.",
+    };
+  }
 
   const idempotencyKey = createGenerationIdempotencyKey(parsed.data);
   const promptHash = createGenerationPromptHash({

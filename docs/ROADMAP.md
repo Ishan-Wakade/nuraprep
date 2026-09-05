@@ -68,8 +68,11 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 - [x] Implement a fail-closed source/license registry and abstract coverage-intake workflow.
 - [x] Add a provider-neutral boundary, versioned template approval, idempotent regeneration requests, immutable lifecycle controls, and per-request cost ceilings.
-- [ ] Add reviewed metadata and licensed-storage acquisition adapters; do not enable collection from gated or unclear-rights sources.
-- [ ] Add a configured provider worker, batch budgets, structured candidate persistence, validator evidence, and calibrated originality checks.
+- [x] Add a strict bodyless metadata acquisition adapter contract that rejects returned content bodies.
+- [x] Add budgeted provider-worker orchestration and atomic, one-candidate-only draft persistence with regeneration-scope enforcement.
+- [x] Add internal exact, number-invariant, and phrase-overlap rejection signals to deterministic review evidence.
+- [ ] Add a reviewed network transport and licensed-storage adapter; do not enable collection from gated or unclear-rights sources.
+- [ ] Add a configured provider and queue runner, batch budgets, and calibration cases for originality thresholds.
 - Add recurring-error summaries and regression suites; keep prompt/rubric changes human-approved.
 - Expand only at the rate human review and quality sampling can support.
 

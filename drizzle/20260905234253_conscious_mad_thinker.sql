@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "question_version_generation_run_idx" ON "question_versions" USING btree ("generation_run_id");

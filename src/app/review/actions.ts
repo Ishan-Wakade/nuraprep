@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, isNull, max, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, max, ne, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -26,6 +26,7 @@ import {
   misconceptionRulesSchema,
   tutorGuidanceSchema,
 } from "@/lib/questions/contracts";
+import { findInternalSimilaritySignals } from "@/lib/questions/originality";
 import {
   AUTOMATED_PUBLICATION_VALIDATORS,
   evaluatePublicationGate,
@@ -72,6 +73,30 @@ export async function runDeterministicValidation(
     distractorRationales: version.distractorRationales,
   };
   const contentResult = validateQuestionContent(content);
+  const comparisonVersions = await database
+    .select({
+      id: questionVersions.id,
+      prompt: questionVersions.prompt,
+      choices: questionVersions.choices,
+    })
+    .from(questionVersions)
+    .where(ne(questionVersions.questionId, version.questionId));
+  const originalitySignals = findInternalSimilaritySignals(
+    {
+      id: version.id,
+      prompt: version.prompt,
+      choices: version.choices,
+    },
+    comparisonVersions,
+  );
+  const originalityIssues = originalitySignals
+    .filter((signal) => signal.blocking)
+    .map((signal) => ({
+      code: `INTERNAL_${signal.reason ?? "SIMILARITY"}`,
+      message: `This candidate is too similar to internal question version ${signal.comparedWithId}.`,
+      path: "prompt",
+      severity: "error" as const,
+    }));
   const misconceptionIssues = validateMisconceptionRules(
     content,
     version.commonMisconceptions,
@@ -94,7 +119,8 @@ export async function runDeterministicValidation(
   const answerContractValid =
     contentResult.valid &&
     misconceptionIssues.length === 0 &&
-    tutorGuidanceIssues.length === 0;
+    tutorGuidanceIssues.length === 0 &&
+    originalityIssues.length === 0;
   const mathResult = validateMathVerification(
     content,
     version.verificationSpec,
@@ -131,15 +157,20 @@ export async function runDeterministicValidation(
         : (contentResult.issues[0]?.code ??
           misconceptionIssues[0]?.code ??
           tutorGuidanceIssues[0]?.code ??
+          originalityIssues[0]?.code ??
           "CONTENT_INVALID"),
       evidence: {
-        method: "deterministic-answer-contract",
+        method: "deterministic-answer-contract-and-internal-similarity",
         executedBy: reviewer.id,
         issues: [
           ...contentResult.issues,
           ...misconceptionIssues,
           ...tutorGuidanceIssues,
+          ...originalityIssues,
         ],
+        originalitySignals,
+        originalityLimit:
+          "Internal comparison is a rejection aid, not proof of legal originality.",
       },
     },
     {

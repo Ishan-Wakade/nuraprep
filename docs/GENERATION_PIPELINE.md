@@ -11,8 +11,9 @@ The current slice supports:
 - versioned generation templates with explicit owner approval evidence;
 - full-question, explanation-only, and distractor-only regeneration requests;
 - stable idempotency keys, immutable request identity, and per-request cost ceilings;
-- a provider-neutral TypeScript interface; and
-- database-enforced one-way completion linked to a generated candidate version.
+- a provider-neutral TypeScript interface and worker orchestrator;
+- strict structured-output, answer-contract, symbolic-math, misconception, and regeneration-scope checks; and
+- atomic candidate persistence with database-enforced one-way completion linked to exactly one generated candidate version.
 
 No action in the reviewer UI fetches source pages, stores source question text, or sends content to a model.
 
@@ -50,12 +51,17 @@ Templates are versioned. A draft becomes dispatchable only after the owner recor
 2. They select full revision, explanation only, or distractors only and enter a concrete instruction.
 3. The server creates a SHA-256 idempotency key over the source version, template, scope, normalized instruction, and cost ceiling.
 4. A duplicate submission resolves to the existing request.
-5. A future worker may dispatch only through the provider-neutral interface and must reject work that can exceed the stored ceiling.
-6. Success requires a complete linked candidate question version. Partial fields never overwrite the source version.
-7. The candidate remains `DRAFT`, with no copied validations or review decisions.
-8. Deterministic checks and human review must pass before a separate publication action can expose it to learners.
+5. The worker asks the provider for a worst-case estimate and rejects the request before dispatch when it exceeds the stored ceiling.
+6. Provider output is treated as untrusted. Its usage accounting, complete candidate schema, answer contract, symbolic math, misconception rules, and requested regeneration scope must pass.
+7. Success atomically writes exactly one complete linked candidate version and then closes the run. Partial fields never overwrite the source version.
+8. The candidate remains `DRAFT`, with no copied validations or review decisions.
+9. Deterministic checks and human review must pass before a separate publication action can expose it to learners.
 
-PostgreSQL prevents request-identity edits, deletion, repeated terminal transitions, cost-overrun records, and successful runs without a linked candidate version.
+PostgreSQL prevents request-identity edits, deletion, repeated terminal transitions, cost-overrun records, multiple candidates for one run, and successful runs without a linked candidate version.
+
+The provider envelope carries the stable run ID and idempotency key so adapters can propagate the same key to providers that support idempotent requests. The database uniqueness boundary still protects candidate persistence when delivery is repeated.
+
+Explanation-only regeneration may change only the explanation. Distractor-only regeneration is limited to choice items, preserves the correct answer and its content, and may change only distractor choices and their rationales. Any hidden change fails the worker before persistence.
 
 ## Provider adapter requirements
 
@@ -71,9 +77,9 @@ Before an external adapter is enabled, it must prove that it:
 
 ## Still open
 
-- a configured provider adapter and worker;
+- a configured provider adapter and queue runner;
 - licensed-storage ingestion with malware scanning and object-storage isolation;
-- calibrated internal originality signals and legally permitted comparison corpora;
+- calibration of the implemented internal exact, number-invariant, and phrase-overlap signals, plus any legally permitted external comparison corpus;
 - batch budgets, rate controls, cancellation, and operational metrics;
 - a hand-reviewed gold evaluation set and regression harness; and
 - recurring-feedback proposals that create, but never auto-approve, new template or rubric versions.

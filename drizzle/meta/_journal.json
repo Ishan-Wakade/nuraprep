@@ -85,6 +85,27 @@
       "when": 1788651413321,
       "tag": "20260905233653_guard_generation_templates",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788651773257,
+      "tag": "20260905234253_conscious_mad_thinker",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788651862061,
+      "tag": "20260905234422_vengeful_shaman",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1788652030388,
+      "tag": "20260905234710_silly_omega_sentinel",
+      "breakpoints": true
     }
   ]
 }

@@ -202,6 +202,45 @@ async function main() {
         versionId,
       ],
     );
+    await client.query("SAVEPOINT generation_candidate_uniqueness_check");
+    let duplicateCandidateWasBlocked = false;
+    try {
+      await client.query(
+        `INSERT INTO question_versions
+         (id, question_id, version, question_type, prompt, choices, answer_spec,
+          explanation, distractor_rationales, primary_skill_id,
+          learning_objective, difficulty, difficulty_rationale,
+          estimated_seconds, calculator_policy, common_misconceptions,
+          authoring_mode, generation_run_id, provenance_summary)
+         SELECT $1, question_id, 3, question_type, prompt, choices, answer_spec,
+                explanation, distractor_rationales, primary_skill_id,
+                learning_objective, difficulty, difficulty_rationale,
+                estimated_seconds, calculator_policy, common_misconceptions,
+                'GENERATED', $2, $3
+         FROM question_versions WHERE id = $4`,
+        [
+          randomUUID(),
+          generationRunId,
+          "A duplicate candidate for one run must be rejected.",
+          versionId,
+        ],
+      );
+    } catch (error) {
+      duplicateCandidateWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23505";
+    } finally {
+      await client.query(
+        "ROLLBACK TO SAVEPOINT generation_candidate_uniqueness_check",
+      );
+    }
+    if (!duplicateCandidateWasBlocked) {
+      throw new Error(
+        "One generation run produced multiple candidate versions.",
+      );
+    }
     await client.query(
       `UPDATE generation_runs
        SET status = 'SUCCEEDED', completed_at = now(),

@@ -1,6 +1,23 @@
-import type { GenerationRequest } from "./contracts";
+import type { GenerationRequest, GeneratedCandidate } from "./contracts";
+import type {
+  MathVerificationSpec,
+  QuestionContent,
+} from "@/lib/questions/contracts";
+
+export type GenerationSourceSnapshot = Omit<
+  GeneratedCandidate,
+  "content" | "verificationSpec"
+> & {
+  content: QuestionContent;
+  verificationSpec: MathVerificationSpec | null;
+};
 
 export type GenerationEnvelope = {
+  execution: {
+    runId: string;
+    idempotencyKey: string;
+    maxCostMicros: number;
+  };
   template: {
     key: string;
     version: number;
@@ -10,7 +27,7 @@ export type GenerationEnvelope = {
     validatorContract: Record<string, unknown>;
   };
   request: GenerationRequest;
-  internalQuestionVersion: Record<string, unknown>;
+  internalQuestionVersion: GenerationSourceSnapshot;
   abstractCoverageObservations: string[];
   sourceQuestionTextProvided: false;
 };
@@ -36,5 +53,6 @@ export type GenerationProviderResult = {
 export interface QuestionGenerationProvider {
   readonly provider: string;
   readonly model: string;
+  estimateMaximumCostMicros(envelope: GenerationEnvelope): Promise<number>;
   generate(envelope: GenerationEnvelope): Promise<GenerationProviderResult>;
 }

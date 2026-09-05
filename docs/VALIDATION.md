@@ -6,7 +6,7 @@ NuraPrep separates validation, review, and publication. A question can be mathem
 
 Two checks are currently automated:
 
-- `answer-contract` validates the response type, stable identifiers, choice set, distractor mappings, table shape, and any deterministic misconception rules.
+- `answer-contract` validates the response type, stable identifiers, choice set, distractor mappings, table shape, deterministic misconception rules, and internal near-duplicate rejection signals.
 - `mathematical-correctness` executes a safe structured verification recipe and compares the computed result with the keyed answer.
 
 The math verifier does not evaluate arbitrary JavaScript or model-written code. Its supported recipes are a bounded reverse-Polish arithmetic expression, equivalence checks across candidate expressions, numeric ordering, and mean/median/range operations. Unsupported or malformed recipes fail closed.
@@ -15,7 +15,9 @@ Misconception attribution also fails closed. A reviewer must explicitly map a se
 
 Tutor guidance uses a bounded, versioned sequence of reviewer-authored Socratic questions or hints plus a post-answer reflection prompt. The server releases one requested step at a time and stores an append-only interaction event. The answer contract validates the structure and stable identifiers; the human explanation-consistency review remains responsible for checking pedagogy and answer leakage.
 
-Four checks require explicit reviewer evidence:
+The internal similarity pass compares different NuraPrep question families using exact normalized text, a number-invariant fingerprint, and five-token phrase containment. A blocking match fails the automated evidence, but a low score is not treated as proof of legal originality. Prior versions in the same family are excluded so legitimate revision history remains possible.
+
+Four checks still require explicit reviewer evidence:
 
 - `explanation-consistency`
 - `accessibility`
@@ -40,6 +42,6 @@ Learner selection will join only the single current publication record. Drafts, 
 
 - Verification recipes establish that a stored answer matches a declared calculation; a reviewer must still confirm that the recipe faithfully represents the written prompt.
 - A non-matching wrong answer receives no misconception label. Missing evidence is preferable to an unsupported diagnosis.
-- Originality is reviewer-attested until a legally permitted comparison corpus and calibrated similarity thresholds exist.
+- Internal originality signals are intentionally conservative and uncalibrated. Human originality review remains required, and no external source text is retained merely to create a comparison corpus.
 - Reading-level and broader accessibility automation will supplement, not replace, reviewer evidence in a later validation milestone.
 - Seed candidates are development fixtures. They are not human-reviewed or production-approved.
