@@ -298,6 +298,57 @@ test("submits a timed Math simulation early without fabricating answers", async 
   await expect(page.getByText("0 of 38", { exact: true })).toBeVisible();
 });
 
+test("creates a versioned readiness estimate and edits its study plan", async ({
+  page,
+}) => {
+  await page.goto("/practice/progress");
+  await page
+    .getByRole("button", { name: /Create estimate|Refresh estimate/ })
+    .click();
+  await expect(page).toHaveURL(/\/practice\/progress\?estimate=[a-f0-9-]+/);
+
+  await expect(
+    page.getByText("NuraPrep Math readiness estimate"),
+  ).toBeVisible();
+  await expect(page.getByText("score-baseline-v1")).toBeVisible();
+  await expect(
+    page.getByText(/not an official ATI score/i).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "By Math domain" }),
+  ).toBeVisible();
+
+  const firstPlanItem = page
+    .locator("section")
+    .filter({ hasText: "Editable weekly plan" })
+    .locator("li")
+    .first();
+  await firstPlanItem.getByLabel("Status").selectOption("IN_PROGRESS");
+  await firstPlanItem.getByLabel("Minutes/week").fill("75");
+  await firstPlanItem.getByRole("button", { name: "Save item" }).click();
+  await expect(
+    firstPlanItem.getByText("Study-plan item updated."),
+  ).toBeVisible();
+  await page.getByLabel("Total weekly study budget").fill("240");
+  await page
+    .getByLabel("Personal notes")
+    .fill("Study in four focused blocks before the next simulation.");
+  await page.getByRole("button", { name: "Save plan preferences" }).click();
+  await expect(page.getByText("Study-plan preferences updated.")).toBeVisible();
+
+  await page.getByRole("button", { name: "Refresh estimate" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Estimate history" }),
+  ).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const dimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
+});
+
 async function answerDiagnosticQuestion(
   page: import("@playwright/test").Page,
   options: { missArithmetic?: boolean } = {},

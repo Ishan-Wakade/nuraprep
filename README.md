@@ -11,7 +11,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 ## Project status
 
-**Score-estimation phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, persisted topic practice, a coverage-aware diagnostic, a versioned rules-based adaptive scheduler, and full timed-test mechanics. Practice includes server-controlled Socratic hints, reviewer-authored misconception attribution, version-linked learner reports, and owner triage. The six seed candidates remain deliberately unapproved; browser tests add disposable, explicitly test-only fixtures to verify a complete 38-question simulation. There is no approved production question bank or validated score predictor yet.
+**Generation-pipeline phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, persisted topic practice, a coverage-aware diagnostic, a versioned rules-based adaptive scheduler, full timed-test mechanics, and a transparent readiness-estimation baseline with editable study plans. The six seed candidates remain deliberately unapproved; browser tests add disposable, explicitly test-only fixtures to verify complete learner flows. There is no approved production question bank or externally validated score predictor yet.
 
 | Area                                        | Status                                                           |
 | ------------------------------------------- | ---------------------------------------------------------------- |
@@ -22,7 +22,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 | Diagnostic                                  | Working local flow with explicit coverage and starting signals   |
 | Adaptive mode                               | Working local, inspectable rules baseline                        |
 | Timed Math practice test                    | Mechanics verified; production bank lacks 38 approved families   |
-| Score estimate and study plan               | Planned                                                          |
+| Score estimate and study plan               | Working, versioned baseline; external calibration remains open   |
 | Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works                 |
 
 ## Product preview
@@ -86,7 +86,7 @@ Important boundaries:
 - Adaptive recommendations and score estimates retain their inputs, model version, explanation, and uncertainty.
 - Authentication and billing are deferred so the practice and review loops can be validated first.
 
-See [Architecture](docs/ARCHITECTURE.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Practice-test blueprint](docs/PRACTICE_TEST.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), and [Roadmap](docs/ROADMAP.md).
+See [Architecture](docs/ARCHITECTURE.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Practice-test blueprint](docs/PRACTICE_TEST.md), [Score estimation](docs/SCORE_ESTIMATION.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), and [Roadmap](docs/ROADMAP.md).
 
 ## Technology
 

@@ -28,6 +28,7 @@ import type {
   TutorGuidance,
 } from "@/lib/questions/contracts";
 import type { PracticeSessionFilters } from "@/lib/practice/contracts";
+import type { ScoreFeatureSnapshot } from "@/lib/score/contracts";
 
 const auditColumns = {
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -142,6 +143,17 @@ export const practiceSessionStatusEnum = pgEnum("practice_session_status", [
   "ABANDONED",
 ]);
 export const timingModeEnum = pgEnum("timing_mode", ["UNTIMED", "TIMED"]);
+export const scoreEvidenceLevelEnum = pgEnum("score_evidence_level", [
+  "LOW",
+  "DEVELOPING",
+  "SUBSTANTIAL",
+]);
+export const studyPlanItemStatusEnum = pgEnum("study_plan_item_status", [
+  "PLANNED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "SKIPPED",
+]);
 
 export const examSpecifications = pgTable(
   "exam_specifications",
@@ -642,6 +654,109 @@ export const learnerProfiles = pgTable(
     ...auditColumns,
   },
   (table) => [uniqueIndex("learner_auth_subject_idx").on(table.authSubject)],
+);
+
+export const scoreEstimates = pgTable(
+  "score_estimates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    learnerId: uuid("learner_id")
+      .notNull()
+      .references(() => learnerProfiles.id, { onDelete: "restrict" }),
+    modelVersion: varchar("model_version", { length: 80 }).notNull(),
+    estimateBasisPoints: integer("estimate_basis_points").notNull(),
+    lowerBasisPoints: integer("lower_basis_points").notNull(),
+    upperBasisPoints: integer("upper_basis_points").notNull(),
+    evidenceLevel: scoreEvidenceLevelEnum("evidence_level").notNull(),
+    evidenceCount: integer("evidence_count").notNull(),
+    effectiveEvidenceMilli: integer("effective_evidence_milli").notNull(),
+    featureSnapshot: jsonb("feature_snapshot")
+      .$type<ScoreFeatureSnapshot>()
+      .notNull(),
+    caveats: jsonb("caveats").$type<string[]>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("score_estimate_learner_created_idx").on(
+      table.learnerId,
+      table.createdAt,
+    ),
+    check(
+      "score_estimate_range_check",
+      sql`${table.lowerBasisPoints} BETWEEN 0 AND 10000 AND ${table.estimateBasisPoints} BETWEEN ${table.lowerBasisPoints} AND ${table.upperBasisPoints} AND ${table.upperBasisPoints} BETWEEN 0 AND 10000`,
+    ),
+    check(
+      "score_estimate_evidence_check",
+      sql`${table.evidenceCount} >= 0 AND ${table.effectiveEvidenceMilli} >= 0`,
+    ),
+  ],
+);
+
+export const studyPlans = pgTable(
+  "study_plans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    learnerId: uuid("learner_id")
+      .notNull()
+      .references(() => learnerProfiles.id, { onDelete: "restrict" }),
+    scoreEstimateId: uuid("score_estimate_id")
+      .notNull()
+      .references(() => scoreEstimates.id, { onDelete: "restrict" }),
+    modelVersion: varchar("model_version", { length: 80 }).notNull(),
+    weeklyMinutes: integer("weekly_minutes").notNull().default(180),
+    learnerNotes: text("learner_notes"),
+    ...auditColumns,
+  },
+  (table) => [
+    uniqueIndex("study_plan_estimate_idx").on(table.scoreEstimateId),
+    index("study_plan_learner_created_idx").on(
+      table.learnerId,
+      table.createdAt,
+    ),
+    check(
+      "study_plan_weekly_minutes_check",
+      sql`${table.weeklyMinutes} BETWEEN 30 AND 1200`,
+    ),
+  ],
+);
+
+export const studyPlanItems = pgTable(
+  "study_plan_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studyPlanId: uuid("study_plan_id")
+      .notNull()
+      .references(() => studyPlans.id, { onDelete: "restrict" }),
+    skillId: uuid("skill_id")
+      .notNull()
+      .references(() => skills.id, { onDelete: "restrict" }),
+    priority: integer("priority").notNull(),
+    status: studyPlanItemStatusEnum("status").notNull().default("PLANNED"),
+    targetMinutes: integer("target_minutes").notNull(),
+    rationale: text("rationale").notNull(),
+    ...auditColumns,
+  },
+  (table) => [
+    uniqueIndex("study_plan_item_priority_idx").on(
+      table.studyPlanId,
+      table.priority,
+    ),
+    uniqueIndex("study_plan_item_skill_idx").on(
+      table.studyPlanId,
+      table.skillId,
+    ),
+    check("study_plan_item_priority_check", sql`${table.priority} > 0`),
+    check(
+      "study_plan_item_minutes_check",
+      sql`${table.targetMinutes} BETWEEN 10 AND 600`,
+    ),
+    check(
+      "study_plan_item_rationale_check",
+      sql`length(${table.rationale}) >= 10`,
+    ),
+  ],
 );
 
 export const practiceSessions = pgTable(

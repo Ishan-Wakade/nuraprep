@@ -105,9 +105,9 @@ The practice-test assembler reads a versioned exam specification and only curren
 
 ## Score-estimation baseline
 
-The first estimator combines reviewed practice-test performance by content domain and internal difficulty band. Timed attempts receive a separate pacing feature rather than an arbitrary penalty. Bootstrap resampling provides an uncertainty interval when enough attempts exist; sparse histories receive a wider interval and an explicit low-evidence label.
+The first estimator combines reviewed performance by public scored domain, internal difficulty band, recency, and session evidence quality. Timed attempts retain separate accuracy and pacing features rather than receiving an arbitrary penalty. A weighted Beta baseline provides an approximate internal uncertainty interval; sparse histories remain close to a neutral prior with a deliberately wide range and an explicit low-evidence label.
 
-This estimate is not an ATI score conversion. Model versions, features, predictions, intervals, and eventual self-reported outcomes are retained for calibration analysis using mean absolute error, interval coverage, calibration curves, and threshold classification metrics.
+This estimate is not an ATI score conversion. Estimate records are append-only; their model version, features, prediction, interval, and caveats cannot be rewritten. Study plans reference an estimate but remain editable. Eventual consented outcomes will be evaluated using mean absolute error, interval coverage, calibration curves, and named-threshold classification metrics. See [Score estimation and study planning](SCORE_ESTIMATION.md).
 
 ## Deployment evolution
 

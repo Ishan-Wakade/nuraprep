@@ -100,17 +100,17 @@ Editing creates a new `QuestionVersion`. Approval never mutates an older version
 
 ## Learner entities
 
-The topic-practice slice now implements `learner_profiles`, `practice_sessions`, immutable `practice_session_items`, immutable `attempts`, append-only `tutor_interactions`, exact-version `learner_question_reports`, and append-only `learner_question_report_events`. The remaining entities below are added with their owning milestone.
+The learner slice now implements `learner_profiles`, `practice_sessions`, immutable `practice_session_items`, immutable `attempts`, append-only `tutor_interactions`, exact-version `learner_question_reports`, append-only `learner_question_report_events`, append-only `score_estimates`, and editable study plans linked to estimate history. The remaining entities below are added with their owning milestone.
 
 - **PracticeSession:** mode, filters, timing policy, start/end state, and a reproducible item manifest.
 - **Attempt:** exact session item, answer payload, correctness, duration, confidence, evaluator version, server timestamp, and any matched reviewer-authored misconception-rule evidence.
 - **AttemptEvaluation:** future expansion point for partial credit and richer evaluation traces; deterministic misconception attribution is already stored with the attempt.
 - **TutorInteraction:** exact session item, reviewed hint-step identifier and index, and request time. Unrequested steps are not sent to the learner, and answer content is not part of the hint contract.
-- **SkillEstimate:** user, skill, estimator version, evidence count, mastery estimate, uncertainty, and calculation timestamp.
+- **SkillEstimate:** currently represented inside versioned adaptive and score feature snapshots; a separate table is deferred until longitudinal skill-history queries justify it.
 - **ReviewSchedule:** user, skill/question family, due date, spacing state, and reason.
 - **TestForm:** reproducible assembly manifest with distribution rules and no repeated family.
-- **ScoreEstimate:** model version, evidence window, estimate, interval, calibration status, caveats, and feature snapshot.
-- **StudyPlan:** versioned goals and scheduled skill activities with user adjustments.
+- **ScoreEstimate:** append-only model version, evidence count, estimate, interval, evidence level, caveats, and exact feature snapshot.
+- **StudyPlan / StudyPlanItem:** editable learner preferences and per-skill priorities linked to the immutable estimate that generated them.
 - **ProblemReport:** implemented as immutable learner evidence linked to the exact attempt and question version; append-only reviewer events carry triage status and resolution evidence. Notification delivery remains planned.
 
 ## Publication invariants

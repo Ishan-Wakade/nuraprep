@@ -58,11 +58,11 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 ## 5. Transparent score estimate and study plan
 
-- Implement a calibrated-accuracy baseline with topic/difficulty inputs, timed context, evidence thresholds, and uncertainty intervals.
-- Explain estimate limits in plain language and generate an editable study plan.
-- Define outcome-consent, calibration, MAE, interval coverage, and threshold evaluation protocols.
+- [x] Implement a calibration-ready accuracy baseline with topic/difficulty inputs, timed context, evidence thresholds, and uncertainty intervals.
+- [x] Explain estimate limits in plain language and generate an editable study plan.
+- [x] Define outcome-consent, calibration, MAE, interval coverage, and threshold evaluation protocols.
 
-**Exit:** estimates are reproducible, versioned, uncertainty-aware, and never represented as official ATI scores.
+**Exit:** estimates are reproducible, versioned, uncertainty-aware, and never represented as official ATI scores. External predictive validation remains explicitly open until consented learner outcomes exist.
 
 ## 6. Generation pipeline and scale
 

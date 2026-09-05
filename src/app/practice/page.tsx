@@ -95,6 +95,27 @@ export default async function PracticeSetupPage({
             </span>
           </Link>
 
+          <Link
+            href="/practice/progress"
+            className="mt-4 grid gap-4 rounded-2xl border border-[#d6ddd7] bg-[#fffdf8] p-5 shadow-sm transition hover:border-[#85afa6] sm:grid-cols-[1fr_auto] sm:items-center sm:p-6"
+          >
+            <span>
+              <span className="text-xs font-bold tracking-[0.12em] text-[#116b65] uppercase">
+                Progress and planning
+              </span>
+              <strong className="mt-2 block font-serif text-2xl">
+                Estimate readiness and build a study plan
+              </strong>
+              <span className="mt-2 block text-sm leading-6 text-[#47615f]">
+                Save a versioned internal estimate with uncertainty, then edit
+                the recommended weekly priorities.
+              </span>
+            </span>
+            <span className="text-sm font-bold text-[#116b65]">
+              View progress →
+            </span>
+          </Link>
+
           <div className="mt-8 rounded-2xl border border-[#d6ddd7] bg-[#fffdf8] p-5 shadow-sm sm:p-7">
             <PracticeSetupForm
               skills={data.availability}

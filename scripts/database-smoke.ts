@@ -163,6 +163,70 @@ async function main() {
        VALUES ($1, $2, 'CI smoke learner')`,
       [learnerId, `ci-smoke-${learnerId}`],
     );
+
+    const scoreEstimateId = randomUUID();
+    const studyPlanId = randomUUID();
+    const studyPlanItemId = randomUUID();
+    await client.query(
+      `INSERT INTO score_estimates
+       (id, learner_id, model_version, estimate_basis_points,
+        lower_basis_points, upper_basis_points, evidence_level,
+        evidence_count, effective_evidence_milli, feature_snapshot, caveats)
+       VALUES ($1, $2, 'ci-score-baseline', 6000, 4000, 8000, 'LOW',
+               1, 500, $3::jsonb, $4::jsonb)`,
+      [
+        scoreEstimateId,
+        learnerId,
+        JSON.stringify({ source: "rolled-back database smoke test" }),
+        JSON.stringify(["Not an official ATI score."]),
+      ],
+    );
+    await client.query("SAVEPOINT score_estimate_immutability_check");
+    let scoreEstimateMutationWasBlocked = false;
+    try {
+      await client.query(
+        "UPDATE score_estimates SET estimate_basis_points = 7000 WHERE id = $1",
+        [scoreEstimateId],
+      );
+    } catch (error) {
+      scoreEstimateMutationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query(
+        "ROLLBACK TO SAVEPOINT score_estimate_immutability_check",
+      );
+    }
+    if (!scoreEstimateMutationWasBlocked) {
+      throw new Error(
+        "The score-estimate append-only trigger allowed an update.",
+      );
+    }
+    await client.query(
+      `INSERT INTO study_plans
+       (id, learner_id, score_estimate_id, model_version, weekly_minutes)
+       VALUES ($1, $2, $3, 'ci-study-plan', 180)`,
+      [studyPlanId, learnerId, scoreEstimateId],
+    );
+    await client.query(
+      `INSERT INTO study_plan_items
+       (id, study_plan_id, skill_id, priority, target_minutes, rationale)
+       VALUES ($1, $2, $3, 1, 90, $4)`,
+      [
+        studyPlanItemId,
+        studyPlanId,
+        skillId,
+        "Exercise the editable study-plan relationship in a rolled-back smoke test.",
+      ],
+    );
+    await client.query(
+      `UPDATE study_plan_items
+       SET status = 'IN_PROGRESS', target_minutes = 75, updated_at = now()
+       WHERE id = $1`,
+      [studyPlanItemId],
+    );
     await client.query(
       `INSERT INTO practice_sessions
        (id, learner_id, mode, status, timing_mode, requested_question_count, filters)
