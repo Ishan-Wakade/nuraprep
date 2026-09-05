@@ -92,6 +92,145 @@ async function main() {
       );
     }
 
+    await client.query("SAVEPOINT source_permission_check");
+    let sourcePermissionWasBlocked = false;
+    try {
+      await client.query(
+        `INSERT INTO source_artifacts
+         (canonical_url, publisher, title, artifact_type, accessed_at,
+          access_class, decision, allow_metadata, allow_model_input,
+          decision_rationale, reviewed_by)
+         VALUES ($1, 'CI publisher', 'CI metadata source', 'WEB_PAGE', now(),
+                 'PUBLIC', 'METADATA_ONLY', true, true, $2, 'ci-smoke-test')`,
+        [
+          `https://example.invalid/${randomUUID()}`,
+          "This invalid record must not grant model-input rights from a metadata-only decision.",
+        ],
+      );
+    } catch (error) {
+      sourcePermissionWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23514";
+    } finally {
+      await client.query("ROLLBACK TO SAVEPOINT source_permission_check");
+    }
+    if (!sourcePermissionWasBlocked) {
+      throw new Error(
+        "The source policy allowed metadata-only material into model input.",
+      );
+    }
+
+    const generationTemplateId = randomUUID();
+    const generationRunId = randomUUID();
+    const generatedVersionId = randomUUID();
+    await client.query(
+      `INSERT INTO generation_templates
+       (id, template_key, version, status, target_skill_id, question_type,
+        difficulty, instructions, parameter_constraints, prohibited_patterns,
+        validator_contract, authored_by, approved_by, approval_notes, approved_at)
+       VALUES ($1, $2, 1, 'APPROVED', $3, 'SINGLE_CHOICE', 'FOUNDATIONAL',
+               $4, '{}'::jsonb, '[]'::jsonb, '{}'::jsonb, 'ci-smoke-test',
+               'ci-smoke-test', $5, now())`,
+      [
+        generationTemplateId,
+        `ci-template-${generationTemplateId}`,
+        skillId,
+        "Generate an original development candidate without source-question text.",
+        "The smoke test records approval evidence for this temporary template.",
+      ],
+    );
+    await client.query("SAVEPOINT generation_template_history_check");
+    let generationTemplateMutationWasBlocked = false;
+    try {
+      await client.query(
+        "UPDATE generation_templates SET instructions = 'mutated' WHERE id = $1",
+        [generationTemplateId],
+      );
+    } catch (error) {
+      generationTemplateMutationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query(
+        "ROLLBACK TO SAVEPOINT generation_template_history_check",
+      );
+    }
+    if (!generationTemplateMutationWasBlocked) {
+      throw new Error(
+        "The approved generation template allowed a content mutation.",
+      );
+    }
+    await client.query(
+      `INSERT INTO generation_runs
+       (id, idempotency_key, template_id, source_question_version_id,
+        request_kind, requested_by, provider, model, prompt_hash, parameters,
+        request_payload, status, max_cost_micros)
+       VALUES ($1, $2, $3, $4, 'FULL_REVISION', 'ci-smoke-test',
+               'CI_PROVIDER', 'ci-model', $5, $6::jsonb, $7::jsonb,
+               'PENDING', 1000)`,
+      [
+        generationRunId,
+        `ci-generation-${generationRunId}`,
+        generationTemplateId,
+        versionId,
+        "ci-prompt-hash",
+        JSON.stringify({ sourceQuestionTextProvided: false }),
+        JSON.stringify({ sourceQuestionTextProvided: false }),
+      ],
+    );
+    await client.query(
+      `INSERT INTO question_versions
+       (id, question_id, version, question_type, prompt, choices, answer_spec,
+        explanation, distractor_rationales, primary_skill_id, learning_objective,
+        difficulty, difficulty_rationale, estimated_seconds, calculator_policy,
+        common_misconceptions, authoring_mode, generation_run_id,
+        provenance_summary)
+       SELECT $1, question_id, 2, question_type, prompt, choices, answer_spec,
+              explanation, distractor_rationales, primary_skill_id,
+              learning_objective, difficulty, difficulty_rationale,
+              estimated_seconds, calculator_policy, common_misconceptions,
+              'GENERATED', $2, $3
+       FROM question_versions WHERE id = $4`,
+      [
+        generatedVersionId,
+        generationRunId,
+        "Generated only to exercise the rolled-back generation-run boundary.",
+        versionId,
+      ],
+    );
+    await client.query(
+      `UPDATE generation_runs
+       SET status = 'SUCCEEDED', completed_at = now(),
+           input_tokens = 10, output_tokens = 10, estimated_cost_micros = 500
+       WHERE id = $1`,
+      [generationRunId],
+    );
+    await client.query("SAVEPOINT generation_history_check");
+    let generationMutationWasBlocked = false;
+    try {
+      await client.query(
+        "UPDATE generation_runs SET max_cost_micros = 2000 WHERE id = $1",
+        [generationRunId],
+      );
+    } catch (error) {
+      generationMutationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query("ROLLBACK TO SAVEPOINT generation_history_check");
+    }
+    if (!generationMutationWasBlocked) {
+      throw new Error(
+        "The terminal generation-run history allowed a mutation.",
+      );
+    }
+
     const publicationId = randomUUID();
     await client.query(
       `INSERT INTO question_publications

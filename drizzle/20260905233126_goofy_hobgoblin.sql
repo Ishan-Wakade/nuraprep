@@ -1,0 +1,1 @@
+ALTER TABLE "generation_templates" ADD CONSTRAINT "generation_template_approval_check" CHECK ("generation_templates"."status" <> 'APPROVED' OR ("generation_templates"."approved_by" IS NOT NULL AND "generation_templates"."approval_notes" IS NOT NULL AND "generation_templates"."approved_at" IS NOT NULL));

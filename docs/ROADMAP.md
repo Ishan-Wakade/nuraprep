@@ -18,7 +18,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Build deterministic answer parsing and content-contract validators for arithmetic, rational numbers, units, constraints, and answer uniqueness.
 - [x] Build a local reviewer browse/filter/preview/version/feedback/decision flow.
 - [x] Add safe deterministic math recipes, reviewer-attested evidence, and an explicit publication ledger.
-- [ ] Add safe regeneration controls after the provider-neutral generation boundary exists.
+- [x] Add safe regeneration controls after the provider-neutral generation boundary exists.
 - [x] Add reviewer search over learner/reviewer feedback with recurring error summaries.
 - Hand-author a small gold evaluation set spanning the Math taxonomy.
 
@@ -66,8 +66,10 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 ## 6. Generation pipeline and scale
 
-- Implement the source/license registry and permitted acquisition adapters.
-- Add versioned templates, batch generation, idempotent jobs, validator evidence, originality checks, and cost controls.
+- [x] Implement a fail-closed source/license registry and abstract coverage-intake workflow.
+- [x] Add a provider-neutral boundary, versioned template approval, idempotent regeneration requests, immutable lifecycle controls, and per-request cost ceilings.
+- [ ] Add reviewed metadata and licensed-storage acquisition adapters; do not enable collection from gated or unclear-rights sources.
+- [ ] Add a configured provider worker, batch budgets, structured candidate persistence, validator evidence, and calibrated originality checks.
 - Add recurring-error summaries and regression suites; keep prompt/rubric changes human-approved.
 - Expand only at the rate human review and quality sampling can support.
 

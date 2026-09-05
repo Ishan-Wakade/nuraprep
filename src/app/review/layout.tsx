@@ -40,7 +40,7 @@ export default function ReviewLayout({ children }: { children: ReactNode }) {
         <aside className="border-b border-[#d8ded9] bg-[#eef2ee] px-5 py-4 md:min-h-[calc(100vh-73px)] md:border-r md:border-b-0 md:px-4 md:py-7">
           <nav
             aria-label="Reviewer navigation"
-            className="flex gap-2 md:flex-col"
+            className="flex flex-wrap gap-2 md:flex-col"
           >
             <Link
               href="/review"
@@ -53,6 +53,18 @@ export default function ReviewLayout({ children }: { children: ReactNode }) {
               className="rounded-lg border border-[#cad6d1] bg-white px-4 py-3 text-sm font-semibold text-[#116b65] hover:border-[#116b65]"
             >
               Feedback patterns
+            </Link>
+            <Link
+              href="/review/sources"
+              className="rounded-lg border border-[#cad6d1] bg-white px-4 py-3 text-sm font-semibold text-[#116b65] hover:border-[#116b65]"
+            >
+              Source register
+            </Link>
+            <Link
+              href="/review/generation"
+              className="rounded-lg border border-[#cad6d1] bg-white px-4 py-3 text-sm font-semibold text-[#116b65] hover:border-[#116b65]"
+            >
+              Generation
             </Link>
           </nav>
           <div className="mt-7 hidden rounded-xl border border-[#d6ddd8] bg-white/60 p-4 text-xs leading-5 text-[#5f7376] md:block">

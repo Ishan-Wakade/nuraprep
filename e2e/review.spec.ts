@@ -113,6 +113,108 @@ test("creates a numeric revision without answer choices", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("registers governed source metadata and an abstract coverage note", async ({
+  page,
+}) => {
+  const uniqueTitle = `CI public outline ${Date.now()}`;
+  await page.goto("/review/sources");
+  await expect(
+    page.getByRole("heading", { name: "Source and rights register" }),
+  ).toBeVisible();
+
+  await page
+    .getByLabel("Canonical HTTPS URL")
+    .fill(`https://example.org/nuraprep-ci/${Date.now()}`);
+  await page.getByLabel("Publisher").fill("Example education publisher");
+  await page.getByLabel("Title").fill(uniqueTitle);
+  await page.getByLabel("Artifact type").fill("CONTENT_OUTLINE");
+  await page.getByLabel("Access class").selectOption("PUBLIC");
+  await page.getByLabel("Policy decision").selectOption("COVERAGE_ANALYSIS");
+  await page
+    .getByLabel("Decision rationale")
+    .fill(
+      "Retain only metadata and human-authored high-level coverage observations for this CI record.",
+    );
+  await page.getByRole("button", { name: "Register source" }).click();
+  await expect(
+    page.getByText("Source registered with policy-derived permissions."),
+  ).toBeVisible();
+
+  const sourceCard = page.locator("article").filter({ hasText: uniqueTitle });
+  await expect(sourceCard.getByText("Storage: blocked")).toBeVisible();
+  await expect(sourceCard.getByText("Model input: blocked")).toBeVisible();
+  await sourceCard
+    .getByLabel("Abstract coverage observation")
+    .fill(
+      "Learners should interpret whole-number multiplication in a practical quantity context.",
+    );
+  await sourceCard.getByRole("checkbox").check();
+  await sourceCard.getByRole("button", { name: "Record observation" }).click();
+  await expect(page.getByText("Coverage observation recorded.")).toBeVisible();
+});
+
+test("approves a template and deduplicates regeneration requests", async ({
+  page,
+}) => {
+  await page.goto("/review/generation");
+  await expect(
+    page.getByRole("heading", {
+      name: "Templates and generation requests",
+    }),
+  ).toBeVisible();
+
+  const templateCard = page
+    .locator("article")
+    .filter({ hasText: "bootstrap.whole-number-groups-001" });
+  const approveButton = templateCard.getByRole("button", {
+    name: "Approve template",
+  });
+  if (await approveButton.isVisible()) {
+    await templateCard
+      .getByLabel("Approval evidence")
+      .fill(
+        "Checked the skill target, originality prohibition, constraints, and required validator contract.",
+      );
+    await approveButton.click();
+    await expect(templateCard.getByText(/APPROVED · v1/)).toBeVisible();
+  }
+
+  await page.goto(`/review/questions/${firstVersionId}`);
+  await page
+    .getByLabel("Reviewer instruction")
+    .fill(
+      "Use a different practical context and add one explicit multiplication-reasoning step.",
+    );
+  await page.getByLabel("Regeneration scope").selectOption("FULL_REVISION");
+  await page.getByLabel(/Maximum provider cost/).fill("25000");
+  await page
+    .getByLabel(/I confirm this instruction contains no third-party/)
+    .check();
+  await page
+    .getByRole("button", { name: "Queue regeneration request" })
+    .click();
+  await expect(
+    page.getByText(/generation request (queued|is already queued)/i),
+  ).toBeVisible();
+
+  await page
+    .getByLabel("Reviewer instruction")
+    .fill(
+      "Use a different practical context and add one explicit multiplication-reasoning step.",
+    );
+  await page.getByLabel("Regeneration scope").selectOption("FULL_REVISION");
+  await page.getByLabel(/Maximum provider cost/).fill("25000");
+  await page
+    .getByLabel(/I confirm this instruction contains no third-party/)
+    .check();
+  await page
+    .getByRole("button", { name: "Queue regeneration request" })
+    .click();
+  await expect(
+    page.getByText("An identical generation request is already queued."),
+  ).toBeVisible();
+});
+
 test("has no horizontal overflow on the mobile review queue", async ({
   page,
 }) => {
@@ -132,4 +234,11 @@ test("has no horizontal overflow on the mobile review queue", async ({
     scrollWidth: document.documentElement.scrollWidth,
   }));
   expect(feedbackDimensions.scrollWidth).toBe(feedbackDimensions.clientWidth);
+
+  await page.goto("/review/sources");
+  const sourceDimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(sourceDimensions.scrollWidth).toBe(sourceDimensions.clientWidth);
 });

@@ -678,7 +678,10 @@ async function main() {
           .insert(generationRuns)
           .values({
             id: runId,
+            idempotencyKey: `bootstrap-${candidate.slug}-v1`,
             templateId,
+            requestKind: "NEW_QUESTION",
+            requestedBy: "codex-engineering-session",
             provider: "OpenAI",
             model: "codex-session-model-not-exported",
             promptHash: createHash("sha256").update(instructions).digest("hex"),
@@ -687,8 +690,13 @@ async function main() {
                 "The exact runtime model identifier was unavailable to the repository process.",
               sourceQuestionTextProvided: false,
             },
+            requestPayload: {
+              purpose: "bootstrap-development-candidate",
+              sourceQuestionTextProvided: false,
+            },
             randomSeed: `bootstrap-${index + 1}`,
             status: "SUCCEEDED",
+            maxCostMicros: 0,
             completedAt: new Date("2026-09-05T00:00:00Z"),
           })
           .onConflictDoNothing();

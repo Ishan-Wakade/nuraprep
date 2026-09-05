@@ -286,6 +286,8 @@ export async function getQuestionReviewDetail(versionId: string) {
     versions,
     publications,
     learnerReports,
+    approvedTemplates,
+    regenerationRuns,
   ] = await Promise.all([
     database
       .select({
@@ -362,6 +364,37 @@ export async function getQuestionReviewDetail(versionId: string) {
       )
       .where(eq(learnerQuestionReports.questionVersionId, versionId))
       .orderBy(desc(learnerQuestionReports.createdAt)),
+    database
+      .select({
+        id: generationTemplates.id,
+        templateKey: generationTemplates.templateKey,
+        version: generationTemplates.version,
+        difficulty: generationTemplates.difficulty,
+      })
+      .from(generationTemplates)
+      .where(
+        and(
+          eq(generationTemplates.status, "APPROVED"),
+          eq(generationTemplates.targetSkillId, question.primarySkillId),
+          eq(generationTemplates.questionType, question.questionType),
+        ),
+      )
+      .orderBy(desc(generationTemplates.version)),
+    database
+      .select({
+        id: generationRuns.id,
+        requestKind: generationRuns.requestKind,
+        status: generationRuns.status,
+        provider: generationRuns.provider,
+        model: generationRuns.model,
+        maxCostMicros: generationRuns.maxCostMicros,
+        failureCode: generationRuns.failureCode,
+        startedAt: generationRuns.startedAt,
+        completedAt: generationRuns.completedAt,
+      })
+      .from(generationRuns)
+      .where(eq(generationRuns.sourceQuestionVersionId, versionId))
+      .orderBy(desc(generationRuns.startedAt)),
   ]);
 
   const learnerReportEvents = learnerReports.length
@@ -454,6 +487,12 @@ export async function getQuestionReviewDetail(versionId: string) {
     publications: serializedPublications,
     currentPublication:
       serializedPublications.find((item) => item.retiredAt === null) ?? null,
+    approvedTemplates,
+    regenerationRuns: regenerationRuns.map((run) => ({
+      ...run,
+      startedAt: run.startedAt.toISOString(),
+      completedAt: run.completedAt?.toISOString() ?? null,
+    })),
     publicationGate,
     publicationReadiness,
   };

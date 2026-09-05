@@ -11,7 +11,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 ## Project status
 
-**Generation-pipeline phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, persisted topic practice, a coverage-aware diagnostic, a versioned rules-based adaptive scheduler, full timed-test mechanics, and a transparent readiness-estimation baseline with editable study plans. The six seed candidates remain deliberately unapproved; browser tests add disposable, explicitly test-only fixtures to verify complete learner flows. There is no approved production question bank or externally validated score predictor yet.
+**Generation-pipeline phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, persisted topic practice, a coverage-aware diagnostic, a versioned rules-based adaptive scheduler, full timed-test mechanics, a transparent readiness-estimation baseline, and a fail-closed source/generation control plane. The six seed candidates remain deliberately unapproved; browser tests add disposable, explicitly test-only fixtures to verify complete learner flows. There is no approved production question bank, configured generation provider, or externally validated score predictor yet.
 
 | Area                                        | Status                                                           |
 | ------------------------------------------- | ---------------------------------------------------------------- |
@@ -23,6 +23,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 | Adaptive mode                               | Working local, inspectable rules baseline                        |
 | Timed Math practice test                    | Mechanics verified; production bank lacks 38 approved families   |
 | Score estimate and study plan               | Working, versioned baseline; external calibration remains open   |
+| Source and generation controls              | Registry and request queue working; provider intentionally off   |
 | Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works                 |
 
 ## Product preview
@@ -86,7 +87,7 @@ Important boundaries:
 - Adaptive recommendations and score estimates retain their inputs, model version, explanation, and uncertainty.
 - Authentication and billing are deferred so the practice and review loops can be validated first.
 
-See [Architecture](docs/ARCHITECTURE.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Practice-test blueprint](docs/PRACTICE_TEST.md), [Score estimation](docs/SCORE_ESTIMATION.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), and [Roadmap](docs/ROADMAP.md).
+See [Architecture](docs/ARCHITECTURE.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Practice-test blueprint](docs/PRACTICE_TEST.md), [Score estimation](docs/SCORE_ESTIMATION.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), [Generation pipeline](docs/GENERATION_PIPELINE.md), and [Roadmap](docs/ROADMAP.md).
 
 ## Technology
 
@@ -95,7 +96,7 @@ See [Architecture](docs/ARCHITECTURE.md), [Adaptive model](docs/ADAPTIVE_MODEL.m
 - PostgreSQL 17 with Drizzle ORM and append-only audit records
 - Vitest, Testing Library, and Playwright
 - Docker Compose for local PostgreSQL
-- OpenAI API behind provider-neutral interfaces for reviewed generation and tutoring (later milestone)
+- Provider-neutral generation interface and auditable request queue; external provider adapter intentionally not configured
 - AWS deployment plan after the core experience is proven
 
 No vector database or separate API service is planned for version 1. They will be introduced only if measured product requirements justify them.
@@ -120,7 +121,7 @@ pnpm db:seed
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Local topic practice is at [http://localhost:3000/practice](http://localhost:3000/practice); diagnostic, adaptive, and timed-test entry points are nested beneath it. The owner review queue is at [http://localhost:3000/review](http://localhost:3000/review). Temporary development identities are rejected whenever `APP_ENV=production`.
+Open [http://localhost:3000](http://localhost:3000). Local topic practice is at [http://localhost:3000/practice](http://localhost:3000/practice); diagnostic, adaptive, and timed-test entry points are nested beneath it. The owner review queue is at [http://localhost:3000/review](http://localhost:3000/review), with source governance at `/review/sources` and generation controls at `/review/generation`. Temporary development identities are rejected whenever `APP_ENV=production`.
 
 ## Environment variables
 

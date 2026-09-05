@@ -75,6 +75,12 @@ export const generationStatusEnum = pgEnum("generation_status", [
   "FAILED",
   "CANCELLED",
 ]);
+export const generationRequestKindEnum = pgEnum("generation_request_kind", [
+  "NEW_QUESTION",
+  "FULL_REVISION",
+  "EXPLANATION_ONLY",
+  "DISTRACTORS_ONLY",
+]);
 export const questionTypeEnum = pgEnum("question_type", [
   "SINGLE_CHOICE",
   "MULTIPLE_SELECT",
@@ -290,6 +296,18 @@ export const sourceArtifacts = pgTable(
       "source_model_input_permission_check",
       sql`NOT ${table.allowModelInput} OR ${table.decision} = 'LICENSED_STORAGE'`,
     ),
+    check(
+      "source_coverage_permission_check",
+      sql`NOT ${table.allowCoverageAnalysis} OR ${table.decision} IN ('COVERAGE_ANALYSIS', 'LICENSED_STORAGE')`,
+    ),
+    check(
+      "source_quotation_permission_check",
+      sql`NOT ${table.allowQuotation} OR ${table.decision} = 'LICENSED_STORAGE'`,
+    ),
+    check(
+      "source_licensed_evidence_check",
+      sql`${table.decision} <> 'LICENSED_STORAGE' OR (${table.allowStorage} AND ${table.statedLicense} IS NOT NULL AND ${table.termsUrl} IS NOT NULL)`,
+    ),
   ],
 );
 
@@ -342,6 +360,7 @@ export const generationTemplates = pgTable(
       .notNull(),
     authoredBy: varchar("authored_by", { length: 160 }).notNull(),
     approvedBy: varchar("approved_by", { length: 160 }),
+    approvalNotes: text("approval_notes"),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -353,6 +372,10 @@ export const generationTemplates = pgTable(
       table.version,
     ),
     check("generation_template_version_check", sql`${table.version} > 0`),
+    check(
+      "generation_template_approval_check",
+      sql`${table.status} <> 'APPROVED' OR (${table.approvedBy} IS NOT NULL AND ${table.approvalNotes} IS NOT NULL AND ${table.approvedAt} IS NOT NULL)`,
+    ),
   ],
 );
 
@@ -360,6 +383,7 @@ export const generationRuns = pgTable(
   "generation_runs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    idempotencyKey: varchar("idempotency_key", { length: 128 }).notNull(),
     templateId: uuid("template_id")
       .notNull()
       .references(() => generationTemplates.id, { onDelete: "restrict" }),
@@ -367,12 +391,25 @@ export const generationRuns = pgTable(
       (): AnyPgColumn => generationRuns.id,
       { onDelete: "set null" },
     ),
+    sourceQuestionVersionId: uuid("source_question_version_id").references(
+      (): AnyPgColumn => questionVersions.id,
+      { onDelete: "restrict" },
+    ),
+    requestKind: generationRequestKindEnum("request_kind")
+      .notNull()
+      .default("NEW_QUESTION"),
+    requestedBy: varchar("requested_by", { length: 160 }).notNull(),
     provider: varchar("provider", { length: 80 }).notNull(),
     model: varchar("model", { length: 160 }).notNull(),
     promptHash: varchar("prompt_hash", { length: 128 }).notNull(),
     parameters: jsonb("parameters").$type<Record<string, unknown>>().notNull(),
+    requestPayload: jsonb("request_payload")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     randomSeed: varchar("random_seed", { length: 160 }),
     status: generationStatusEnum("status").notNull().default("PENDING"),
+    maxCostMicros: integer("max_cost_micros").notNull().default(0),
     inputTokens: integer("input_tokens"),
     outputTokens: integer("output_tokens"),
     estimatedCostMicros: integer("estimated_cost_micros"),
@@ -383,9 +420,22 @@ export const generationRuns = pgTable(
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },
   (table) => [
+    uniqueIndex("generation_run_idempotency_idx").on(table.idempotencyKey),
     index("generation_run_template_status_idx").on(
       table.templateId,
       table.status,
+    ),
+    index("generation_run_source_version_idx").on(
+      table.sourceQuestionVersionId,
+      table.startedAt,
+    ),
+    check(
+      "generation_run_cost_limit_check",
+      sql`${table.maxCostMicros} >= 0 AND (${table.estimatedCostMicros} IS NULL OR (${table.estimatedCostMicros} >= 0 AND ${table.estimatedCostMicros} <= ${table.maxCostMicros}))`,
+    ),
+    check(
+      "generation_run_completion_check",
+      sql`(${table.status} = 'PENDING' AND ${table.completedAt} IS NULL) OR (${table.status} <> 'PENDING' AND ${table.completedAt} IS NOT NULL)`,
     ),
   ],
 );

@@ -1,0 +1,83 @@
+import { getSourceRegistry } from "@/data/content-governance";
+
+import {
+  CoverageObservationForm,
+  SourceRegistrationForm,
+} from "./source-forms";
+
+export default async function SourceRegistryPage() {
+  const registry = await getSourceRegistry();
+  return (
+    <div className="mx-auto max-w-6xl">
+      <p className="text-xs font-bold tracking-[0.14em] text-[#116b65] uppercase">
+        Content governance
+      </p>
+      <h1 className="mt-2 font-serif text-4xl tracking-[-0.03em]">
+        Source and rights register
+      </h1>
+      <p className="mt-3 max-w-3xl text-sm leading-6 text-[#5b7073]">
+        Register a source before analysis. Permissions are derived from the
+        reviewed decision; this form cannot independently enable storage,
+        quotation, or model input.
+      </p>
+
+      <section className="mt-7 rounded-2xl border border-[#d8ded9] bg-[#fffdf8] p-5 shadow-sm">
+        <h2 className="font-serif text-2xl">Register a source</h2>
+        <p className="mt-2 text-xs leading-5 text-[#687a7c]">
+          Gated, paid, and user-submitted material fails closed unless a
+          compatible license or written permission is recorded.
+        </p>
+        <SourceRegistrationForm />
+      </section>
+
+      <section className="mt-7 space-y-4" aria-label="Registered sources">
+        {registry.sources.map((source) => (
+          <article
+            key={source.id}
+            className="rounded-2xl border border-[#d8ded9] bg-white p-5 shadow-sm"
+          >
+            <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+              <div>
+                <div className="flex flex-wrap gap-2 text-[11px] font-bold tracking-wide uppercase text-[#5e7274]">
+                  <span>{source.decision.replaceAll("_", " ")}</span>
+                  <span>·</span>
+                  <span>{source.accessClass.replaceAll("_", " ")}</span>
+                  <span>·</span>
+                  <span>{source.artifactType.replaceAll("_", " ")}</span>
+                </div>
+                <h2 className="mt-2 text-lg font-semibold">{source.title}</h2>
+                <p className="mt-1 text-sm text-[#5b7073]">
+                  {source.publisher}
+                </p>
+                <a
+                  href={source.canonicalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 block break-all text-xs text-[#116b65] underline"
+                >
+                  {source.canonicalUrl}
+                </a>
+              </div>
+              <div className="rounded-xl bg-[#edf3ef] px-4 py-3 text-xs leading-5 text-[#385b59]">
+                <strong>{source.observationCount}</strong> abstract observations
+                <br />
+                Storage: {source.allowStorage ? "allowed" : "blocked"}
+                <br />
+                Model input: {source.allowModelInput ? "allowed" : "blocked"}
+              </div>
+            </div>
+            <p className="mt-4 rounded-lg bg-[#faf9f4] px-3 py-2 text-xs leading-5 text-[#52676a]">
+              {source.decisionRationale}
+            </p>
+            {source.allowCoverageAnalysis && (
+              <CoverageObservationForm
+                sourceArtifactId={source.id}
+                skills={registry.skills}
+              />
+            )}
+          </article>
+        ))}
+      </section>
+    </div>
+  );
+}

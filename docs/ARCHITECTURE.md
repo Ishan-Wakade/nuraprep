@@ -83,6 +83,8 @@ No generated item bypasses the human gate in the first release. Failed checks ar
 
 PostgreSQL triggers reject updates and deletes on question versions, validation runs, and review decisions. A revision copies the source and skill links into a new version but intentionally carries over neither validation evidence nor approval. Publication is a separate attributed ledger record; its trigger permits one controlled retirement and rejects identity changes or later history rewrites. The publication evaluator requires provenance, a latest approval, and a passing latest run for every required validator.
 
+The source registry derives permissions from reviewed decisions and fails closed for paid, gated, and user-submitted material. Generation requests use approved versioned templates, stable idempotency keys, and cost ceilings. Their database guard permits one `PENDING`-to-terminal transition, and `SUCCEEDED` requires a linked candidate version. The provider interface exists, but no external provider is configured yet; see [Controlled question-generation pipeline](GENERATION_PIPELINE.md).
+
 ## Adaptive baseline
 
 The diagnostic is the first implemented input to this layer. It assembles at most one current published question per available skill, requires at least four skills, stores the exact immutable item manifest, and derives a starting recommendation from saved correctness, confidence, and time evidence. A one-item result is deliberately called an early signal rather than mastery.

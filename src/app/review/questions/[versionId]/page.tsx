@@ -10,6 +10,7 @@ import {
   FeedbackForm,
   LearnerReportTriageForm,
   PublishForm,
+  RegenerationRequestForm,
   ReviewerValidationForm,
   RevisionForm,
 } from "./review-forms";
@@ -209,6 +210,23 @@ export default async function QuestionReviewPage({
             eyebrow="Controlled improvement loop"
           >
             <FeedbackForm versionId={question.versionId} />
+          </Panel>
+          <Panel title="Regenerate" eyebrow="Controlled candidate request">
+            <RegenerationRequestForm
+              versionId={question.versionId}
+              templates={question.approvedTemplates}
+            />
+            {question.regenerationRuns.length > 0 && (
+              <ol className="mt-5 space-y-2 border-t border-[#e2e6e2] pt-4 text-xs text-[#52676a]">
+                {question.regenerationRuns.map((run) => (
+                  <li key={run.id}>
+                    <strong>{label(run.status)}</strong> ·{" "}
+                    {label(run.requestKind)} · {run.provider}/{run.model} ·
+                    ceiling ${(run.maxCostMicros / 1_000_000).toFixed(4)}
+                  </li>
+                ))}
+              </ol>
+            )}
           </Panel>
           <Panel title="Create a revision" eyebrow="Append-only editing">
             <RevisionForm

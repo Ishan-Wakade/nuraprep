@@ -20,6 +20,7 @@ import {
   submitReviewerValidation,
   triageLearnerQuestionReport,
 } from "../../actions";
+import { requestQuestionRegeneration } from "../../generation/actions";
 
 const initialReviewerActionState = {
   status: "idle" as const,
@@ -468,6 +469,109 @@ export function RevisionForm({
         state={state}
         pending={pending}
         label="Create new version"
+      />
+    </form>
+  );
+}
+
+export function RegenerationRequestForm({
+  versionId,
+  templates,
+}: {
+  versionId: string;
+  templates: {
+    id: string;
+    templateKey: string;
+    version: number;
+    difficulty: string;
+  }[];
+}) {
+  const [state, action, pending] = useActionState(
+    requestQuestionRegeneration,
+    initialReviewerActionState,
+  );
+
+  if (!templates.length) {
+    return (
+      <p className="text-sm leading-6 text-[#52676a]">
+        No matching template is approved. Review and approve a versioned
+        template in the generation console before requesting model-assisted
+        work.
+      </p>
+    );
+  }
+
+  return (
+    <form action={action} className="space-y-4">
+      <input type="hidden" name="sourceQuestionVersionId" value={versionId} />
+      <p className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-900">
+        This queues an auditable request. Any future result must create a new
+        complete DRAFT version and pass every validator and human review gate.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="text-xs font-bold text-[#52676a]">
+          Approved template
+          <select
+            name="templateId"
+            className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
+          >
+            {templates.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.templateKey} v{template.version} ·{" "}
+                {template.difficulty}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs font-bold text-[#52676a]">
+          Regeneration scope
+          <select
+            name="requestKind"
+            className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
+          >
+            <option value="FULL_REVISION">Full question revision</option>
+            <option value="EXPLANATION_ONLY">Explanation only</option>
+            <option value="DISTRACTORS_ONLY">Distractors only</option>
+          </select>
+        </label>
+      </div>
+      <label className="block text-xs font-bold text-[#52676a]">
+        Reviewer instruction
+        <textarea
+          name="reviewerInstruction"
+          required
+          minLength={10}
+          maxLength={2000}
+          rows={4}
+          className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm font-normal"
+          placeholder="Describe the specific reviewed issue this candidate should address."
+        />
+      </label>
+      <label className="block text-xs font-bold text-[#52676a] sm:max-w-xs">
+        Maximum provider cost (micros of USD)
+        <input
+          name="maxCostMicros"
+          type="number"
+          min="0"
+          max="5000000"
+          defaultValue="50000"
+          className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm font-normal"
+        />
+      </label>
+      <label className="flex gap-2 text-xs leading-5 text-[#52676a]">
+        <input
+          required
+          type="checkbox"
+          name="noSourceTextAttestation"
+          className="mt-1"
+        />
+        I confirm this instruction contains no third-party question wording,
+        values, answer choices, or distinctive structure.
+      </label>
+      <ActionFooter
+        state={state}
+        pending={pending}
+        label="Queue regeneration request"
       />
     </form>
   );

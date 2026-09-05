@@ -64,6 +64,27 @@
       "when": 1788649731602,
       "tag": "20260905230851_remarkable_bedlam",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788651005360,
+      "tag": "20260905233005_amusing_pestilence",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788651086428,
+      "tag": "20260905233126_goofy_hobgoblin",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788651413321,
+      "tag": "20260905233653_guard_generation_templates",
+      "breakpoints": true
     }
   ]
 }
