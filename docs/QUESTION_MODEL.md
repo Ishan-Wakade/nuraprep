@@ -1,6 +1,6 @@
 # Question and learning data model
 
-This document defines the domain model before database implementation. Names may change during migration design, but the invariants are requirements.
+This document defines the domain model and its required invariants. The milestone-one PostgreSQL schema implements the content, provenance, validation, and review entities; learner entities remain planned for the practice milestone.
 
 ## Core content entities
 

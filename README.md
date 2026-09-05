@@ -11,17 +11,17 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 ## Project status
 
-**Foundation phase — not yet a production study tool.** The repository currently contains the React application scaffold, quality tooling, architecture, content-governance policy, and delivery roadmap. It does not yet contain an approved question bank or a validated score predictor.
+**Content-foundation phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer-contract checks, six deliberately unapproved Math candidates, and a local owner-review workflow. It does not yet contain an approved production question bank, learner practice flow, or validated score predictor.
 
-| Area                                        | Status                                           |
-| ------------------------------------------- | ------------------------------------------------ |
-| Public repository and engineering standards | Complete                                         |
-| Math taxonomy and question data model       | Designed; implementation next                    |
-| Reviewer and provenance workflow            | Designed; implementation next                    |
-| Topic practice, diagnostic, adaptive mode   | Planned                                          |
-| Timed Math practice test                    | Planned                                          |
-| Score estimate and study plan               | Planned                                          |
-| Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works |
+| Area                                        | Status                                            |
+| ------------------------------------------- | ------------------------------------------------- |
+| Public repository and engineering standards | Complete                                          |
+| Math taxonomy and question data model       | Implemented with migrations and seed data         |
+| Reviewer and provenance workflow            | Working local vertical slice; authentication next |
+| Topic practice, diagnostic, adaptive mode   | Planned                                           |
+| Timed Math practice test                    | Planned                                           |
+| Score estimate and study plan               | Planned                                           |
+| Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works  |
 
 ## Product preview
 
@@ -80,9 +80,9 @@ See [Architecture](docs/ARCHITECTURE.md), [Question model](docs/QUESTION_MODEL.m
 
 - Next.js 16 App Router, React 19, and TypeScript
 - Tailwind CSS 4
-- PostgreSQL with a typed data-access layer (implementation milestone 1)
+- PostgreSQL 17 with Drizzle ORM and append-only audit records
 - Vitest, Testing Library, and Playwright
-- Docker Compose for local infrastructure (implementation milestone 1)
+- Docker Compose for local PostgreSQL
 - OpenAI API behind provider-neutral interfaces for reviewed generation and tutoring (later milestone)
 - AWS deployment plan after the core experience is proven
 
@@ -94,7 +94,7 @@ Requirements:
 
 - Node.js 22–26
 - pnpm 11+
-- Docker Desktop (required once PostgreSQL is added)
+- Docker Desktop
 
 ```bash
 git clone https://github.com/Ishan-Wakade/nuraprep.git
@@ -102,14 +102,17 @@ cd nuraprep
 corepack enable
 pnpm install --frozen-lockfile
 cp .env.example .env.local
+docker compose up -d postgres
+pnpm db:migrate
+pnpm db:seed
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). The owner review queue is available at [http://localhost:3000/review](http://localhost:3000/review) only when `DEV_REVIEWER_ENABLED=true`. That temporary bypass is rejected whenever `APP_ENV=production`.
 
 ## Environment variables
 
-`.env.example` is the authoritative inventory. Variables are grouped by delivery phase, and secrets must never use the `NEXT_PUBLIC_` prefix. The foundation UI runs without secrets. Planned integrations use separate staging and production credentials.
+`.env.example` is the authoritative inventory. Variables are grouped by delivery phase, and secrets must never use the `NEXT_PUBLIC_` prefix. Local database values are development-only; planned integrations use separate staging and production credentials.
 
 ## Quality checks
 
@@ -118,11 +121,12 @@ pnpm format:check
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm test:db
 pnpm build
 pnpm test:e2e
 ```
 
-`pnpm check` runs the first five commands in sequence. Pull requests must pass the same gates in GitHub Actions. Mathematical validators will also have property-based and mutation test cases when the question model is implemented.
+`pnpm check` runs formatting, linting, type-checking, unit tests, and the production build. `pnpm test:db` requires the local PostgreSQL container. End-to-end tests require a migrated and seeded database. GitHub Actions provisions a fresh PostgreSQL service and runs the complete sequence on every pull request and `main` push.
 
 ## Deployment direction
 

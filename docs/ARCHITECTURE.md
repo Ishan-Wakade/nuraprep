@@ -6,6 +6,8 @@ NuraPrep will begin as a **modular monolith** built with Next.js, React, TypeScr
 
 This is the smallest architecture that supports transactional question approval, learner progress, and authorization without creating distributed-system overhead. Generation workers can be extracted later because jobs use explicit payloads and idempotency keys.
 
+The implemented content slice uses Drizzle ORM over PostgreSQL. Database access is created lazily at request time so static pages can build without a database connection. Reviewer reads go through server-only data-access functions; every mutation rechecks reviewer authorization, validates untrusted form input, and appends a new audit record or question version.
+
 ## Runtime view
 
 ```mermaid
@@ -78,6 +80,8 @@ flowchart LR
 ```
 
 No generated item bypasses the human gate in the first release. Failed checks are retained as structured validation results, not overwritten.
+
+PostgreSQL triggers reject updates and deletes on question versions, validation runs, and review decisions. A revision copies the source and skill links into a new version but intentionally carries over neither validation evidence nor approval. The publication evaluator requires an active question family, provenance, a latest approval, and a passing latest run for every required validator.
 
 ## Adaptive baseline
 

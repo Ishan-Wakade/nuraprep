@@ -12,14 +12,16 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 ## 1. Content foundation and reviewer slice
 
-- Implement PostgreSQL and the typed schema for taxonomy, sources, question versions, validators, and reviews.
-- Seed the sourced TEAS Math specification and a reviewed topic taxonomy.
-- Implement typed answer contracts for single choice, multiple select, numeric, ordered, and table/graph items.
-- Build deterministic validators for arithmetic, rational numbers, units, constraints, and answer uniqueness.
-- Build reviewer browse/filter/preview/edit/version/feedback/approve flows.
+- [x] Implement PostgreSQL and the typed schema for taxonomy, sources, question versions, validators, and reviews.
+- [x] Seed the sourced TEAS Math specification and an initial topic taxonomy.
+- [x] Implement typed answer contracts for single choice, multiple select, numeric, ordered, and table/graph items.
+- [x] Build deterministic answer parsing and content-contract validators for arithmetic, rational numbers, units, constraints, and answer uniqueness.
+- [x] Build a local reviewer browse/filter/preview/version/feedback/decision flow.
+- [ ] Add safe regeneration controls after the provider-neutral generation boundary exists.
+- [ ] Add reviewer search over submitted feedback and recurring error summaries.
 - Hand-author a small gold evaluation set spanning the Math taxonomy.
 
-**Exit:** a reviewer can trace, validate, revise, compare, and approve a question; learner APIs cannot read drafts.
+**Exit:** a reviewer can trace, validate, revise, compare, and approve a question; learner APIs cannot read drafts. Seed candidates are intentionally unapproved and remain blocked from publication until every validator and human-review requirement passes.
 
 ## 2. Topic-practice vertical slice
 
