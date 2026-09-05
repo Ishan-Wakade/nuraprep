@@ -24,6 +24,7 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
   ).toBeDisabled();
 
   await page.getByRole("button", { name: "Run deterministic checks" }).click();
+  await expect(page.getByText(/^Automated checks appended:/)).toBeVisible();
   const publicationCandidateUrl = page.url();
   await page.goto(`${publicationCandidateUrl}?validation=automated`);
   await expect(page.getByText("answer-contract v1").first()).toBeVisible();
@@ -44,6 +45,9 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
         `E2E reviewer inspected ${validatorKey} against its documented rubric.`,
       );
     await page.getByRole("button", { name: "Append review evidence" }).click();
+    await expect(
+      page.getByText(`${validatorKey} evidence appended as pass.`),
+    ).toBeVisible();
     await page.goto(`${publicationCandidateUrl}?validation=${validatorKey}`);
     await expect(page.getByText(`${validatorKey} v1`).first()).toBeVisible();
   }
@@ -53,12 +57,18 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
     .getByLabel("Review notes")
     .fill("E2E review confirms all required evidence is present.");
   await page.getByRole("button", { name: "Record decision" }).click();
+  await expect(
+    page.getByText("Review decision recorded as immutable history."),
+  ).toBeVisible();
 
   await page.goto(`${publicationCandidateUrl}?validation=complete`);
   await expect(
     page.getByRole("button", { name: "Publish approved version" }),
   ).toBeEnabled();
   await page.getByRole("button", { name: "Publish approved version" }).click();
+  await expect(
+    page.getByText("Question version published to the learner-safe bank."),
+  ).toBeVisible();
 
   const publishedPage = await page.context().newPage();
   await publishedPage.goto(

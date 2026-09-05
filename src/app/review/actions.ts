@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, isNull, max } from "drizzle-orm";
+import { and, desc, eq, isNull, max, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -361,6 +361,8 @@ export async function publishQuestionVersion(
   }
 
   await database.transaction(async (transaction) => {
+    await lockQuestionFamily(transaction, readiness.questionId);
+
     await transaction
       .update(questionPublications)
       .set({
@@ -482,6 +484,8 @@ export async function createQuestionRevision(
     mathVerificationSpecSchema.parse(verificationSpec);
 
   const newVersionId = await database.transaction(async (transaction) => {
+    await lockQuestionFamily(transaction, current.questionId);
+
     const [versionResult] = await transaction
       .select({ maximumVersion: max(questionVersions.version) })
       .from(questionVersions)
@@ -556,6 +560,19 @@ export async function createQuestionRevision(
 
   revalidatePath("/review");
   redirect(`/review/questions/${newVersionId}`);
+}
+
+async function lockQuestionFamily(
+  transaction: Parameters<
+    Parameters<ReturnType<typeof getDatabase>["transaction"]>[0]
+  >[0],
+  questionId: string,
+) {
+  // Version allocation and publication replacement both mutate family-wide
+  // invariants, so serialize them even when two owner actions arrive together.
+  await transaction.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${questionId}::text, 0))`,
+  );
 }
 
 async function getPublicationReadiness(versionId: string) {
