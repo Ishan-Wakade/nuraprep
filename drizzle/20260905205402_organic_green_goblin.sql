@@ -1,0 +1,2 @@
+ALTER TABLE "attempts" ADD COLUMN "misconception_attributions" jsonb DEFAULT '[]'::jsonb NOT NULL;--> statement-breakpoint
+ALTER TABLE "question_versions" ADD COLUMN "misconception_rules" jsonb DEFAULT '[]'::jsonb NOT NULL;

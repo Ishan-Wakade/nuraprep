@@ -21,6 +21,8 @@ import type {
   DistractorRationales,
   LearnerAnswer,
   MathVerificationSpec,
+  MisconceptionAttribution,
+  MisconceptionRule,
   QuestionChoice,
   QuestionStimulus,
 } from "@/lib/questions/contracts";
@@ -417,6 +419,10 @@ export const questionVersions = pgTable(
     commonMisconceptions: jsonb("common_misconceptions")
       .$type<string[]>()
       .notNull(),
+    misconceptionRules: jsonb("misconception_rules")
+      .$type<MisconceptionRule[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     authoringMode: authoringModeEnum("authoring_mode").notNull(),
     generationRunId: uuid("generation_run_id").references(
       () => generationRuns.id,
@@ -722,6 +728,10 @@ export const attempts = pgTable(
       .default("answer-evaluator-v1"),
     elapsedMilliseconds: integer("elapsed_milliseconds").notNull(),
     confidence: integer("confidence"),
+    misconceptionAttributions: jsonb("misconception_attributions")
+      .$type<MisconceptionAttribution[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     submittedAt: timestamp("submitted_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

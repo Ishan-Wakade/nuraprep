@@ -20,7 +20,10 @@ import {
 } from "@/db/schema";
 import { requireLearner } from "@/lib/auth/learner";
 import type { LearnerAnswer } from "@/lib/questions/contracts";
-import { evaluateAnswer } from "@/lib/questions/validation";
+import {
+  attributeMisconceptions,
+  evaluateAnswer,
+} from "@/lib/questions/validation";
 import {
   learnerQuestionReportSchema,
   practiceSessionFiltersSchema,
@@ -226,6 +229,7 @@ export async function submitPracticeAnswer(
       questionType: questionVersions.questionType,
       answerSpec: questionVersions.answerSpec,
       choices: questionVersions.choices,
+      misconceptionRules: questionVersions.misconceptionRules,
     })
     .from(practiceSessionItems)
     .innerJoin(
@@ -275,6 +279,11 @@ export async function submitPracticeAnswer(
     };
   }
   const evaluation = evaluateAnswer(item.answerSpec, answer);
+  const misconceptionAttributions = attributeMisconceptions(
+    answer,
+    evaluation,
+    item.misconceptionRules,
+  );
 
   const inserted = await database.transaction(async (transaction) => {
     const [attempt] = await transaction
@@ -286,6 +295,7 @@ export async function submitPracticeAnswer(
         evaluationReason: evaluation.reason ?? null,
         elapsedMilliseconds: parsed.data.elapsedMilliseconds,
         confidence: parsed.data.confidence,
+        misconceptionAttributions,
       })
       .onConflictDoNothing({ target: attempts.sessionItemId })
       .returning({ id: attempts.id });

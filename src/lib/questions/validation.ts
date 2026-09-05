@@ -1,9 +1,13 @@
 import {
   mathVerificationSpecSchema,
+  misconceptionCodesSchema,
+  misconceptionRulesSchema,
   questionContentSchema,
   type AnswerSpec,
   type LearnerAnswer,
   type MathVerificationSpec,
+  type MisconceptionAttribution,
+  type MisconceptionRule,
   type QuestionContent,
   type RpnExpression,
 } from "./contracts";
@@ -278,6 +282,172 @@ export function evaluateAnswer(
         normalizedValue: numericValue,
       };
     }
+  }
+}
+
+export function validateMisconceptionRules(
+  contentInput: unknown,
+  declaredCodes: string[],
+  rulesInput: unknown,
+): ValidationIssue[] {
+  const contentResult = questionContentSchema.safeParse(contentInput);
+  const codesResult = misconceptionCodesSchema.safeParse(declaredCodes);
+  const rulesResult = misconceptionRulesSchema.safeParse(rulesInput);
+  if (!contentResult.success || !codesResult.success || !rulesResult.success) {
+    return [
+      {
+        code: "MISCONCEPTION_RULE_SCHEMA_INVALID",
+        message:
+          "Misconception rules must match the deterministic rule contract.",
+        path: "misconceptionRules",
+        severity: "error",
+      },
+    ];
+  }
+
+  const content = contentResult.data;
+  const choiceIds = new Set(content.choices?.map((choice) => choice.id) ?? []);
+  const declared = new Set(codesResult.data);
+  const issues: ValidationIssue[] = [];
+
+  for (const [index, rule] of rulesResult.data.entries()) {
+    const path = `misconceptionRules.${index}`;
+    if (!declared.has(rule.code)) {
+      issues.push({
+        code: "MISCONCEPTION_CODE_UNDECLARED",
+        message: `Rule code “${rule.code}” is not declared on this question version.`,
+        path: `${path}.code`,
+        severity: "error",
+      });
+    }
+
+    if (rule.kind === "selected_choice") {
+      const correctIds = new Set(getCorrectIds(content.answerSpec));
+      if (!choiceIds.has(rule.choiceId) || correctIds.has(rule.choiceId)) {
+        issues.push({
+          code: "MISCONCEPTION_CHOICE_INVALID",
+          message:
+            "A selected-choice rule must reference an incorrect displayed choice.",
+          path: `${path}.choiceId`,
+          severity: "error",
+        });
+      }
+    }
+
+    if (
+      rule.kind === "omitted_choice" &&
+      (content.answerSpec.type !== "multiple_select" ||
+        !content.answerSpec.choiceIds.includes(rule.choiceId))
+    ) {
+      issues.push({
+        code: "MISCONCEPTION_OMISSION_INVALID",
+        message:
+          "An omitted-choice rule must reference a correct multiple-select choice.",
+        path: `${path}.choiceId`,
+        severity: "error",
+      });
+    }
+
+    if (rule.kind === "numeric_value") {
+      const matchesCorrectAnswer =
+        content.answerSpec.type === "numeric" &&
+        evaluateAnswer(content.answerSpec, {
+          type: "numeric",
+          value: String(rule.value),
+          unit: content.answerSpec.unit,
+        }).correct;
+      if (content.answerSpec.type !== "numeric" || matchesCorrectAnswer) {
+        issues.push({
+          code: "MISCONCEPTION_NUMERIC_VALUE_INVALID",
+          message:
+            "A numeric-value rule must describe an incorrect value for a numeric question.",
+          path: `${path}.value`,
+          severity: "error",
+        });
+      }
+    }
+
+    if (rule.kind === "reversed_pair") {
+      const expected =
+        content.answerSpec.type === "ordered_response"
+          ? content.answerSpec.itemIds
+          : [];
+      if (
+        expected.indexOf(rule.earlierItemId) < 0 ||
+        expected.indexOf(rule.laterItemId) < 0 ||
+        expected.indexOf(rule.earlierItemId) >=
+          expected.indexOf(rule.laterItemId)
+      ) {
+        issues.push({
+          code: "MISCONCEPTION_ORDER_PAIR_INVALID",
+          message:
+            "A reversed-pair rule must name two items in their correct earlier/later order.",
+          path,
+          severity: "error",
+        });
+      }
+    }
+
+    if (
+      rule.kind === "evaluation_reason" &&
+      content.answerSpec.type !== "numeric"
+    ) {
+      issues.push({
+        code: "MISCONCEPTION_REASON_INVALID",
+        message:
+          "Evaluation-reason rules currently apply only to numeric input.",
+        path: `${path}.reason`,
+        severity: "error",
+      });
+    }
+  }
+
+  return issues;
+}
+
+export function attributeMisconceptions(
+  submitted: LearnerAnswer,
+  evaluation: AnswerEvaluation,
+  rulesInput: MisconceptionRule[],
+): MisconceptionAttribution[] {
+  if (evaluation.correct) return [];
+
+  return rulesInput
+    .filter((rule) => misconceptionRuleMatches(rule, submitted, evaluation))
+    .map(({ id, code, learnerMessage }) => ({ id, code, learnerMessage }));
+}
+
+function misconceptionRuleMatches(
+  rule: MisconceptionRule,
+  submitted: LearnerAnswer,
+  evaluation: AnswerEvaluation,
+) {
+  switch (rule.kind) {
+    case "selected_choice":
+      return submitted.type === "single_choice"
+        ? submitted.choiceId === rule.choiceId
+        : submitted.type === "multiple_select" &&
+            submitted.choiceIds.includes(rule.choiceId);
+    case "omitted_choice":
+      return (
+        submitted.type === "multiple_select" &&
+        !submitted.choiceIds.includes(rule.choiceId)
+      );
+    case "numeric_value": {
+      if (submitted.type !== "numeric") return false;
+      const value = parseNumericInput(submitted.value);
+      return (
+        value !== undefined && Math.abs(value - rule.value) <= rule.tolerance
+      );
+    }
+    case "reversed_pair": {
+      if (submitted.type !== "ordered_response") return false;
+      const earlierIndex = submitted.itemIds.indexOf(rule.earlierItemId);
+      const laterIndex = submitted.itemIds.indexOf(rule.laterItemId);
+      return earlierIndex >= 0 && laterIndex >= 0 && earlierIndex > laterIndex;
+    }
+    case "evaluation_reason":
+      return evaluation.reason === rule.reason;
   }
 }
 

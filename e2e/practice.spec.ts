@@ -24,14 +24,20 @@ test("completes a published topic-practice question with feedback", async ({
   ).toBeVisible();
   await expect(page.getByText(/The total is the number of boxes/)).toBeHidden();
 
-  await page.locator('input[name="choiceId"][value="c"]').check();
+  await page.locator('input[name="choiceId"][value="a"]').check();
   await page.getByLabel("Confidence (optional)").selectOption("4");
   await page.getByRole("button", { name: "Check answer" }).click();
 
   await expect(
     page.getByRole("heading", {
-      name: "Your reasoning landed on the right result.",
+      name: "Correct answer: C. 432",
     }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Reasoning pattern to revisit" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/added the number of groups and the amount/i),
   ).toBeVisible();
   await expect(
     page.getByText(/The total is the number of boxes/),
@@ -76,7 +82,7 @@ test("completes a published topic-practice question with feedback", async ({
   await page.getByRole("link", { name: "View session summary" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "1 of 1 correct" }),
+    page.getByRole("heading", { name: "0 of 1 correct" }),
   ).toBeVisible();
   await expect(page.getByText(/not an official ATI score/i)).toBeVisible();
 });

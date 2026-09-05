@@ -20,12 +20,17 @@ import {
   validatorRules,
 } from "@/db/schema";
 import { requireReviewer } from "@/lib/auth/reviewer";
-import { mathVerificationSpecSchema } from "@/lib/questions/contracts";
+import {
+  mathVerificationSpecSchema,
+  misconceptionCodesSchema,
+  misconceptionRulesSchema,
+} from "@/lib/questions/contracts";
 import {
   AUTOMATED_PUBLICATION_VALIDATORS,
   evaluatePublicationGate,
   REVIEWER_PUBLICATION_VALIDATORS,
   validateMathVerification,
+  validateMisconceptionRules,
   validateQuestionContent,
 } from "@/lib/questions/validation";
 
@@ -66,6 +71,13 @@ export async function runDeterministicValidation(
     distractorRationales: version.distractorRationales,
   };
   const contentResult = validateQuestionContent(content);
+  const misconceptionIssues = validateMisconceptionRules(
+    content,
+    version.commonMisconceptions,
+    version.misconceptionRules,
+  );
+  const answerContractValid =
+    contentResult.valid && misconceptionIssues.length === 0;
   const mathResult = validateMathVerification(
     content,
     version.verificationSpec,
@@ -96,14 +108,16 @@ export async function runDeterministicValidation(
     {
       questionVersionId: version.id,
       validatorRuleId: answerRule.id,
-      outcome: contentResult.valid ? "PASS" : "FAIL",
-      failureCode: contentResult.valid
+      outcome: answerContractValid ? "PASS" : "FAIL",
+      failureCode: answerContractValid
         ? null
-        : (contentResult.issues[0]?.code ?? "CONTENT_INVALID"),
+        : (contentResult.issues[0]?.code ??
+          misconceptionIssues[0]?.code ??
+          "CONTENT_INVALID"),
       evidence: {
         method: "deterministic-answer-contract",
         executedBy: reviewer.id,
-        issues: contentResult.issues,
+        issues: [...contentResult.issues, ...misconceptionIssues],
       },
     },
     {
@@ -121,7 +135,7 @@ export async function runDeterministicValidation(
   revalidateReview(version.id);
   return {
     status: "success",
-    message: `Automated checks appended: answer contract ${contentResult.valid ? "passed" : "failed"}; math ${mathResult.valid ? "passed" : "failed"}.`,
+    message: `Automated checks appended: answer contract ${answerContractValid ? "passed" : "failed"}; math ${mathResult.valid ? "passed" : "failed"}.`,
   };
 }
 
@@ -457,6 +471,8 @@ const revisionSchema = z.object({
   choicesJson: z.string().max(30_000),
   answerSpecJson: z.string().min(2).max(10_000),
   verificationSpecJson: z.string().min(2).max(30_000),
+  commonMisconceptionsJson: z.string().min(2).max(10_000),
+  misconceptionRulesJson: z.string().min(2).max(30_000),
   explanation: z.string().trim().min(1).max(20_000),
   distractorRationalesJson: z.string().min(2).max(30_000),
   difficulty: z.enum(["FOUNDATIONAL", "DEVELOPING", "PROFICIENT", "ADVANCED"]),
@@ -482,18 +498,22 @@ export async function createQuestionRevision(
   let answerSpec: unknown;
   let distractorRationales: unknown;
   let verificationSpec: unknown;
+  let commonMisconceptions: unknown;
+  let misconceptionRules: unknown;
   try {
     choices = parsed.data.choicesJson.trim()
       ? JSON.parse(parsed.data.choicesJson)
       : undefined;
     answerSpec = JSON.parse(parsed.data.answerSpecJson);
     verificationSpec = JSON.parse(parsed.data.verificationSpecJson);
+    commonMisconceptions = JSON.parse(parsed.data.commonMisconceptionsJson);
+    misconceptionRules = JSON.parse(parsed.data.misconceptionRulesJson);
     distractorRationales = JSON.parse(parsed.data.distractorRationalesJson);
   } catch {
     return {
       status: "error",
       message:
-        "Choices, answer specification, verification specification, and rationales must be valid JSON.",
+        "Choices, answer specification, verification specification, misconception metadata, and rationales must be valid JSON.",
     };
   }
 
@@ -537,6 +557,32 @@ export async function createQuestionRevision(
   }
   const parsedVerificationSpec =
     mathVerificationSpecSchema.parse(verificationSpec);
+  const parsedMisconceptionCodes =
+    misconceptionCodesSchema.safeParse(commonMisconceptions);
+  if (!parsedMisconceptionCodes.success) {
+    return {
+      status: "error",
+      message:
+        parsedMisconceptionCodes.error.issues[0]?.message ??
+        "Misconception codes are invalid.",
+    };
+  }
+  const misconceptionIssues = validateMisconceptionRules(
+    contentValidation.content,
+    parsedMisconceptionCodes.data,
+    misconceptionRules,
+  );
+  if (misconceptionIssues.length > 0) {
+    return {
+      status: "error",
+      message: misconceptionIssues
+        .slice(0, 3)
+        .map((issue) => `${issue.code}: ${issue.message}`)
+        .join(" "),
+    };
+  }
+  const parsedMisconceptionRules =
+    misconceptionRulesSchema.parse(misconceptionRules);
 
   const newVersionId = await database.transaction(async (transaction) => {
     await lockQuestionFamily(transaction, current.questionId);
@@ -566,7 +612,8 @@ export async function createQuestionRevision(
         difficultyRationale: parsed.data.difficultyRationale,
         estimatedSeconds: parsed.data.estimatedSeconds,
         calculatorPolicy: current.calculatorPolicy,
-        commonMisconceptions: current.commonMisconceptions,
+        commonMisconceptions: parsedMisconceptionCodes.data,
+        misconceptionRules: parsedMisconceptionRules,
         authoringMode: "HUMAN",
         authorId: reviewer.id,
         provenanceSummary: `${current.provenanceSummary} Revised by the owner review workflow from version ${current.version}.`,

@@ -18,11 +18,13 @@ import {
 } from "../src/db/schema";
 import type {
   MathVerificationSpec,
+  MisconceptionRule,
   QuestionContent,
 } from "../src/lib/questions/contracts";
 import {
   REQUIRED_PUBLICATION_VALIDATORS,
   validateMathVerification,
+  validateMisconceptionRules,
   validateQuestionContent,
 } from "../src/lib/questions/validation";
 
@@ -65,6 +67,7 @@ type SeedQuestion = {
   estimatedSeconds: number;
   calculatorPolicy: "ALLOWED" | "NOT_ALLOWED" | "NOT_NEEDED";
   misconceptions: string[];
+  misconceptionRules?: MisconceptionRule[];
   content: QuestionContent;
   verificationSpec: MathVerificationSpec;
 };
@@ -82,6 +85,24 @@ const seedQuestions: SeedQuestion[] = [
     estimatedSeconds: 55,
     calculatorPolicy: "NOT_NEEDED",
     misconceptions: ["ADDS_INSTEAD_OF_MULTIPLIES", "PLACE_VALUE_ERROR"],
+    misconceptionRules: [
+      {
+        id: "adds-groups-and-size",
+        code: "ADDS_INSTEAD_OF_MULTIPLIES",
+        learnerMessage:
+          "You may have added the number of groups and the amount in each group. Reframe the situation as equal groups and multiply.",
+        kind: "selected_choice",
+        choiceId: "a",
+      },
+      {
+        id: "place-value-product-error",
+        code: "PLACE_VALUE_ERROR",
+        learnerMessage:
+          "Your choice is close to the product, which can signal a place-value error. Check each partial product by place.",
+        kind: "selected_choice",
+        choiceId: "d",
+      },
+    ],
     content: {
       questionType: "SINGLE_CHOICE",
       prompt:
@@ -324,6 +345,19 @@ async function main() {
       if (!mathValidation.valid) {
         throw new Error(
           `Seed question ${candidate.slug} has an invalid verification specification: ${mathValidation.failureCode}`,
+        );
+      }
+
+      const misconceptionIssues = validateMisconceptionRules(
+        candidate.content,
+        candidate.misconceptions,
+        candidate.misconceptionRules ?? [],
+      );
+      if (misconceptionIssues.length > 0) {
+        throw new Error(
+          `Seed question ${candidate.slug} has invalid misconception rules: ${misconceptionIssues
+            .map((issue) => issue.code)
+            .join(", ")}`,
         );
       }
     }
@@ -584,6 +618,7 @@ async function main() {
             estimatedSeconds: candidate.estimatedSeconds,
             calculatorPolicy: candidate.calculatorPolicy,
             commonMisconceptions: candidate.misconceptions,
+            misconceptionRules: candidate.misconceptionRules ?? [],
             authoringMode: "GENERATED",
             generationRunId: `18000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
             provenanceSummary:

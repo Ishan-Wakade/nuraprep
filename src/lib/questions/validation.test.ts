@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import type { QuestionContent } from "./contracts";
+import type { MisconceptionRule, QuestionContent } from "./contracts";
 import {
+  attributeMisconceptions,
   evaluateAnswer,
   evaluatePublicationGate,
   parseNumericInput,
   REQUIRED_PUBLICATION_VALIDATORS,
   validateMathVerification,
+  validateMisconceptionRules,
   validateQuestionContent,
 } from "./validation";
 
@@ -130,6 +132,128 @@ describe("evaluateAnswer", () => {
         { type: "numeric", value: "75.7" },
       ).correct,
     ).toBe(true);
+  });
+});
+
+describe("deterministic misconception attribution", () => {
+  const rules = [
+    {
+      id: "adds-values",
+      code: "ADDS_INSTEAD_OF_MULTIPLIES",
+      learnerMessage: "Model the context as equal groups and multiply.",
+      kind: "selected_choice" as const,
+      choiceId: "a",
+    },
+  ] satisfies MisconceptionRule[];
+
+  it("validates explicit rules against declared codes and answer structure", () => {
+    expect(
+      validateMisconceptionRules(
+        validSingleChoiceQuestion,
+        ["ADDS_INSTEAD_OF_MULTIPLIES"],
+        rules,
+      ),
+    ).toEqual([]);
+
+    expect(
+      validateMisconceptionRules(
+        validSingleChoiceQuestion,
+        ["SOME_OTHER_CODE"],
+        [{ ...rules[0], choiceId: "c" }],
+      ).map((issue) => issue.code),
+    ).toEqual([
+      "MISCONCEPTION_CODE_UNDECLARED",
+      "MISCONCEPTION_CHOICE_INVALID",
+    ]);
+  });
+
+  it("attributes only a reviewed rule that matches an incorrect answer", () => {
+    const wrongAnswer = { type: "single_choice" as const, choiceId: "a" };
+    expect(
+      attributeMisconceptions(
+        wrongAnswer,
+        evaluateAnswer(validSingleChoiceQuestion.answerSpec, wrongAnswer),
+        rules,
+      ),
+    ).toEqual([
+      {
+        id: "adds-values",
+        code: "ADDS_INSTEAD_OF_MULTIPLIES",
+        learnerMessage: "Model the context as equal groups and multiply.",
+      },
+    ]);
+
+    const correctAnswer = { type: "single_choice" as const, choiceId: "c" };
+    expect(
+      attributeMisconceptions(
+        correctAnswer,
+        evaluateAnswer(validSingleChoiceQuestion.answerSpec, correctAnswer),
+        rules,
+      ),
+    ).toEqual([]);
+  });
+
+  it("matches omitted selections, numeric values, input errors, and reversed pairs", () => {
+    const cases: Array<{
+      answer: Parameters<typeof attributeMisconceptions>[0];
+      evaluation: Parameters<typeof attributeMisconceptions>[1];
+      rule: MisconceptionRule;
+    }> = [
+      {
+        answer: { type: "multiple_select", choiceIds: ["a"] },
+        evaluation: { correct: false },
+        rule: {
+          id: "missed-c",
+          code: "MISSED_EQUIVALENT",
+          learnerMessage: "Check every option before submitting.",
+          kind: "omitted_choice",
+          choiceId: "c",
+        },
+      },
+      {
+        answer: { type: "numeric", value: "42" },
+        evaluation: { correct: false, normalizedValue: 42 },
+        rule: {
+          id: "numeric-42",
+          code: "ADDED_VALUES",
+          learnerMessage: "Use the operation represented by the context.",
+          kind: "numeric_value",
+          value: 42,
+          tolerance: 0,
+        },
+      },
+      {
+        answer: { type: "numeric", value: "not a number" },
+        evaluation: { correct: false, reason: "INVALID_NUMBER" },
+        rule: {
+          id: "invalid-input",
+          code: "INVALID_NUMERIC_FORMAT",
+          learnerMessage: "Enter only a number, fraction, or mixed number.",
+          kind: "evaluation_reason",
+          reason: "INVALID_NUMBER",
+        },
+      },
+      {
+        answer: { type: "ordered_response", itemIds: ["later", "earlier"] },
+        evaluation: { correct: false },
+        rule: {
+          id: "reversed-pair",
+          code: "REVERSED_DECIMAL_ORDER",
+          learnerMessage: "Compare place values from left to right.",
+          kind: "reversed_pair",
+          earlierItemId: "earlier",
+          laterItemId: "later",
+        },
+      },
+    ];
+
+    for (const testCase of cases) {
+      expect(
+        attributeMisconceptions(testCase.answer, testCase.evaluation, [
+          testCase.rule,
+        ]),
+      ).toHaveLength(1);
+    }
   });
 });
 

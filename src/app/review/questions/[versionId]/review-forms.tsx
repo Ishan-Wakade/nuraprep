@@ -7,6 +7,7 @@ import type {
   AnswerSpec,
   DistractorRationales,
   MathVerificationSpec,
+  MisconceptionRule,
 } from "@/lib/questions/contracts";
 
 import {
@@ -331,6 +332,8 @@ export function RevisionForm({
   choices,
   answerSpec,
   verificationSpec,
+  commonMisconceptions,
+  misconceptionRules,
   explanation,
   distractorRationales,
   difficulty,
@@ -342,6 +345,8 @@ export function RevisionForm({
   choices: QuestionChoice[] | null;
   answerSpec: AnswerSpec;
   verificationSpec: MathVerificationSpec | null;
+  commonMisconceptions: string[];
+  misconceptionRules: MisconceptionRule[];
   explanation: string;
   distractorRationales: DistractorRationales;
   difficulty: string;
@@ -386,6 +391,16 @@ export function RevisionForm({
           name="verificationSpecJson"
           label="Math verification specification JSON"
           value={verificationSpec}
+        />
+        <JsonField
+          name="misconceptionRulesJson"
+          label="Misconception attribution rules JSON"
+          value={misconceptionRules}
+        />
+        <JsonField
+          name="commonMisconceptionsJson"
+          label="Declared misconception codes JSON"
+          value={commonMisconceptions}
         />
       </div>
       <label className="block text-xs font-bold text-[#52676a]">

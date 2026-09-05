@@ -84,6 +84,66 @@ export const distractorRationaleSchema = z.record(
   z.string().trim().min(1).max(2_000),
 );
 
+export const misconceptionCodeSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(120)
+  .regex(/^[A-Z0-9_-]+$/);
+
+export const misconceptionCodesSchema = z
+  .array(misconceptionCodeSchema)
+  .max(40)
+  .refine((codes) => new Set(codes).size === codes.length, {
+    message: "Misconception codes must be unique.",
+  });
+
+const misconceptionRuleBase = {
+  id: stableIdSchema,
+  code: misconceptionCodeSchema,
+  learnerMessage: z.string().trim().min(1).max(500),
+};
+
+export const misconceptionRuleSchema = z.discriminatedUnion("kind", [
+  z.object({
+    ...misconceptionRuleBase,
+    kind: z.literal("selected_choice"),
+    choiceId: stableIdSchema,
+  }),
+  z.object({
+    ...misconceptionRuleBase,
+    kind: z.literal("omitted_choice"),
+    choiceId: stableIdSchema,
+  }),
+  z.object({
+    ...misconceptionRuleBase,
+    kind: z.literal("numeric_value"),
+    value: z.number().finite(),
+    tolerance: z.number().finite().nonnegative().default(0),
+  }),
+  z.object({
+    ...misconceptionRuleBase,
+    kind: z.literal("reversed_pair"),
+    earlierItemId: stableIdSchema,
+    laterItemId: stableIdSchema,
+  }),
+  z.object({
+    ...misconceptionRuleBase,
+    kind: z.literal("evaluation_reason"),
+    reason: z.enum(["INVALID_NUMBER", "UNIT_REQUIRED", "UNIT_INVALID"]),
+  }),
+]);
+
+export const misconceptionRulesSchema = z
+  .array(misconceptionRuleSchema)
+  .max(40)
+  .refine(
+    (rules) => new Set(rules.map((rule) => rule.id)).size === rules.length,
+    {
+      message: "Misconception rule identifiers must be unique.",
+    },
+  );
+
 export const questionContentSchema = z.object({
   questionType: z.enum([
     "SINGLE_CHOICE",
@@ -143,6 +203,11 @@ export type DistractorRationales = z.infer<typeof distractorRationaleSchema>;
 export type QuestionContent = z.infer<typeof questionContentSchema>;
 export type RpnExpression = z.infer<typeof rpnExpressionSchema>;
 export type MathVerificationSpec = z.infer<typeof mathVerificationSpecSchema>;
+export type MisconceptionRule = z.infer<typeof misconceptionRuleSchema>;
+export type MisconceptionAttribution = Pick<
+  MisconceptionRule,
+  "id" | "code" | "learnerMessage"
+>;
 
 export type LearnerAnswer =
   | { type: "single_choice"; choiceId: string }

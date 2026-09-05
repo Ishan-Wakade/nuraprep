@@ -101,8 +101,8 @@ Editing creates a new `QuestionVersion`. Approval never mutates an older version
 The topic-practice slice now implements `learner_profiles`, `practice_sessions`, immutable `practice_session_items`, immutable `attempts`, exact-version `learner_question_reports`, and append-only `learner_question_report_events`. The remaining entities below are added with their owning milestone.
 
 - **PracticeSession:** mode, filters, timing policy, start/end state, and a reproducible item manifest.
-- **Attempt:** exact session item, answer payload, correctness, duration, confidence, evaluator version, and server timestamp.
-- **AttemptEvaluation:** validator version, misconception classification, awarded credit, and explanation shown.
+- **Attempt:** exact session item, answer payload, correctness, duration, confidence, evaluator version, server timestamp, and any matched reviewer-authored misconception-rule evidence.
+- **AttemptEvaluation:** future expansion point for partial credit and richer evaluation traces; deterministic misconception attribution is already stored with the attempt.
 - **SkillEstimate:** user, skill, estimator version, evidence count, mastery estimate, uncertainty, and calculation timestamp.
 - **ReviewSchedule:** user, skill/question family, due date, spacing state, and reason.
 - **TestForm:** reproducible assembly manifest with distribution rules and no repeated family.

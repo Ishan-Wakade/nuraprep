@@ -241,6 +241,7 @@ export async function getQuestionReviewDetail(versionId: string) {
       estimatedSeconds: questionVersions.estimatedSeconds,
       calculatorPolicy: questionVersions.calculatorPolicy,
       commonMisconceptions: questionVersions.commonMisconceptions,
+      misconceptionRules: questionVersions.misconceptionRules,
       questionType: questionVersions.questionType,
       authoringMode: questionVersions.authoringMode,
       authorId: questionVersions.authorId,

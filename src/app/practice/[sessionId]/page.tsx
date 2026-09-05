@@ -172,6 +172,19 @@ function Feedback({
         </p>
       </div>
 
+      {!feedback.correct && feedback.misconceptionAttributions.length > 0 && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <h3 className="text-sm font-bold text-blue-950">
+            Reasoning pattern to revisit
+          </h3>
+          <ul className="mt-2 space-y-2 text-sm leading-6 text-blue-950">
+            {feedback.misconceptionAttributions.map((attribution) => (
+              <li key={attribution.id}>{attribution.learnerMessage}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {Object.keys(feedback.distractorRationales).length > 0 && (
         <div>
           <h3 className="text-sm font-bold">Why the other choices miss</h3>

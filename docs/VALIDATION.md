@@ -6,10 +6,12 @@ NuraPrep separates validation, review, and publication. A question can be mathem
 
 Two checks are currently automated:
 
-- `answer-contract` validates the response type, stable identifiers, choice set, distractor mappings, and table shape.
+- `answer-contract` validates the response type, stable identifiers, choice set, distractor mappings, table shape, and any deterministic misconception rules.
 - `mathematical-correctness` executes a safe structured verification recipe and compares the computed result with the keyed answer.
 
 The math verifier does not evaluate arbitrary JavaScript or model-written code. Its supported recipes are a bounded reverse-Polish arithmetic expression, equivalence checks across candidate expressions, numeric ordering, and mean/median/range operations. Unsupported or malformed recipes fail closed.
+
+Misconception attribution also fails closed. A reviewer must explicitly map a selected distractor, omitted correct choice, numeric value, reversed ordered pair, or numeric-input error to a declared misconception code and learner-facing teaching message. Matching rules are copied into the immutable attempt record. NuraPrep does not infer a learner misconception from free-form text or an LLM response.
 
 Four checks require explicit reviewer evidence:
 
@@ -35,6 +37,7 @@ Learner selection will join only the single current publication record. Drafts, 
 ## Current limits
 
 - Verification recipes establish that a stored answer matches a declared calculation; a reviewer must still confirm that the recipe faithfully represents the written prompt.
+- A non-matching wrong answer receives no misconception label. Missing evidence is preferable to an unsupported diagnosis.
 - Originality is reviewer-attested until a legally permitted comparison corpus and calibrated similarity thresholds exist.
 - Reading-level and broader accessibility automation will supplement, not replace, reviewer evidence in a later validation milestone.
 - Seed candidates are development fixtures. They are not human-reviewed or production-approved.

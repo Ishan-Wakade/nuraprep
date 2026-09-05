@@ -31,7 +31,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Build accessible renderers for choice, multiple-select, numeric, ordered, and table/graph content.
 - [x] Show correctness, worked solution, per-choice rationales, and the underlying skill.
 - [x] Add exact-version learner problem reporting and append-only owner triage.
-- [ ] Add deterministic misconception attribution.
+- [x] Add deterministic, reviewer-authored misconception attribution without model guessing.
 - Add hint-first tutor contracts with answer-reveal controls and safety logging.
 
 **Exit:** a learner completes a reviewed multi-format practice session end to end and reports an issue.

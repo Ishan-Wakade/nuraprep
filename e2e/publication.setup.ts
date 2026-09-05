@@ -16,6 +16,18 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
       tolerance: 0,
     }),
   );
+  await page.getByLabel("Misconception attribution rules JSON").fill(
+    JSON.stringify([
+      {
+        id: "adds-groups-and-size",
+        code: "ADDS_INSTEAD_OF_MULTIPLIES",
+        learnerMessage:
+          "You may have added the number of groups and the amount in each group. Reframe the situation as equal groups and multiply.",
+        kind: "selected_choice",
+        choiceId: "a",
+      },
+    ]),
+  );
   await page.getByRole("button", { name: "Create new version" }).click();
   await expect(page).not.toHaveURL(`/review/questions/${firstVersionId}`);
 

@@ -152,6 +152,7 @@ export async function getPracticeSessionView(
       evaluationReason: attempts.evaluationReason,
       elapsedMilliseconds: attempts.elapsedMilliseconds,
       confidence: attempts.confidence,
+      misconceptionAttributions: attempts.misconceptionAttributions,
       submittedAt: attempts.submittedAt,
     })
     .from(practiceSessionItems)
@@ -187,6 +188,7 @@ export async function getPracticeSessionView(
         ),
         elapsedMilliseconds: selected.elapsedMilliseconds ?? 0,
         confidence: selected.confidence,
+        misconceptionAttributions: selected.misconceptionAttributions ?? [],
         submittedAt: selected.submittedAt?.toISOString() ?? null,
       }
     : null;
