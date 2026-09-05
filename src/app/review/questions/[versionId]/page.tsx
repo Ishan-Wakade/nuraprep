@@ -132,6 +132,9 @@ export default async function QuestionReviewPage({
             <KeyValue label="Deterministic misconception rules">
               <CodeBlock value={question.misconceptionRules} />
             </KeyValue>
+            <KeyValue label="Tutor guidance">
+              <CodeBlock value={question.tutorGuidance} />
+            </KeyValue>
           </Panel>
 
           <Panel title="Review decision" eyebrow="Immutable audit event">
@@ -216,6 +219,7 @@ export default async function QuestionReviewPage({
               verificationSpec={question.verificationSpec ?? null}
               commonMisconceptions={question.commonMisconceptions}
               misconceptionRules={question.misconceptionRules}
+              tutorGuidance={question.tutorGuidance ?? null}
               explanation={question.explanation}
               distractorRationales={question.distractorRationales}
               difficulty={question.difficulty}

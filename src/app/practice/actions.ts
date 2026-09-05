@@ -17,6 +17,7 @@ import {
   questions,
   questionVersions,
   skills,
+  tutorInteractions,
 } from "@/db/schema";
 import { requireLearner } from "@/lib/auth/learner";
 import type { LearnerAnswer } from "@/lib/questions/contracts";
@@ -413,6 +414,98 @@ export async function submitQuestionReport(
         status: "success",
         message: "You already reported this issue category for this attempt.",
       };
+}
+
+const tutorRequestSchema = z.object({
+  sessionId: z.uuid(),
+  sessionItemId: z.uuid(),
+});
+
+export async function requestTutorStep(
+  _previousState: PracticeActionState,
+  formData: FormData,
+): Promise<PracticeActionState> {
+  const identity = requireLearner();
+  const parsed = tutorRequestSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { status: "error", message: "Invalid tutor request." };
+  }
+
+  const database = getDatabase();
+  const [item] = await database
+    .select({
+      itemId: practiceSessionItems.id,
+      status: practiceSessions.status,
+      tutorGuidance: questionVersions.tutorGuidance,
+      attemptId: attempts.id,
+    })
+    .from(practiceSessionItems)
+    .innerJoin(
+      practiceSessions,
+      eq(practiceSessions.id, practiceSessionItems.sessionId),
+    )
+    .innerJoin(
+      learnerProfiles,
+      eq(learnerProfiles.id, practiceSessions.learnerId),
+    )
+    .innerJoin(
+      questionVersions,
+      eq(questionVersions.id, practiceSessionItems.questionVersionId),
+    )
+    .leftJoin(attempts, eq(attempts.sessionItemId, practiceSessionItems.id))
+    .where(
+      and(
+        eq(practiceSessionItems.id, parsed.data.sessionItemId),
+        eq(practiceSessions.id, parsed.data.sessionId),
+        eq(learnerProfiles.authSubject, identity.subject),
+      ),
+    )
+    .limit(1);
+
+  if (!item || item.status !== "IN_PROGRESS" || item.attemptId) {
+    return {
+      status: "error",
+      message:
+        "Tutor hints are available only before this answer is submitted.",
+    };
+  }
+  if (!item.tutorGuidance) {
+    return {
+      status: "error",
+      message: "This question does not have reviewed tutor guidance yet.",
+    };
+  }
+
+  const [result] = await database
+    .select({ revealedCount: count(tutorInteractions.id) })
+    .from(tutorInteractions)
+    .where(eq(tutorInteractions.sessionItemId, item.itemId));
+  const nextStepIndex = (result?.revealedCount ?? 0) + 1;
+  const nextStep = item.tutorGuidance.steps[nextStepIndex - 1];
+  if (!nextStep) {
+    return {
+      status: "success",
+      message: "All reviewed hints for this question are already visible.",
+    };
+  }
+
+  const inserted = await database
+    .insert(tutorInteractions)
+    .values({
+      sessionItemId: item.itemId,
+      stepIndex: nextStepIndex,
+      stepId: nextStep.id,
+    })
+    .onConflictDoNothing()
+    .returning({ id: tutorInteractions.id });
+
+  revalidatePath(`/practice/${parsed.data.sessionId}`);
+  return {
+    status: "success",
+    message: inserted[0]
+      ? "A reviewed tutor step is now visible."
+      : "That tutor step was already requested.",
+  };
 }
 
 function buildLearnerAnswer(

@@ -11,14 +11,14 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 ## Project status
 
-**Topic-practice phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, and a persisted topic-practice vertical slice with reviewer-authored misconception attribution, version-linked learner reports, and owner triage. The six seed candidates remain deliberately unapproved; browser tests publish a disposable gated fixture in the local/test database. There is no approved production question bank or validated score predictor yet.
+**Topic-practice phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, and a persisted topic-practice vertical slice with server-controlled Socratic hints, reviewer-authored misconception attribution, version-linked learner reports, and owner triage. The six seed candidates remain deliberately unapproved; browser tests publish a disposable gated fixture in the local/test database. There is no approved production question bank or validated score predictor yet.
 
 | Area                                        | Status                                                           |
 | ------------------------------------------- | ---------------------------------------------------------------- |
 | Public repository and engineering standards | Complete                                                         |
 | Math taxonomy and question data model       | Implemented with migrations and seed data                        |
 | Reviewer and provenance workflow            | Review, publication, reports, and pattern search working locally |
-| Topic practice                              | Working local vertical slice; tutor next                         |
+| Topic practice                              | Working local vertical slice; diagnostic next                    |
 | Diagnostic and adaptive mode                | Planned                                                          |
 | Timed Math practice test                    | Planned                                                          |
 | Score estimate and study plan               | Planned                                                          |

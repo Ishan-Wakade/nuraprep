@@ -13,6 +13,8 @@ The math verifier does not evaluate arbitrary JavaScript or model-written code. 
 
 Misconception attribution also fails closed. A reviewer must explicitly map a selected distractor, omitted correct choice, numeric value, reversed ordered pair, or numeric-input error to a declared misconception code and learner-facing teaching message. Matching rules are copied into the immutable attempt record. NuraPrep does not infer a learner misconception from free-form text or an LLM response.
 
+Tutor guidance uses a bounded, versioned sequence of reviewer-authored Socratic questions or hints plus a post-answer reflection prompt. The server releases one requested step at a time and stores an append-only interaction event. The answer contract validates the structure and stable identifiers; the human explanation-consistency review remains responsible for checking pedagogy and answer leakage.
+
 Four checks require explicit reviewer evidence:
 
 - `explanation-consistency`

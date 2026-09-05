@@ -28,6 +28,26 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
       },
     ]),
   );
+  await page.getByLabel("Tutor guidance JSON").fill(
+    JSON.stringify({
+      steps: [
+        {
+          id: "identify-structure",
+          kind: "SOCRATIC_QUESTION",
+          content:
+            "What operation represents several equal groups of the same size?",
+        },
+        {
+          id: "name-factors",
+          kind: "HINT",
+          content:
+            "Treat the carton count and notebooks per carton as the two factors.",
+        },
+      ],
+      reflectionPrompt:
+        "How would the setup change if one more carton were added?",
+    }),
+  );
   await page.getByRole("button", { name: "Create new version" }).click();
   await expect(page).not.toHaveURL(`/review/questions/${firstVersionId}`);
 

@@ -215,6 +215,37 @@ async function main() {
       throw new Error("The attempt append-only trigger allowed an update.");
     }
 
+    const tutorInteractionId = randomUUID();
+    await client.query(
+      `INSERT INTO tutor_interactions
+       (id, session_item_id, step_index, step_id)
+       VALUES ($1, $2, 1, 'smoke-hint')`,
+      [tutorInteractionId, sessionItemId],
+    );
+    await client.query("SAVEPOINT tutor_interaction_immutability_check");
+    let tutorInteractionMutationWasBlocked = false;
+    try {
+      await client.query(
+        "UPDATE tutor_interactions SET step_id = 'mutated' WHERE id = $1",
+        [tutorInteractionId],
+      );
+    } catch (error) {
+      tutorInteractionMutationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query(
+        "ROLLBACK TO SAVEPOINT tutor_interaction_immutability_check",
+      );
+    }
+    if (!tutorInteractionMutationWasBlocked) {
+      throw new Error(
+        "The tutor-interaction append-only trigger allowed an update.",
+      );
+    }
+
     const reportId = randomUUID();
     const reportEventId = randomUUID();
     await client.query(

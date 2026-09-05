@@ -6,6 +6,7 @@ import { getPracticeSessionView } from "@/data/practice";
 import { AnswerForm } from "./answer-form";
 import { ProblemReportForm } from "./problem-report-form";
 import { SessionTimer } from "./session-timer";
+import { TutorPanel } from "./tutor-panel";
 
 export default async function PracticeSessionPage({
   params,
@@ -93,15 +94,26 @@ export default async function PracticeSessionPage({
             skillTitle={question.skillTitle}
             learningObjective={question.learningObjective}
             questionVersionId={question.versionId}
+            reflectionPrompt={question.tutor?.reflectionPrompt ?? null}
           />
         ) : session.status === "IN_PROGRESS" ? (
-          <AnswerForm
-            sessionId={session.id}
-            sessionItemId={question.itemId}
-            questionType={question.questionType}
-            choices={question.choices ?? null}
-            unitRequired={question.unitRequired}
-          />
+          <>
+            {question.tutor && (
+              <TutorPanel
+                sessionId={session.id}
+                sessionItemId={question.itemId}
+                revealedSteps={question.tutor.revealedSteps}
+                remainingSteps={question.tutor.remainingSteps}
+              />
+            )}
+            <AnswerForm
+              sessionId={session.id}
+              sessionItemId={question.itemId}
+              questionType={question.questionType}
+              choices={question.choices ?? null}
+              unitRequired={question.unitRequired}
+            />
+          </>
         ) : (
           <div className="mt-7 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
             This session has ended. Review the session summary for your saved
@@ -134,6 +146,7 @@ function Feedback({
   skillTitle,
   learningObjective,
   questionVersionId,
+  reflectionPrompt,
 }: {
   feedback: NonNullable<
     Awaited<ReturnType<typeof getPracticeSessionView>>
@@ -142,6 +155,7 @@ function Feedback({
   skillTitle: string;
   learningObjective: string;
   questionVersionId: string;
+  reflectionPrompt: string | null;
 }) {
   if (!feedback) return null;
 
@@ -211,6 +225,13 @@ function Feedback({
         <strong>Skill: {skillTitle}</strong>
         <p className="mt-1 leading-6 text-[#47615f]">{learningObjective}</p>
       </div>
+
+      {reflectionPrompt && (
+        <div className="rounded-xl border border-[#b9d4cb] bg-white p-4 text-sm">
+          <strong>Related follow-up</strong>
+          <p className="mt-1 leading-6 text-[#47615f]">{reflectionPrompt}</p>
+        </div>
+      )}
 
       <ProblemReportForm
         questionVersionId={questionVersionId}

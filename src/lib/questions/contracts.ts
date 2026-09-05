@@ -144,6 +144,27 @@ export const misconceptionRulesSchema = z
     },
   );
 
+export const tutorGuidanceSchema = z
+  .object({
+    steps: z
+      .array(
+        z.object({
+          id: stableIdSchema,
+          kind: z.enum(["SOCRATIC_QUESTION", "HINT"]),
+          content: z.string().trim().min(1).max(1_000),
+        }),
+      )
+      .min(1)
+      .max(5),
+    reflectionPrompt: z.string().trim().min(1).max(1_000),
+  })
+  .refine(
+    (guidance) =>
+      new Set(guidance.steps.map((step) => step.id)).size ===
+      guidance.steps.length,
+    { message: "Tutor-step identifiers must be unique.", path: ["steps"] },
+  );
+
 export const questionContentSchema = z.object({
   questionType: z.enum([
     "SINGLE_CHOICE",
@@ -208,6 +229,7 @@ export type MisconceptionAttribution = Pick<
   MisconceptionRule,
   "id" | "code" | "learnerMessage"
 >;
+export type TutorGuidance = z.infer<typeof tutorGuidanceSchema>;
 
 export type LearnerAnswer =
   | { type: "single_choice"; choiceId: string }

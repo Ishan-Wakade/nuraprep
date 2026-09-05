@@ -24,6 +24,15 @@ test("completes a published topic-practice question with feedback", async ({
   ).toBeVisible();
   await expect(page.getByText(/The total is the number of boxes/)).toBeHidden();
 
+  await page.getByRole("button", { name: "Ask for a hint" }).click();
+  await expect(
+    page.getByText("A reviewed tutor step is now visible."),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/what operation represents several equal groups/i),
+  ).toBeVisible();
+  await expect(page.getByText(/The total is the number of boxes/)).toBeHidden();
+
   await page.locator('input[name="choiceId"][value="a"]').check();
   await page.getByLabel("Confidence (optional)").selectOption("4");
   await page.getByRole("button", { name: "Check answer" }).click();
@@ -39,6 +48,7 @@ test("completes a published topic-practice question with feedback", async ({
   await expect(
     page.getByText(/added the number of groups and the amount/i),
   ).toBeVisible();
+  await expect(page.getByText(/if one more carton were added/i)).toBeVisible();
   await expect(
     page.getByText(/The total is the number of boxes/),
   ).toBeVisible();

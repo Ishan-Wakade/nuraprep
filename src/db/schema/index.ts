@@ -25,6 +25,7 @@ import type {
   MisconceptionRule,
   QuestionChoice,
   QuestionStimulus,
+  TutorGuidance,
 } from "@/lib/questions/contracts";
 import type { PracticeSessionFilters } from "@/lib/practice/contracts";
 
@@ -423,6 +424,7 @@ export const questionVersions = pgTable(
       .$type<MisconceptionRule[]>()
       .notNull()
       .default(sql`'[]'::jsonb`),
+    tutorGuidance: jsonb("tutor_guidance").$type<TutorGuidance>(),
     authoringMode: authoringModeEnum("authoring_mode").notNull(),
     generationRunId: uuid("generation_run_id").references(
       () => generationRuns.id,
@@ -747,6 +749,32 @@ export const attempts = pgTable(
       "attempt_confidence_check",
       sql`${table.confidence} IS NULL OR ${table.confidence} BETWEEN 1 AND 5`,
     ),
+  ],
+);
+
+export const tutorInteractions = pgTable(
+  "tutor_interactions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionItemId: uuid("session_item_id")
+      .notNull()
+      .references(() => practiceSessionItems.id, { onDelete: "restrict" }),
+    stepIndex: integer("step_index").notNull(),
+    stepId: varchar("step_id", { length: 80 }).notNull(),
+    requestedAt: timestamp("requested_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("tutor_interaction_step_idx").on(
+      table.sessionItemId,
+      table.stepIndex,
+    ),
+    uniqueIndex("tutor_interaction_step_id_idx").on(
+      table.sessionItemId,
+      table.stepId,
+    ),
+    check("tutor_interaction_step_check", sql`${table.stepIndex} > 0`),
   ],
 );
 

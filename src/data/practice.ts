@@ -13,6 +13,7 @@ import {
   questions,
   questionVersions,
   skills,
+  tutorInteractions,
 } from "@/db/schema";
 import { requireLearner, type LearnerIdentity } from "@/lib/auth/learner";
 
@@ -146,6 +147,7 @@ export async function getPracticeSessionView(
       calculatorPolicy: questionVersions.calculatorPolicy,
       skillCode: skills.code,
       skillTitle: skills.title,
+      tutorGuidance: questionVersions.tutorGuidance,
       attemptId: attempts.id,
       answerPayload: attempts.answerPayload,
       correct: attempts.correct,
@@ -172,6 +174,23 @@ export async function getPracticeSessionView(
       : (firstUnanswered ?? rows.at(-1)?.position ?? 1);
   const selected = rows.find((row) => row.position === position);
   if (!selected) return undefined;
+
+  const revealedTutorInteractions = selected.tutorGuidance
+    ? await database
+        .select({
+          stepIndex: tutorInteractions.stepIndex,
+          stepId: tutorInteractions.stepId,
+        })
+        .from(tutorInteractions)
+        .where(eq(tutorInteractions.sessionItemId, selected.itemId))
+        .orderBy(asc(tutorInteractions.stepIndex))
+    : [];
+  const revealedTutorSteps = revealedTutorInteractions.flatMap(
+    (interaction) => {
+      const step = selected.tutorGuidance?.steps[interaction.stepIndex - 1];
+      return step?.id === interaction.stepId ? [step] : [];
+    },
+  );
 
   const answeredCount = rows.filter((row) => row.attemptId).length;
   const feedback = selected.attemptId
@@ -220,6 +239,18 @@ export async function getPracticeSessionView(
         selected.answerSpec.type === "numeric" &&
         selected.answerSpec.unitRequired,
       selectionReason: selected.selectionReason,
+      tutor: selected.tutorGuidance
+        ? {
+            revealedSteps: revealedTutorSteps,
+            remainingSteps: Math.max(
+              0,
+              selected.tutorGuidance.steps.length - revealedTutorSteps.length,
+            ),
+            reflectionPrompt: selected.attemptId
+              ? selected.tutorGuidance.reflectionPrompt
+              : null,
+          }
+        : null,
       feedback,
     },
     positions: rows.map((row) => ({

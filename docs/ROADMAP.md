@@ -32,7 +32,8 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Show correctness, worked solution, per-choice rationales, and the underlying skill.
 - [x] Add exact-version learner problem reporting and append-only owner triage.
 - [x] Add deterministic, reviewer-authored misconception attribution without model guessing.
-- Add hint-first tutor contracts with answer-reveal controls and safety logging.
+- [x] Add server-controlled, reviewer-authored hint ladders with append-only request logging and post-answer reflection prompts.
+- [ ] Add a provider-neutral conversational tutor only after prompt-injection, answer-reveal, and retention controls are reviewed.
 
 **Exit:** a learner completes a reviewed multi-format practice session end to end and reports an issue.
 

@@ -16,10 +16,12 @@ import {
   validationRuns,
   validatorRules,
 } from "../src/db/schema";
-import type {
-  MathVerificationSpec,
-  MisconceptionRule,
-  QuestionContent,
+import {
+  tutorGuidanceSchema,
+  type MathVerificationSpec,
+  type MisconceptionRule,
+  type QuestionContent,
+  type TutorGuidance,
 } from "../src/lib/questions/contracts";
 import {
   REQUIRED_PUBLICATION_VALIDATORS,
@@ -68,6 +70,7 @@ type SeedQuestion = {
   calculatorPolicy: "ALLOWED" | "NOT_ALLOWED" | "NOT_NEEDED";
   misconceptions: string[];
   misconceptionRules?: MisconceptionRule[];
+  tutorGuidance?: TutorGuidance;
   content: QuestionContent;
   verificationSpec: MathVerificationSpec;
 };
@@ -103,6 +106,24 @@ const seedQuestions: SeedQuestion[] = [
         choiceId: "d",
       },
     ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "identify-structure",
+          kind: "SOCRATIC_QUESTION",
+          content:
+            "What operation represents several equal groups of the same size?",
+        },
+        {
+          id: "name-factors",
+          kind: "HINT",
+          content:
+            "Treat the number of cartons and notebooks per carton as the two factors, then multiply carefully by place value.",
+        },
+      ],
+      reflectionPrompt:
+        "How would your setup change if one more carton were added while the number of notebooks per carton stayed the same?",
+    },
     content: {
       questionType: "SINGLE_CHOICE",
       prompt:
@@ -358,6 +379,14 @@ async function main() {
           `Seed question ${candidate.slug} has invalid misconception rules: ${misconceptionIssues
             .map((issue) => issue.code)
             .join(", ")}`,
+        );
+      }
+      if (
+        candidate.tutorGuidance &&
+        !tutorGuidanceSchema.safeParse(candidate.tutorGuidance).success
+      ) {
+        throw new Error(
+          `Seed question ${candidate.slug} has invalid tutor guidance.`,
         );
       }
     }
@@ -619,6 +648,7 @@ async function main() {
             calculatorPolicy: candidate.calculatorPolicy,
             commonMisconceptions: candidate.misconceptions,
             misconceptionRules: candidate.misconceptionRules ?? [],
+            tutorGuidance: candidate.tutorGuidance,
             authoringMode: "GENERATED",
             generationRunId: `18000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
             provenanceSummary:

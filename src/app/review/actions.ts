@@ -24,6 +24,7 @@ import {
   mathVerificationSpecSchema,
   misconceptionCodesSchema,
   misconceptionRulesSchema,
+  tutorGuidanceSchema,
 } from "@/lib/questions/contracts";
 import {
   AUTOMATED_PUBLICATION_VALIDATORS,
@@ -76,8 +77,24 @@ export async function runDeterministicValidation(
     version.commonMisconceptions,
     version.misconceptionRules,
   );
+  const tutorGuidanceResult = version.tutorGuidance
+    ? tutorGuidanceSchema.safeParse(version.tutorGuidance)
+    : null;
+  const tutorGuidanceIssues =
+    tutorGuidanceResult?.success === false
+      ? [
+          {
+            code: "TUTOR_GUIDANCE_INVALID",
+            message: "Tutor guidance does not match the bounded hint contract.",
+            path: "tutorGuidance",
+            severity: "error" as const,
+          },
+        ]
+      : [];
   const answerContractValid =
-    contentResult.valid && misconceptionIssues.length === 0;
+    contentResult.valid &&
+    misconceptionIssues.length === 0 &&
+    tutorGuidanceIssues.length === 0;
   const mathResult = validateMathVerification(
     content,
     version.verificationSpec,
@@ -113,11 +130,16 @@ export async function runDeterministicValidation(
         ? null
         : (contentResult.issues[0]?.code ??
           misconceptionIssues[0]?.code ??
+          tutorGuidanceIssues[0]?.code ??
           "CONTENT_INVALID"),
       evidence: {
         method: "deterministic-answer-contract",
         executedBy: reviewer.id,
-        issues: [...contentResult.issues, ...misconceptionIssues],
+        issues: [
+          ...contentResult.issues,
+          ...misconceptionIssues,
+          ...tutorGuidanceIssues,
+        ],
       },
     },
     {
@@ -473,6 +495,7 @@ const revisionSchema = z.object({
   verificationSpecJson: z.string().min(2).max(30_000),
   commonMisconceptionsJson: z.string().min(2).max(10_000),
   misconceptionRulesJson: z.string().min(2).max(30_000),
+  tutorGuidanceJson: z.string().min(4).max(30_000),
   explanation: z.string().trim().min(1).max(20_000),
   distractorRationalesJson: z.string().min(2).max(30_000),
   difficulty: z.enum(["FOUNDATIONAL", "DEVELOPING", "PROFICIENT", "ADVANCED"]),
@@ -500,6 +523,7 @@ export async function createQuestionRevision(
   let verificationSpec: unknown;
   let commonMisconceptions: unknown;
   let misconceptionRules: unknown;
+  let tutorGuidance: unknown;
   try {
     choices = parsed.data.choicesJson.trim()
       ? JSON.parse(parsed.data.choicesJson)
@@ -508,6 +532,7 @@ export async function createQuestionRevision(
     verificationSpec = JSON.parse(parsed.data.verificationSpecJson);
     commonMisconceptions = JSON.parse(parsed.data.commonMisconceptionsJson);
     misconceptionRules = JSON.parse(parsed.data.misconceptionRulesJson);
+    tutorGuidance = JSON.parse(parsed.data.tutorGuidanceJson);
     distractorRationales = JSON.parse(parsed.data.distractorRationalesJson);
   } catch {
     return {
@@ -583,6 +608,17 @@ export async function createQuestionRevision(
   }
   const parsedMisconceptionRules =
     misconceptionRulesSchema.parse(misconceptionRules);
+  const parsedTutorGuidance = tutorGuidance
+    ? tutorGuidanceSchema.safeParse(tutorGuidance)
+    : { success: true as const, data: null };
+  if (!parsedTutorGuidance.success) {
+    return {
+      status: "error",
+      message:
+        parsedTutorGuidance.error.issues[0]?.message ??
+        "Tutor guidance is invalid.",
+    };
+  }
 
   const newVersionId = await database.transaction(async (transaction) => {
     await lockQuestionFamily(transaction, current.questionId);
@@ -614,6 +650,7 @@ export async function createQuestionRevision(
         calculatorPolicy: current.calculatorPolicy,
         commonMisconceptions: parsedMisconceptionCodes.data,
         misconceptionRules: parsedMisconceptionRules,
+        tutorGuidance: parsedTutorGuidance.data,
         authoringMode: "HUMAN",
         authorId: reviewer.id,
         provenanceSummary: `${current.provenanceSummary} Revised by the owner review workflow from version ${current.version}.`,

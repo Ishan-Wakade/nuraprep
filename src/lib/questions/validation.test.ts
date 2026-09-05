@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import type { MisconceptionRule, QuestionContent } from "./contracts";
+import {
+  tutorGuidanceSchema,
+  type MisconceptionRule,
+  type QuestionContent,
+} from "./contracts";
 import {
   attributeMisconceptions,
   evaluateAnswer,
@@ -254,6 +258,29 @@ describe("deterministic misconception attribution", () => {
         ]),
       ).toHaveLength(1);
     }
+  });
+});
+
+describe("tutorGuidanceSchema", () => {
+  it("requires bounded, uniquely identified Socratic steps", () => {
+    const guidance = {
+      steps: [
+        {
+          id: "structure",
+          kind: "SOCRATIC_QUESTION",
+          content: "What operation models equal groups?",
+        },
+      ],
+      reflectionPrompt: "What changes if one group is added?",
+    };
+
+    expect(tutorGuidanceSchema.safeParse(guidance).success).toBe(true);
+    expect(
+      tutorGuidanceSchema.safeParse({
+        ...guidance,
+        steps: [guidance.steps[0], guidance.steps[0]],
+      }).success,
+    ).toBe(false);
   });
 });
 

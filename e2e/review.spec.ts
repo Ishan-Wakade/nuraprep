@@ -63,7 +63,7 @@ test("records a decision and creates an immutable revision", async ({
   ).toBeVisible();
   await expect(page.getByText("CONTEXT_CLARITY").first()).toBeVisible();
   await expect(
-    page.getByText(/practical context should be more direct/i),
+    page.getByText(/practical context should be more direct/i).first(),
   ).toBeVisible();
 
   await page.goto(`/review/questions/${firstVersionId}`);
