@@ -45,3 +45,4 @@ Learner selection will join only the single current publication record. Drafts, 
 - Internal originality signals are intentionally conservative and uncalibrated. Human originality review remains required, and no external source text is retained merely to create a comparison corpus.
 - Reading-level and broader accessibility automation will supplement, not replace, reviewer evidence in a later validation milestone.
 - Seed candidates are development fixtures. They are not human-reviewed or production-approved.
+- The 12-case Math gold set spans every current leaf skill and executes in CI, but remains labeled `ENGINEERING_DRAFT` until independent owner or educator review.

@@ -81,5 +81,5 @@ Before an external adapter is enabled, it must prove that it:
 - licensed-storage ingestion with malware scanning and object-storage isolation;
 - calibration of the implemented internal exact, number-invariant, and phrase-overlap signals, plus any legally permitted external comparison corpus;
 - batch budgets, rate controls, cancellation, and operational metrics;
-- a hand-reviewed gold evaluation set and regression harness; and
+- independent owner/educator approval of the 12-case engineering-draft gold evaluation set; and
 - recurring-feedback proposals that create, but never auto-approve, new template or rubric versions.

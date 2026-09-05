@@ -20,7 +20,8 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Add safe deterministic math recipes, reviewer-attested evidence, and an explicit publication ledger.
 - [x] Add safe regeneration controls after the provider-neutral generation boundary exists.
 - [x] Add reviewer search over learner/reviewer feedback with recurring error summaries.
-- Hand-author a small gold evaluation set spanning the Math taxonomy.
+- [x] Hand-author an engineering-draft gold evaluation case for every current Math leaf skill and execute it against deterministic contracts.
+- [ ] Obtain independent owner/educator review before treating the engineering-draft gold set as benchmark truth.
 
 **Exit:** a reviewer can trace, validate, revise, compare, and approve a question; learner APIs cannot read drafts. Seed candidates are intentionally unapproved and remain blocked from publication until every validator and human-review requirement passes.
 
