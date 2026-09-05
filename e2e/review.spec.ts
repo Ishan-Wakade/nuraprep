@@ -47,6 +47,27 @@ test("records a decision and creates an immutable revision", async ({
     page.getByText("Review decision recorded as immutable history."),
   ).toBeVisible();
 
+  await page.getByLabel("Category").selectOption("AMBIGUITY");
+  await page.getByLabel(/Recurring issue code/).fill("CONTEXT_CLARITY");
+  await page
+    .getByLabel("Feedback")
+    .fill("The practical context should be more direct and easier to scan.");
+  await page.getByRole("button", { name: "Save feedback" }).click();
+  await expect(
+    page.getByText("Feedback saved for controlled batch analysis."),
+  ).toBeVisible();
+
+  await page.goto("/review/feedback?q=CONTEXT_CLARITY");
+  await expect(
+    page.getByRole("heading", { name: "Feedback patterns" }),
+  ).toBeVisible();
+  await expect(page.getByText("CONTEXT_CLARITY").first()).toBeVisible();
+  await expect(
+    page.getByText(/practical context should be more direct/i),
+  ).toBeVisible();
+
+  await page.goto(`/review/questions/${firstVersionId}`);
+
   await page
     .locator('textarea[name="prompt"]')
     .fill(
@@ -104,4 +125,11 @@ test("has no horizontal overflow on the mobile review queue", async ({
   }));
 
   expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
+
+  await page.goto("/review/feedback");
+  const feedbackDimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(feedbackDimensions.scrollWidth).toBe(feedbackDimensions.clientWidth);
 });

@@ -44,16 +44,16 @@ export default function ReviewLayout({ children }: { children: ReactNode }) {
           >
             <Link
               href="/review"
-              className="rounded-lg bg-[#116b65] px-4 py-3 text-sm font-semibold text-white"
+              className="rounded-lg border border-[#cad6d1] bg-white px-4 py-3 text-sm font-semibold text-[#116b65] hover:border-[#116b65]"
             >
               Question queue
             </Link>
-            <span
-              className="rounded-lg px-4 py-3 text-sm text-[#718083]"
-              aria-disabled="true"
+            <Link
+              href="/review/feedback"
+              className="rounded-lg border border-[#cad6d1] bg-white px-4 py-3 text-sm font-semibold text-[#116b65] hover:border-[#116b65]"
             >
-              Feedback patterns · soon
-            </span>
+              Feedback patterns
+            </Link>
           </nav>
           <div className="mt-7 hidden rounded-xl border border-[#d6ddd8] bg-white/60 p-4 text-xs leading-5 text-[#5f7376] md:block">
             Development access is intentionally unavailable when{" "}

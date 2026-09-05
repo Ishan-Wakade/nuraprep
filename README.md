@@ -13,16 +13,16 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 **Topic-practice phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, and a persisted topic-practice vertical slice with reviewer-authored misconception attribution, version-linked learner reports, and owner triage. The six seed candidates remain deliberately unapproved; browser tests publish a disposable gated fixture in the local/test database. There is no approved production question bank or validated score predictor yet.
 
-| Area                                        | Status                                            |
-| ------------------------------------------- | ------------------------------------------------- |
-| Public repository and engineering standards | Complete                                          |
-| Math taxonomy and question data model       | Implemented with migrations and seed data         |
-| Reviewer and provenance workflow            | Working local vertical slice; authentication next |
-| Topic practice                              | Working local vertical slice; tutor next          |
-| Diagnostic and adaptive mode                | Planned                                           |
-| Timed Math practice test                    | Planned                                           |
-| Score estimate and study plan               | Planned                                           |
-| Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works  |
+| Area                                        | Status                                                           |
+| ------------------------------------------- | ---------------------------------------------------------------- |
+| Public repository and engineering standards | Complete                                                         |
+| Math taxonomy and question data model       | Implemented with migrations and seed data                        |
+| Reviewer and provenance workflow            | Review, publication, reports, and pattern search working locally |
+| Topic practice                              | Working local vertical slice; tutor next                         |
+| Diagnostic and adaptive mode                | Planned                                                          |
+| Timed Math practice test                    | Planned                                                          |
+| Score estimate and study plan               | Planned                                                          |
+| Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works                 |
 
 ## Product preview
 
@@ -36,7 +36,7 @@ The interface shown is a product-direction preview. The example readiness state 
 
 ![NuraPrep answer feedback with a worked solution, deterministic misconception guidance, and distractor-specific explanations](public/screenshots/answer-feedback.png)
 
-These screens are backed by the local PostgreSQL practice flow. A learner can also report an answered item, and the owner can append an auditable triage decision against that exact question version and attempt. The displayed item is a disposable browser-test fixture that passed the development validation and publication workflow; it is not production-approved content.
+These screens are backed by the local PostgreSQL practice flow. A learner can also report an answered item, and the owner can append an auditable triage decision against that exact question version and attempt. The owner workspace searches learner and reviewer evidence together and summarizes recurring categories or stable issue codes without erasing source attribution. The displayed item is a disposable browser-test fixture that passed the development validation and publication workflow; it is not production-approved content.
 
 ## Product direction
 

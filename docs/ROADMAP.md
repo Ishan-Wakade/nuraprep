@@ -19,7 +19,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Build a local reviewer browse/filter/preview/version/feedback/decision flow.
 - [x] Add safe deterministic math recipes, reviewer-attested evidence, and an explicit publication ledger.
 - [ ] Add safe regeneration controls after the provider-neutral generation boundary exists.
-- [ ] Add reviewer search over submitted feedback and recurring error summaries.
+- [x] Add reviewer search over learner/reviewer feedback with recurring error summaries.
 - Hand-author a small gold evaluation set spanning the Math taxonomy.
 
 **Exit:** a reviewer can trace, validate, revise, compare, and approve a question; learner APIs cannot read drafts. Seed candidates are intentionally unapproved and remain blocked from publication until every validator and human-review requirement passes.

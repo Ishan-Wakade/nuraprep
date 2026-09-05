@@ -36,6 +36,13 @@ export type ReviewQueueFilters = {
   skillCode?: string;
 };
 
+export type FeedbackOverviewFilters = {
+  query?: string;
+  category?: (typeof reviewerFeedback.category.enumValues)[number];
+  status?: (typeof reviewerFeedback.status.enumValues)[number];
+  source?: "LEARNER" | "REVIEWER";
+};
+
 export async function getReviewQueue(filters: ReviewQueueFilters) {
   await connection();
   requireReviewer();
@@ -448,5 +455,159 @@ export async function getQuestionReviewDetail(versionId: string) {
       serializedPublications.find((item) => item.retiredAt === null) ?? null,
     publicationGate,
     publicationReadiness,
+  };
+}
+
+export async function getFeedbackOverview(filters: FeedbackOverviewFilters) {
+  await connection();
+  requireReviewer();
+  const database = getDatabase();
+
+  const [reviewerRows, learnerRows] = await Promise.all([
+    database
+      .select({
+        id: reviewerFeedback.id,
+        questionVersionId: reviewerFeedback.questionVersionId,
+        category: reviewerFeedback.category,
+        details: reviewerFeedback.feedback,
+        recurringIssueCode: reviewerFeedback.recurringIssueCode,
+        status: reviewerFeedback.status,
+        createdAt: reviewerFeedback.createdAt,
+        slug: questions.internalSlug,
+        prompt: questionVersions.prompt,
+        skillTitle: skills.title,
+      })
+      .from(reviewerFeedback)
+      .innerJoin(
+        questionVersions,
+        eq(questionVersions.id, reviewerFeedback.questionVersionId),
+      )
+      .innerJoin(questions, eq(questions.id, questionVersions.questionId))
+      .innerJoin(skills, eq(skills.id, questionVersions.primarySkillId))
+      .orderBy(desc(reviewerFeedback.createdAt))
+      .limit(200),
+    database
+      .select({
+        id: learnerQuestionReports.id,
+        questionVersionId: learnerQuestionReports.questionVersionId,
+        category: learnerQuestionReports.category,
+        details: learnerQuestionReports.details,
+        createdAt: learnerQuestionReports.createdAt,
+        slug: questions.internalSlug,
+        prompt: questionVersions.prompt,
+        skillTitle: skills.title,
+      })
+      .from(learnerQuestionReports)
+      .innerJoin(
+        questionVersions,
+        eq(questionVersions.id, learnerQuestionReports.questionVersionId),
+      )
+      .innerJoin(questions, eq(questions.id, questionVersions.questionId))
+      .innerJoin(skills, eq(skills.id, questionVersions.primarySkillId))
+      .orderBy(desc(learnerQuestionReports.createdAt))
+      .limit(200),
+  ]);
+
+  const learnerEvents = learnerRows.length
+    ? await database
+        .select({
+          reportId: learnerQuestionReportEvents.reportId,
+          status: learnerQuestionReportEvents.status,
+          createdAt: learnerQuestionReportEvents.createdAt,
+          id: learnerQuestionReportEvents.id,
+        })
+        .from(learnerQuestionReportEvents)
+        .where(
+          inArray(
+            learnerQuestionReportEvents.reportId,
+            learnerRows.map((row) => row.id),
+          ),
+        )
+        .orderBy(
+          desc(learnerQuestionReportEvents.createdAt),
+          desc(learnerQuestionReportEvents.id),
+        )
+    : [];
+  const latestLearnerStatus = new Map<
+    string,
+    (typeof learnerEvents)[number]["status"]
+  >();
+  for (const event of learnerEvents) {
+    if (!latestLearnerStatus.has(event.reportId)) {
+      latestLearnerStatus.set(event.reportId, event.status);
+    }
+  }
+
+  const allItems = [
+    ...reviewerRows.map((row) => ({ ...row, source: "REVIEWER" as const })),
+    ...learnerRows.map((row) => ({
+      ...row,
+      source: "LEARNER" as const,
+      status: latestLearnerStatus.get(row.id) ?? ("OPEN" as const),
+      recurringIssueCode: null,
+    })),
+  ].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime());
+
+  const normalizedQuery = filters.query?.toLocaleLowerCase("en-US");
+  const items = allItems.filter(
+    (item) =>
+      (!filters.source || item.source === filters.source) &&
+      (!filters.category || item.category === filters.category) &&
+      (!filters.status || item.status === filters.status) &&
+      (!normalizedQuery ||
+        [
+          item.details,
+          item.recurringIssueCode,
+          item.slug,
+          item.prompt,
+          item.skillTitle,
+        ].some((value) =>
+          value?.toLocaleLowerCase("en-US").includes(normalizedQuery),
+        )),
+  );
+
+  const patterns = new Map<
+    string,
+    {
+      key: string;
+      category: (typeof items)[number]["category"];
+      count: number;
+      openCount: number;
+      learnerCount: number;
+      reviewerCount: number;
+    }
+  >();
+  for (const item of items) {
+    const key = item.recurringIssueCode || item.category;
+    const pattern = patterns.get(key) ?? {
+      key,
+      category: item.category,
+      count: 0,
+      openCount: 0,
+      learnerCount: 0,
+      reviewerCount: 0,
+    };
+    pattern.count += 1;
+    if (item.status === "OPEN") pattern.openCount += 1;
+    if (item.source === "LEARNER") pattern.learnerCount += 1;
+    else pattern.reviewerCount += 1;
+    patterns.set(key, pattern);
+  }
+
+  return {
+    items: items.map((item) => ({
+      ...item,
+      createdAt: item.createdAt.toISOString(),
+    })),
+    patterns: [...patterns.values()].sort(
+      (left, right) =>
+        right.count - left.count || left.key.localeCompare(right.key),
+    ),
+    summary: {
+      total: items.length,
+      open: items.filter((item) => item.status === "OPEN").length,
+      learner: items.filter((item) => item.source === "LEARNER").length,
+      reviewer: items.filter((item) => item.source === "REVIEWER").length,
+    },
   };
 }

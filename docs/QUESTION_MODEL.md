@@ -92,6 +92,8 @@ Each validator result is immutable and records validator name/version, execution
 
 `ReviewerFeedback` stores free text plus categories such as mathematical error, ambiguity, alignment, distractor quality, explanation quality, accessibility, originality, difficulty, or formatting. A resolution links to the new template/rule/evaluation case or records why no change was made.
 
+The feedback-pattern view preserves learner-report and reviewer-feedback provenance while grouping repeated stable issue codes or categories. Its counts are operational review signals, not claims about question correctness until an owner investigates the underlying versions.
+
 Editing creates a new `QuestionVersion`. Approval never mutates an older version.
 
 `QuestionPublication` identifies the one current learner-eligible version in a question family and retains retired publication history. Approval alone does not publish content.
