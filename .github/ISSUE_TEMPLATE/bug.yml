@@ -1,0 +1,56 @@
+name: Bug report
+description: Report reproducible behavior that does not work as intended.
+title: "bug: "
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include secrets, personal learner data, or protected exam content. Report security issues through a private advisory.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Explain the behavior and its impact.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Go to ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and device
+      placeholder: Safari 19 on iPhone, Chrome 140 on macOS, etc.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Learner experience
+        - Reviewer experience
+        - Question validation
+        - Accessibility
+        - Documentation or setup
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed secrets, personal data, and protected exam content from this report.
+          required: true

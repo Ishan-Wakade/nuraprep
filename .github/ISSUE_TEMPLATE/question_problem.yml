@@ -1,0 +1,50 @@
+name: Question-quality report
+description: Report a mathematical, wording, explanation, accessibility, or provenance concern.
+title: "content: "
+labels: [content-quality, triage]
+body:
+  - type: markdown
+    attributes:
+      value: Do not paste an ATI or third-party question. Identify only the NuraPrep item and explain the concern in your own words.
+  - type: input
+    id: question
+    attributes:
+      label: NuraPrep question ID and version
+      placeholder: NUM.PCT.03 v2
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Concern category
+      options:
+        - Mathematical error
+        - Ambiguous prompt or answer
+        - Invalid or misleading distractor
+        - Explanation quality
+        - Difficulty or timing
+        - Topic alignment
+        - Accessibility or formatting
+        - Originality or provenance
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: concern
+    attributes:
+      label: What is the concern?
+      description: Explain the issue without including protected third-party content.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting calculation or evidence
+      description: Show your work or provide a public authoritative reference when useful.
+  - type: checkboxes
+    id: integrity
+    attributes:
+      label: Educational-integrity check
+      options:
+        - label: This report contains no copied, recalled, or protected ATI exam question.
+          required: true
