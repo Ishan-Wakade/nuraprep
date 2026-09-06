@@ -745,10 +745,7 @@ function getKeyedNumericValue(content: QuestionContent) {
   );
   if (!keyedChoice) return undefined;
 
-  const leadingNumber = keyedChoice.content.match(
-    /^[\s]*([+-]?(?:(?:\d+\s+)?\d+\/\d+|(?:\d+\.?\d*|\.\d+)))/,
-  )?.[1];
-  return leadingNumber ? parseNumericInput(leadingNumber) : undefined;
+  return parseSimpleNumericChoice(keyedChoice.content)?.value;
 }
 
 function evaluateRpn(expression: RpnExpression) {

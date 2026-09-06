@@ -347,9 +347,484 @@ const seedQuestions: SeedQuestion[] = [
       tolerance: 0,
     },
   },
+  {
+    questionId: "13000000-0000-4000-8000-000000000007",
+    versionId: "14000000-0000-4000-8000-000000000007",
+    slug: "metric-volume-conversion-001",
+    primarySkillId: ids.conversions,
+    learningObjective: "Convert liters to milliliters.",
+    difficulty: "FOUNDATIONAL",
+    difficultyRationale:
+      "Requires one direct metric conversion using a stated base relationship.",
+    estimatedSeconds: 55,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["DIVIDES_WHEN_CONVERTING_TO_SMALLER_UNITS"],
+    misconceptionRules: [
+      {
+        id: "divides-liters-by-thousand",
+        code: "DIVIDES_WHEN_CONVERTING_TO_SMALLER_UNITS",
+        learnerMessage:
+          "You may have divided by 1,000. A liter contains many milliliters, so converting liters to the smaller unit makes the number larger.",
+        kind: "selected_choice",
+        choiceId: "a",
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "recall-liter-relationship",
+          kind: "SOCRATIC_QUESTION",
+          content: "How many milliliters are in 1 liter?",
+        },
+        {
+          id: "scale-by-thousand",
+          kind: "HINT",
+          content:
+            "Because milliliters are smaller units, multiply the number of liters by 1,000.",
+        },
+      ],
+      reflectionPrompt:
+        "Why should the numerical value increase when the same volume is expressed in milliliters?",
+    },
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt:
+        "A dispenser contains 2.35 liters of cleaning solution. How many milliliters of solution does it contain?",
+      choices: [
+        { id: "a", content: "0.00235 mL" },
+        { id: "b", content: "235 mL" },
+        { id: "c", content: "2,350 mL" },
+        { id: "d", content: "23,500 mL" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "c" },
+      explanation:
+        "One liter equals 1,000 milliliters, so 2.35 × 1,000 = 2,350 milliliters.",
+      distractorRationales: {
+        a: "This divides by 1,000 instead of multiplying by 1,000.",
+        b: "This moves the decimal only two places rather than three.",
+        d: "This multiplies by 10,000 rather than 1,000.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [2.35, 1_000, "multiply"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000008",
+    versionId: "14000000-0000-4000-8000-000000000008",
+    slug: "evaluate-linear-expression-001",
+    primarySkillId: ids.algebraicExpressions,
+    learningObjective:
+      "Evaluate a linear algebraic expression for a given variable value.",
+    difficulty: "FOUNDATIONAL",
+    difficultyRationale:
+      "Requires substitution followed by multiplication and addition.",
+    estimatedSeconds: 55,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["ADDS_BEFORE_MULTIPLYING", "OMITS_CONSTANT_TERM"],
+    misconceptionRules: [
+      {
+        id: "adds-n-and-constant-first",
+        code: "ADDS_BEFORE_MULTIPLYING",
+        learnerMessage:
+          "You may have added 7 and 8 before multiplying. After substituting, multiplication comes before addition.",
+        kind: "selected_choice",
+        choiceId: "d",
+      },
+      {
+        id: "omits-expression-constant",
+        code: "OMITS_CONSTANT_TERM",
+        learnerMessage:
+          "You found the product but may have stopped before adding the constant term.",
+        kind: "selected_choice",
+        choiceId: "b",
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "substitute-variable",
+          kind: "SOCRATIC_QUESTION",
+          content: "What expression results when 7 replaces n?",
+        },
+        {
+          id: "apply-operation-order",
+          kind: "HINT",
+          content: "Complete the multiplication before adding 8.",
+        },
+      ],
+      reflectionPrompt:
+        "Which part of the expression changes when the value of n changes?",
+    },
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt: "What is the value of 3n + 8 when n = 7?",
+      choices: [
+        { id: "a", content: "18" },
+        { id: "b", content: "21" },
+        { id: "c", content: "29" },
+        { id: "d", content: "45" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "c" },
+      explanation:
+        "Substitute 7 for n, then follow the order of operations: 3(7) + 8 = 21 + 8 = 29.",
+      distractorRationales: {
+        a: "This does not correctly evaluate both terms after substitution.",
+        b: "This calculates 3 × 7 but omits the added 8.",
+        d: "This adds 7 and 8 before multiplying by 3.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [3, 7, "multiply", 8, "add"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000009",
+    versionId: "14000000-0000-4000-8000-000000000009",
+    slug: "solve-two-step-equation-001",
+    primarySkillId: ids.linearEquations,
+    learningObjective: "Solve a two-step linear equation in one variable.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires reversing two operations while preserving equality.",
+    estimatedSeconds: 70,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["REVERSES_OPERATIONS_IN_WRONG_ORDER"],
+    misconceptionRules: [
+      {
+        id: "divides-before-removing-constant",
+        code: "REVERSES_OPERATIONS_IN_WRONG_ORDER",
+        learnerMessage:
+          "You may have divided before removing the added constant. Undo the +7 first, then undo multiplication by 5.",
+        kind: "numeric_value",
+        value: 1.4,
+        tolerance: 0,
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "isolate-variable-term",
+          kind: "SOCRATIC_QUESTION",
+          content: "What operation will remove 7 from the left side?",
+        },
+        {
+          id: "undo-coefficient",
+          kind: "HINT",
+          content:
+            "After subtracting 7 from both sides, divide both sides by the coefficient of x.",
+        },
+      ],
+      reflectionPrompt:
+        "How can substituting your result back into the original equation verify it?",
+    },
+    content: {
+      questionType: "NUMERIC",
+      prompt: "Solve 5x + 7 = 42 for x.",
+      answerSpec: {
+        type: "numeric",
+        value: 7,
+        tolerance: 0,
+        toleranceMode: "absolute",
+        acceptedUnits: [],
+        unitRequired: false,
+      },
+      explanation:
+        "Subtract 7 from both sides to get 5x = 35. Divide both sides by 5, so x = 7.",
+      distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [42, 7, "subtract", 5, "divide"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000010",
+    versionId: "14000000-0000-4000-8000-000000000010",
+    slug: "test-linear-inequality-value-001",
+    primarySkillId: ids.inequalities,
+    learningObjective: "Determine which value satisfies a linear inequality.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires evaluating the inequality for candidate values and interpreting a strict comparison.",
+    estimatedSeconds: 75,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["TREATS_STRICT_INEQUALITY_AS_EQUALITY"],
+    misconceptionRules: [
+      {
+        id: "selects-equality-boundary",
+        code: "TREATS_STRICT_INEQUALITY_AS_EQUALITY",
+        learnerMessage:
+          "You selected the boundary value, but the symbol < excludes values that make the two sides equal.",
+        kind: "selected_choice",
+        choiceId: "b",
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "find-boundary-value",
+          kind: "SOCRATIC_QUESTION",
+          content: "What value of x makes 3x + 2 exactly equal to 17?",
+        },
+        {
+          id: "interpret-strict-symbol",
+          kind: "HINT",
+          content:
+            "The expression must be less than 17, so test a choice below the equality boundary.",
+        },
+      ],
+      reflectionPrompt:
+        "How would the set of valid values change if the symbol were less than or equal to?",
+    },
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt: "Which value of x makes 3x + 2 < 17 true?",
+      choices: [
+        { id: "a", content: "4" },
+        { id: "b", content: "5" },
+        { id: "c", content: "6" },
+        { id: "d", content: "7" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "a" },
+      explanation:
+        "Substitute each value. When x = 4, 3(4) + 2 = 14, and 14 < 17. The other choices produce 17 or more.",
+      distractorRationales: {
+        b: "This gives 3(5) + 2 = 17, but 17 is not less than 17.",
+        c: "This gives 20, which is greater than 17.",
+        d: "This gives 23, which is greater than 17.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [4],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000011",
+    versionId: "14000000-0000-4000-8000-000000000011",
+    slug: "constant-rate-distance-001",
+    primarySkillId: ids.wordProblems,
+    learningObjective:
+      "Solve a multistep constant-rate word problem using a unit rate.",
+    difficulty: "PROFICIENT",
+    difficultyRationale:
+      "Requires identifying a constant rate, finding a unit rate, and applying it to a new quantity.",
+    estimatedSeconds: 95,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["ADDS_QUANTITIES_INSTEAD_OF_SCALING"],
+    misconceptionRules: [
+      {
+        id: "adds-extra-gallons-to-distance",
+        code: "ADDS_QUANTITIES_INSTEAD_OF_SCALING",
+        learnerMessage:
+          "You may have added the change in gallons to the distance. Find miles per gallon first, then scale that rate to 9 gallons.",
+        kind: "selected_choice",
+        choiceId: "a",
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "find-unit-rate",
+          kind: "SOCRATIC_QUESTION",
+          content: "How many miles does the shuttle travel per gallon?",
+        },
+        {
+          id: "scale-rate",
+          kind: "HINT",
+          content: "Multiply the miles-per-gallon rate by 9 gallons.",
+        },
+      ],
+      reflectionPrompt:
+        "What assumption about the shuttle's fuel use allows the unit rate to be reused?",
+    },
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt:
+        "A shuttle travels 156 miles using 6 gallons of fuel. At the same rate, how far will it travel using 9 gallons?",
+      choices: [
+        { id: "a", content: "159 miles" },
+        { id: "b", content: "208 miles" },
+        { id: "c", content: "234 miles" },
+        { id: "d", content: "1,404 miles" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "c" },
+      explanation:
+        "First find the unit rate: 156 ÷ 6 = 26 miles per gallon. Then multiply: 26 × 9 = 234 miles.",
+      distractorRationales: {
+        a: "This adds the 3 extra gallons to 156 miles instead of using a constant rate.",
+        b: "This does not scale the 6-gallon distance by the factor 9/6.",
+        d: "This multiplies 156 directly by 9 without first finding the per-gallon rate.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [156, 6, "divide", 9, "multiply"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000012",
+    versionId: "14000000-0000-4000-8000-000000000012",
+    slug: "rectangle-area-decimals-001",
+    primarySkillId: ids.measurement,
+    learningObjective: "Calculate rectangular area from decimal measurements.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires selecting the area relationship, multiplying decimals, and retaining square units.",
+    estimatedSeconds: 75,
+    calculatorPolicy: "ALLOWED",
+    misconceptions: ["ADDS_DIMENSIONS_FOR_AREA", "OMITS_SQUARE_UNITS"],
+    misconceptionRules: [
+      {
+        id: "adds-length-and-width",
+        code: "ADDS_DIMENSIONS_FOR_AREA",
+        learnerMessage:
+          "You may have added the dimensions. Area measures the rectangular surface, so multiply length by width.",
+        kind: "selected_choice",
+        choiceId: "c",
+      },
+      {
+        id: "reports-linear-unit",
+        code: "OMITS_SQUARE_UNITS",
+        learnerMessage:
+          "Your numerical result is correct, but area must be expressed in square units.",
+        kind: "selected_choice",
+        choiceId: "b",
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "choose-area-operation",
+          kind: "SOCRATIC_QUESTION",
+          content: "Which operation combines length and width to find area?",
+        },
+        {
+          id: "track-area-units",
+          kind: "HINT",
+          content:
+            "Multiply 1.8 by 0.75, then label the result in square meters because two lengths were multiplied.",
+        },
+      ],
+      reflectionPrompt:
+        "Why are square meters appropriate for area instead of meters?",
+    },
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt:
+        "The rectangular base of a storage bin is 1.8 meters long and 0.75 meter wide. What is the area of the base?",
+      choices: [
+        { id: "a", content: "0.135 square meter" },
+        { id: "b", content: "1.35 meters" },
+        { id: "c", content: "2.55 square meters" },
+        { id: "d", content: "1.35 square meters" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "d" },
+      explanation:
+        "Area equals length times width: 1.8 × 0.75 = 1.35. Because area covers a surface, the unit is square meters.",
+      distractorRationales: {
+        a: "This places the decimal one position too far left in the product.",
+        b: "The numerical product is correct, but meters are linear units rather than area units.",
+        c: "This adds the dimensions instead of multiplying them.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [1.8, 0.75, "multiply"],
+      tolerance: 1e-12,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000013",
+    versionId: "14000000-0000-4000-8000-000000000013",
+    slug: "simple-event-probability-001",
+    primarySkillId: ids.probabilityStatistics,
+    learningObjective:
+      "Calculate the probability of a simple event from equally likely outcomes.",
+    difficulty: "FOUNDATIONAL",
+    difficultyRationale:
+      "Requires identifying favorable and total outcomes and writing their ratio as a decimal.",
+    estimatedSeconds: 65,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["USES_NONFAVORABLE_OUTCOMES_AS_NUMERATOR"],
+    misconceptionRules: [
+      {
+        id: "uses-nongreen-count",
+        code: "USES_NONFAVORABLE_OUTCOMES_AS_NUMERATOR",
+        learnerMessage:
+          "You may have counted outcomes that are not green. The numerator should count only the favorable green outcomes.",
+        kind: "numeric_value",
+        value: 0.7,
+        tolerance: 0,
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "count-total-items",
+          kind: "SOCRATIC_QUESTION",
+          content: "How many tokens are in the bag altogether?",
+        },
+        {
+          id: "form-favorable-ratio",
+          kind: "HINT",
+          content:
+            "Place the number of green tokens over the total number of tokens, then convert the fraction to a decimal.",
+        },
+      ],
+      reflectionPrompt:
+        "How can you use the probability of not selecting green to check your answer?",
+    },
+    content: {
+      questionType: "NUMERIC",
+      prompt:
+        "A bag contains 5 blue tokens, 3 green tokens, and 2 yellow tokens. If one token is selected at random, what is the probability of selecting a green token? Enter the answer as a decimal.",
+      answerSpec: {
+        type: "numeric",
+        value: 0.3,
+        tolerance: 0,
+        toleranceMode: "absolute",
+        acceptedUnits: [],
+        unitRequired: false,
+      },
+      explanation:
+        "There are 5 + 3 + 2 = 10 tokens, and 3 are green. The probability is 3/10 = 0.3.",
+      distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [3, 10, "divide"],
+      tolerance: 1e-12,
+    },
+  },
 ];
 
+const requiredLeafSkillIds = [
+  ids.arithmetic,
+  ids.fractionsDecimalsPercent,
+  ids.ratiosProportions,
+  ids.conversions,
+  ids.algebraicExpressions,
+  ids.linearEquations,
+  ids.inequalities,
+  ids.wordProblems,
+  ids.measurement,
+  ids.geometry,
+  ids.dataInterpretation,
+  ids.probabilityStatistics,
+] as const;
+
 async function main() {
+  assertSeedDatasetIntegrity();
+
   const pool = new Pool({ connectionString: databaseUrl });
   const database = drizzle({ client: pool });
 
@@ -860,6 +1335,30 @@ async function main() {
     });
   } finally {
     await pool.end();
+  }
+}
+
+function assertSeedDatasetIntegrity() {
+  for (const [field, values] of [
+    ["question IDs", seedQuestions.map((candidate) => candidate.questionId)],
+    ["version IDs", seedQuestions.map((candidate) => candidate.versionId)],
+    ["slugs", seedQuestions.map((candidate) => candidate.slug)],
+  ] as const) {
+    if (new Set(values).size !== values.length) {
+      throw new Error(`Seed questions contain duplicate ${field}.`);
+    }
+  }
+
+  const coveredSkillIds = new Set(
+    seedQuestions.map((candidate) => candidate.primarySkillId),
+  );
+  const missingSkillIds = requiredLeafSkillIds.filter(
+    (skillId) => !coveredSkillIds.has(skillId),
+  );
+  if (missingSkillIds.length > 0) {
+    throw new Error(
+      `Seed questions do not cover Math leaf skills: ${missingSkillIds.join(", ")}.`,
+    );
   }
 }
 

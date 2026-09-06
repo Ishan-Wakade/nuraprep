@@ -402,6 +402,29 @@ describe("validateMathVerification", () => {
     ).toMatchObject({ valid: true });
   });
 
+  it("accepts a correctly grouped keyed value with a unit", () => {
+    const content: QuestionContent = {
+      ...validSingleChoiceQuestion,
+      choices: [
+        { id: "a", content: "235 mL" },
+        { id: "b", content: "2,350 mL" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "b" },
+      distractorRationales: { a: "This is smaller by a factor of ten." },
+    };
+
+    expect(
+      validateMathVerification(content, {
+        kind: "numeric_result",
+        expression: [2.35, 1_000, "multiply"],
+        tolerance: 0,
+      }),
+    ).toMatchObject({
+      valid: true,
+      evidence: { computedValue: 2350, keyedValue: 2350 },
+    });
+  });
+
   it("derives every equivalent-ratio choice rather than trusting the key", () => {
     const content: QuestionContent = {
       questionType: "MULTIPLE_SELECT",
