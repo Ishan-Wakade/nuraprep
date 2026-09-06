@@ -97,7 +97,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 ## 7. Authentication and account lifecycle
 
-- Threat-model Google OAuth and session handling.
+- [x] Threat-model Google OAuth, database sessions, authorization, account linking, export, and deletion before implementation.
 - Add sign-in, logout, role enforcement, progress persistence, export, and deletion.
 - Add CSRF/state/nonce protections, secure cookies, session rotation, audit events, and abuse controls.
 
