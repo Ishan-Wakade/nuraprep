@@ -286,6 +286,43 @@ test("approves a template and deduplicates regeneration requests", async ({
   ).toBeVisible();
 });
 
+test("cancels only a pending generation request with reviewer evidence", async ({
+  page,
+}) => {
+  const uniqueInstruction = `E2E cancellation candidate ${Date.now()}: change the context while preserving the multiplication skill.`;
+  const cancellationReason = `The reviewer intentionally cancels this E2E-only request before any provider dispatch. Audit nonce ${Date.now()}.`;
+  await page.goto(`/review/questions/${firstVersionId}`);
+  await page.getByLabel("Reviewer instruction").fill(uniqueInstruction);
+  await page.getByLabel("Regeneration scope").selectOption("FULL_REVISION");
+  await page.getByLabel(/Maximum provider cost/).fill("1000");
+  await page
+    .getByLabel(/I confirm this instruction contains no third-party/)
+    .check();
+  await page
+    .getByRole("button", { name: "Queue regeneration request" })
+    .click();
+  await expect(page.getByText("Generation request queued.")).toBeVisible();
+
+  await page.goto("/review/generation");
+  const pendingRow = page
+    .locator("tbody tr")
+    .filter({ hasText: "whole-number-groups-001" })
+    .filter({ hasText: "PENDING" })
+    .first();
+  await pendingRow.getByText("Cancel request").click();
+  await pendingRow.getByLabel("Cancellation reason").fill(cancellationReason);
+  await pendingRow
+    .getByRole("button", { name: "Confirm cancellation" })
+    .click();
+  const cancelledRow = page
+    .locator("tbody tr")
+    .filter({ hasText: cancellationReason });
+  await expect(
+    cancelledRow.getByRole("cell", { name: "CANCELLED", exact: true }),
+  ).toBeVisible();
+  await expect(cancelledRow.getByText(cancellationReason)).toBeVisible();
+});
+
 test("has no horizontal overflow on the mobile review queue", async ({
   page,
 }) => {
@@ -312,4 +349,13 @@ test("has no horizontal overflow on the mobile review queue", async ({
     scrollWidth: document.documentElement.scrollWidth,
   }));
   expect(sourceDimensions.scrollWidth).toBe(sourceDimensions.clientWidth);
+
+  await page.goto("/review/generation");
+  const generationDimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(generationDimensions.scrollWidth).toBe(
+    generationDimensions.clientWidth,
+  );
 });

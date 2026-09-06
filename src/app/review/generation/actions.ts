@@ -27,6 +27,11 @@ const templateApprovalSchema = z.object({
   approvalNotes: z.string().trim().min(20).max(5_000),
 });
 
+const generationCancellationSchema = z.object({
+  runId: z.uuid(),
+  reason: z.string().trim().min(20).max(2_000),
+});
+
 export async function approveGenerationTemplate(
   _previous: GenerationActionState,
   formData: FormData,
@@ -182,4 +187,49 @@ export async function requestQuestionRegeneration(
         status: "success",
         message: "An identical generation request is already queued.",
       };
+}
+
+export async function cancelPendingGenerationRun(
+  _previous: GenerationActionState,
+  formData: FormData,
+): Promise<GenerationActionState> {
+  const reviewer = requireReviewer();
+  const parsed = generationCancellationSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: parsed.error.issues[0]?.message ?? "Invalid cancellation.",
+    };
+  }
+
+  const [cancelled] = await getDatabase()
+    .update(generationRuns)
+    .set({
+      status: "CANCELLED",
+      cancelledBy: reviewer.id,
+      cancellationReason: parsed.data.reason,
+      completedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(generationRuns.id, parsed.data.runId),
+        eq(generationRuns.status, "PENDING"),
+      ),
+    )
+    .returning({ id: generationRuns.id });
+
+  if (!cancelled) {
+    return {
+      status: "error",
+      message: "Only a request that is still pending can be cancelled.",
+    };
+  }
+
+  revalidatePath("/review/generation");
+  return {
+    status: "success",
+    message: "Pending request cancelled with reviewer evidence.",
+  };
 }

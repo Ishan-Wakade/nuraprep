@@ -392,6 +392,8 @@ export async function getQuestionReviewDetail(versionId: string) {
         model: generationRuns.model,
         maxCostMicros: generationRuns.maxCostMicros,
         failureCode: generationRuns.failureCode,
+        cancelledBy: generationRuns.cancelledBy,
+        cancellationReason: generationRuns.cancellationReason,
         startedAt: generationRuns.startedAt,
         completedAt: generationRuns.completedAt,
       })

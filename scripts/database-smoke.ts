@@ -129,6 +129,7 @@ async function main() {
     const generationClaimToken = randomUUID();
     const exhaustedGenerationRunId = randomUUID();
     const exhaustedGenerationClaimToken = randomUUID();
+    const cancelledGenerationRunId = randomUUID();
     const generatedVersionId = randomUUID();
     await client.query(
       `INSERT INTO generation_templates
@@ -361,6 +362,33 @@ async function main() {
         MAX_GENERATION_ATTEMPTS,
       ],
     );
+    await client.query("SAVEPOINT running_generation_cancel_check");
+    let runningCancellationWasBlocked = false;
+    try {
+      await client.query(
+        `UPDATE generation_runs
+         SET status = 'CANCELLED', cancelled_by = 'ci-smoke-test',
+             cancellation_reason = $2, completed_at = now()
+         WHERE id = $1`,
+        [
+          exhaustedGenerationRunId,
+          "A running request must be fenced by its lease instead of reviewer cancellation.",
+        ],
+      );
+    } catch (error) {
+      runningCancellationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query(
+        "ROLLBACK TO SAVEPOINT running_generation_cancel_check",
+      );
+    }
+    if (!runningCancellationWasBlocked) {
+      throw new Error("A running generation request accepted cancellation.");
+    }
     const expiredHeartbeat = await client.query(
       `UPDATE generation_runs
        SET lease_expires_at = now() + interval '5 minutes',
@@ -408,6 +436,77 @@ async function main() {
       throw new Error(
         "An expired generation run did not preserve attribution when exhausting retries.",
       );
+    }
+
+    await client.query(
+      `INSERT INTO generation_runs
+       (id, idempotency_key, template_id, source_question_version_id,
+        request_kind, requested_by, provider, model, prompt_hash, parameters,
+        request_payload, status, max_cost_micros)
+       VALUES ($1, $2, $3, $4, 'EXPLANATION_ONLY', 'ci-smoke-test',
+               'UNCONFIGURED', 'not-dispatched', $5, $6::jsonb, $7::jsonb,
+               'PENDING', 1000)`,
+      [
+        cancelledGenerationRunId,
+        `ci-generation-cancelled-${cancelledGenerationRunId}`,
+        generationTemplateId,
+        versionId,
+        "ci-cancelled-prompt-hash",
+        JSON.stringify({ sourceQuestionTextProvided: false }),
+        JSON.stringify({ sourceQuestionTextProvided: false }),
+      ],
+    );
+    await client.query("SAVEPOINT cancellation_evidence_check");
+    let missingCancellationEvidenceWasBlocked = false;
+    try {
+      await client.query(
+        `UPDATE generation_runs
+         SET status = 'CANCELLED', completed_at = now()
+         WHERE id = $1`,
+        [cancelledGenerationRunId],
+      );
+    } catch (error) {
+      missingCancellationEvidenceWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23514";
+    } finally {
+      await client.query("ROLLBACK TO SAVEPOINT cancellation_evidence_check");
+    }
+    if (!missingCancellationEvidenceWasBlocked) {
+      throw new Error("A generation request was cancelled without evidence.");
+    }
+    await client.query(
+      `UPDATE generation_runs
+       SET status = 'CANCELLED', cancelled_by = 'ci-smoke-test',
+           cancellation_reason = $2, completed_at = now()
+       WHERE id = $1`,
+      [
+        cancelledGenerationRunId,
+        "The queued smoke-test request is intentionally cancelled to verify immutable audit evidence.",
+      ],
+    );
+    await client.query("SAVEPOINT cancellation_history_check");
+    let cancellationMutationWasBlocked = false;
+    try {
+      await client.query(
+        `UPDATE generation_runs
+         SET cancellation_reason = 'This terminal reason must not change after cancellation.'
+         WHERE id = $1`,
+        [cancelledGenerationRunId],
+      );
+    } catch (error) {
+      cancellationMutationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query("ROLLBACK TO SAVEPOINT cancellation_history_check");
+    }
+    if (!cancellationMutationWasBlocked) {
+      throw new Error("Cancellation audit evidence remained mutable.");
     }
 
     const publicationId = randomUUID();

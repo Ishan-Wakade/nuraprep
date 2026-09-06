@@ -432,6 +432,8 @@ export const generationRuns = pgTable(
     estimatedCostMicros: integer("estimated_cost_micros"),
     providerRequestId: varchar("provider_request_id", { length: 240 }),
     failureCode: varchar("failure_code", { length: 120 }),
+    cancelledBy: varchar("cancelled_by", { length: 160 }),
+    cancellationReason: text("cancellation_reason"),
     startedAt: timestamp("started_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -463,6 +465,10 @@ export const generationRuns = pgTable(
     check(
       "generation_run_usage_check",
       sql`(${table.inputTokens} IS NULL OR ${table.inputTokens} >= 0) AND (${table.outputTokens} IS NULL OR ${table.outputTokens} >= 0)`,
+    ),
+    check(
+      "generation_run_cancellation_check",
+      sql`(${table.status} = 'CANCELLED' AND ${table.cancelledBy} IS NOT NULL AND length(trim(${table.cancellationReason})) >= 20 AND ${table.failureCode} IS NULL) OR (${table.status} <> 'CANCELLED' AND ${table.cancelledBy} IS NULL AND ${table.cancellationReason} IS NULL)`,
     ),
     check(
       "generation_run_lease_check",

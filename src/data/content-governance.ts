@@ -112,6 +112,8 @@ export async function getGenerationConsole() {
         startedAt: generationRuns.startedAt,
         completedAt: generationRuns.completedAt,
         failureCode: generationRuns.failureCode,
+        cancelledBy: generationRuns.cancelledBy,
+        cancellationReason: generationRuns.cancellationReason,
       })
       .from(generationRuns)
       .innerJoin(

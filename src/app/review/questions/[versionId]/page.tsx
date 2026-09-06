@@ -223,6 +223,11 @@ export default async function QuestionReviewPage({
                     <strong>{label(run.status)}</strong> ·{" "}
                     {label(run.requestKind)} · {run.provider}/{run.model} ·
                     ceiling ${(run.maxCostMicros / 1_000_000).toFixed(4)}
+                    {run.cancellationReason && (
+                      <span className="mt-1 block text-red-700">
+                        Cancelled by {run.cancelledBy}: {run.cancellationReason}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ol>

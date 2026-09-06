@@ -2,7 +2,10 @@ import Link from "next/link";
 
 import { getGenerationConsole } from "@/data/content-governance";
 
-import { TemplateApprovalForm } from "./generation-forms";
+import {
+  GenerationCancellationForm,
+  TemplateApprovalForm,
+} from "./generation-forms";
 
 export default async function GenerationConsolePage() {
   const consoleData = await getGenerationConsole();
@@ -69,6 +72,7 @@ export default async function GenerationConsolePage() {
                   "Worker lease",
                   "Cost ceiling",
                   "Requested",
+                  "Action / audit",
                 ].map((heading) => (
                   <th key={heading} className="px-4 py-3 font-bold">
                     {heading}
@@ -79,7 +83,14 @@ export default async function GenerationConsolePage() {
             <tbody>
               {consoleData.runs.map((run) => (
                 <tr key={run.id} className="border-t border-[#e0e5e1]">
-                  <td className="px-4 py-3 font-bold">{run.status}</td>
+                  <td className="px-4 py-3 font-bold">
+                    {run.status}
+                    {run.failureCode && (
+                      <span className="mt-1 block font-normal text-red-700">
+                        {run.failureCode.replaceAll("_", " ")}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     {run.requestKind.replaceAll("_", " ")}
                   </td>
@@ -116,6 +127,17 @@ export default async function GenerationConsolePage() {
                     ${(run.maxCostMicros / 1_000_000).toFixed(4)}
                   </td>
                   <td className="px-4 py-3">{run.startedAt}</td>
+                  <td className="px-4 py-3 align-top">
+                    {run.status === "PENDING" ? (
+                      <GenerationCancellationForm runId={run.id} />
+                    ) : run.status === "CANCELLED" ? (
+                      <p className="max-w-64 leading-5 text-[#52676a]">
+                        Cancelled by {run.cancelledBy}: {run.cancellationReason}
+                      </p>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

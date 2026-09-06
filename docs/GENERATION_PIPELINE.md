@@ -68,6 +68,8 @@ Only a current, unexpired claim token may load, heartbeat, complete, or fail a r
 
 A run receives at most three execution attempts: the initial claim and up to two reclaims after lease expiry. Before claiming work, the repository sweeps up to 100 expired runs that have exhausted this cap into an immutable `LEASE_ATTEMPTS_EXHAUSTED` failure while preserving the last worker and claim attribution. The production queue host must also invoke the exported sweep on its schedule so exhaustion does not depend only on new claim traffic.
 
+A reviewer may cancel only a still-pending request. Cancellation requires a 20–2,000 character reason and stores the authenticated reviewer identity; the database rejects missing evidence, cancellation after a worker claim, and any later mutation of the terminal audit record.
+
 Batch accounting reserves each claimed job's full cost ceiling rather than optimistic estimated spend. `maxJobs` is bounded to 100, the batch budget is bounded to the corresponding 500,000,000-micro ceiling, and the runner stops when no eligible job fits the remaining budget. Actual provider usage is still recorded per run. This is a safety budget, not billing or a claim of provider-price accuracy.
 
 Explanation-only regeneration may change only the explanation. Distractor-only regeneration is limited to choice items, preserves the correct answer and its content, and may change only distractor choices and their rationales. Any hidden change fails the worker before persistence.
@@ -89,6 +91,6 @@ Before an external adapter is enabled, it must prove that it:
 - a configured provider adapter and queue runner;
 - licensed-storage ingestion with malware scanning and object-storage isolation;
 - calibration of the implemented internal exact, number-invariant, and phrase-overlap signals, plus any legally permitted external comparison corpus;
-- a production exhaustion-sweep schedule, wall-clock rate controls, cancellation, and operational metrics;
+- a production exhaustion-sweep schedule, wall-clock rate controls, and operational metrics;
 - independent owner/educator approval of the 12-case engineering-draft gold evaluation set; and
 - implementation of approved feedback proposals as separately reviewed template, validator, rubric, policy, or evaluation-case versions. The proposal and approval ledger exists, but deliberately performs no automatic mutation.
