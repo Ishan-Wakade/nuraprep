@@ -120,6 +120,15 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 **Exit:** staging passes security, backup/restore, observability, accessibility, and cost reviews before any production approval.
 
+## 10. Final engineering handoff
+
+- Produce an exhaustive, plain-language engineering walkthrough of the completed system.
+- Explain every major product, architecture, data-model, security, educational-quality, testing, infrastructure, and operational decision, including alternatives and tradeoffs.
+- Document the implementation sequence and exact local reproduction path so another engineer can rebuild the system from first principles.
+- Convert the work into truthful behavioral-interview stories covering ownership, ambiguity, technical judgment, setbacks, quality, security, and measurable outcomes without inventing metrics.
+
+**Exit:** the repository and final handoff allow the owner to explain, operate, extend, and recreate NuraPrep without relying on undocumented implementation knowledge.
+
 ## Later sections
 
 Reading, Science, and English/Language Usage use the same versioned specification, taxonomy, content, validation, review, practice, and analytics contracts. Section-specific renderers and validators are added one section at a time only after Math is shipped and reviewed.

@@ -20,9 +20,11 @@ jobs:
     timeout-minutes: 15
     env:
       APP_ENV: test
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
       DATABASE_URL: postgresql://nuraprep:nuraprep@localhost:5432/nuraprep
       DIRECT_URL: postgresql://nuraprep:nuraprep@localhost:5432/nuraprep
       E2E_DATABASE_URL: postgresql://nuraprep:nuraprep@localhost:5432/nuraprep_e2e
+      BETTER_AUTH_SECRET: ci-only-auth-secret-with-at-least-32-characters
       DEV_REVIEWER_ENABLED: true
       DEV_LEARNER_ENABLED: true
 
