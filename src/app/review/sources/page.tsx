@@ -2,6 +2,7 @@ import { getSourceRegistry } from "@/data/content-governance";
 
 import {
   CoverageObservationForm,
+  SourcePolicyRecheckForm,
   SourceRegistrationForm,
 } from "./source-forms";
 
@@ -26,6 +27,27 @@ export default async function SourceRegistryPage() {
         quotation, or model input.
       </p>
 
+      <section
+        className="mt-6 grid gap-3 sm:grid-cols-3"
+        aria-label="Source recheck queue"
+      >
+        <RecheckMetric
+          label="Overdue"
+          value={registry.recheckSummary.overdue}
+          tone="urgent"
+        />
+        <RecheckMetric
+          label="Due in 30 days"
+          value={registry.recheckSummary.dueSoon}
+          tone="warning"
+        />
+        <RecheckMetric
+          label="Unscheduled"
+          value={registry.recheckSummary.unscheduled}
+          tone="neutral"
+        />
+      </section>
+
       <section className="mt-7 rounded-2xl border border-[#d8ded9] bg-[#fffdf8] p-5 shadow-sm">
         <h2 className="font-serif text-2xl">Register a source</h2>
         <p className="mt-2 text-xs leading-5 text-[#687a7c]">
@@ -44,6 +66,10 @@ export default async function SourceRegistryPage() {
             <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
               <div>
                 <div className="flex flex-wrap gap-2 text-[11px] font-bold tracking-wide uppercase text-[#5e7274]">
+                  <span className={recheckTone(source.recheckStatus)}>
+                    {source.recheckStatus.replaceAll("_", " ")}
+                  </span>
+                  <span>·</span>
                   <span>{source.decision.replaceAll("_", " ")}</span>
                   <span>·</span>
                   <span>{source.accessClass.replaceAll("_", " ")}</span>
@@ -104,7 +130,7 @@ export default async function SourceRegistryPage() {
               <div>
                 <dt className="font-bold">Review dates</dt>
                 <dd className="mt-0.5">
-                  Accessed{" "}
+                  Last reviewed{" "}
                   {sourceDateFormatter.format(new Date(source.accessedAt))}
                   {source.recheckAt
                     ? ` · Recheck by ${sourceDateFormatter.format(new Date(source.recheckAt))}`
@@ -112,6 +138,34 @@ export default async function SourceRegistryPage() {
                 </dd>
               </div>
             </dl>
+            <details className="mt-3 text-xs text-[#52676a]">
+              <summary className="cursor-pointer font-bold">
+                Policy audit history ({source.reviews.length})
+              </summary>
+              {source.reviews.length ? (
+                <ol className="mt-2 space-y-2">
+                  {source.reviews.map((review) => (
+                    <li
+                      key={review.id}
+                      className="rounded-lg border border-[#e0e5e1] bg-[#faf9f4] px-3 py-2"
+                    >
+                      <strong>{review.reviewKind.toLowerCase()}</strong>
+                      <span> · </span>
+                      {review.resultingPolicy.decision
+                        .toLowerCase()
+                        .replaceAll("_", " ")}
+                      <span> · </span>
+                      {sourceDateFormatter.format(new Date(review.reviewedAt))}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="mt-2">
+                  Legacy record; no immutable policy events are available yet.
+                </p>
+              )}
+            </details>
+            <SourcePolicyRecheckForm source={source} />
             {source.allowCoverageAnalysis && (
               <CoverageObservationForm
                 sourceArtifactId={source.id}
@@ -123,4 +177,32 @@ export default async function SourceRegistryPage() {
       </section>
     </div>
   );
+}
+
+function RecheckMetric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "urgent" | "warning" | "neutral";
+}) {
+  const toneClasses = {
+    urgent: "border-red-200 bg-red-50 text-red-900",
+    warning: "border-amber-200 bg-amber-50 text-amber-900",
+    neutral: "border-slate-200 bg-slate-50 text-slate-800",
+  };
+  return (
+    <div className={`rounded-xl border p-4 ${toneClasses[tone]}`}>
+      <strong className="text-2xl">{value}</strong>
+      <p className="mt-1 text-xs font-bold tracking-wide uppercase">{label}</p>
+    </div>
+  );
+}
+
+function recheckTone(status: string) {
+  if (status === "OVERDUE") return "text-red-700";
+  if (status === "DUE_SOON") return "text-amber-700";
+  return "text-[#5e7274]";
 }

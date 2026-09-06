@@ -5,11 +5,18 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { getDatabase } from "@/db/client";
-import { coverageObservations, skills, sourceArtifacts } from "@/db/schema";
+import {
+  coverageObservations,
+  skills,
+  sourceArtifacts,
+  sourcePolicyReviews,
+  type SourcePolicySnapshot,
+} from "@/db/schema";
 import { requireReviewer } from "@/lib/auth/reviewer";
 import {
   deriveSourcePermissions,
   normalizeCanonicalUrl,
+  sourcePolicyReviewSchema,
   sourceRegistrationSchema,
 } from "@/lib/content/source-policy";
 
@@ -42,26 +49,53 @@ export async function registerSource(
 
   const permissions = deriveSourcePermissions(parsed.data.decision);
   const database = getDatabase();
-  const [created] = await database
-    .insert(sourceArtifacts)
-    .values({
-      canonicalUrl: normalizeCanonicalUrl(parsed.data.canonicalUrl),
-      publisher: parsed.data.publisher,
-      title: parsed.data.title,
-      artifactType: parsed.data.artifactType.toLocaleUpperCase("en-US"),
-      accessedAt: new Date(),
-      statedLicense: parsed.data.statedLicense || null,
-      termsUrl: parsed.data.termsUrl || null,
-      robotsSummary: parsed.data.robotsSummary || null,
-      accessClass: parsed.data.accessClass,
-      decision: parsed.data.decision,
-      ...permissions,
-      decisionRationale: parsed.data.decisionRationale,
-      reviewedBy: reviewer.id,
-      recheckAt: parsed.data.recheckAt ? new Date(parsed.data.recheckAt) : null,
-    })
-    .onConflictDoNothing({ target: sourceArtifacts.canonicalUrl })
-    .returning({ id: sourceArtifacts.id });
+  const reviewedAt = new Date();
+  const recheckAt = parsed.data.recheckAt
+    ? new Date(parsed.data.recheckAt)
+    : null;
+  const created = await database.transaction(async (transaction) => {
+    const [source] = await transaction
+      .insert(sourceArtifacts)
+      .values({
+        canonicalUrl: normalizeCanonicalUrl(parsed.data.canonicalUrl),
+        publisher: parsed.data.publisher,
+        title: parsed.data.title,
+        artifactType: parsed.data.artifactType.toLocaleUpperCase("en-US"),
+        accessedAt: reviewedAt,
+        statedLicense: parsed.data.statedLicense || null,
+        termsUrl: parsed.data.termsUrl || null,
+        robotsSummary: parsed.data.robotsSummary || null,
+        accessClass: parsed.data.accessClass,
+        decision: parsed.data.decision,
+        ...permissions,
+        decisionRationale: parsed.data.decisionRationale,
+        reviewedBy: reviewer.id,
+        recheckAt,
+      })
+      .onConflictDoNothing({ target: sourceArtifacts.canonicalUrl })
+      .returning({ id: sourceArtifacts.id });
+
+    if (source) {
+      await transaction.insert(sourcePolicyReviews).values({
+        sourceArtifactId: source.id,
+        reviewKind: "INITIAL",
+        previousPolicy: null,
+        resultingPolicy: toPolicySnapshot({
+          accessClass: parsed.data.accessClass,
+          decision: parsed.data.decision,
+          statedLicense: parsed.data.statedLicense || null,
+          termsUrl: parsed.data.termsUrl || null,
+          robotsSummary: parsed.data.robotsSummary || null,
+          ...permissions,
+          decisionRationale: parsed.data.decisionRationale,
+          recheckAt,
+        }),
+        reviewedBy: reviewer.id,
+        reviewedAt,
+      });
+    }
+    return source;
+  });
 
   if (!created) {
     return {
@@ -74,6 +108,90 @@ export async function registerSource(
   return {
     status: "success",
     message: "Source registered with policy-derived permissions.",
+  };
+}
+
+export async function recheckSourcePolicy(
+  _previous: GovernanceActionState,
+  formData: FormData,
+): Promise<GovernanceActionState> {
+  const reviewer = requireReviewer();
+  const parsed = sourcePolicyReviewSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: parsed.error.issues[0]?.message ?? "Invalid source recheck.",
+    };
+  }
+
+  const database = getDatabase();
+  const reviewedAt = new Date();
+  const recheckAt = new Date(parsed.data.nextRecheckAt);
+  const permissions = deriveSourcePermissions(parsed.data.decision);
+  const nextPolicy = {
+    accessClass: parsed.data.accessClass,
+    decision: parsed.data.decision,
+    statedLicense: parsed.data.statedLicense || null,
+    termsUrl: parsed.data.termsUrl || null,
+    robotsSummary: parsed.data.robotsSummary || null,
+    ...permissions,
+    decisionRationale: parsed.data.decisionRationale,
+    recheckAt,
+  };
+
+  const updated = await database.transaction(async (transaction) => {
+    const [current] = await transaction
+      .select({
+        accessClass: sourceArtifacts.accessClass,
+        decision: sourceArtifacts.decision,
+        statedLicense: sourceArtifacts.statedLicense,
+        termsUrl: sourceArtifacts.termsUrl,
+        robotsSummary: sourceArtifacts.robotsSummary,
+        allowMetadata: sourceArtifacts.allowMetadata,
+        allowCoverageAnalysis: sourceArtifacts.allowCoverageAnalysis,
+        allowQuotation: sourceArtifacts.allowQuotation,
+        allowStorage: sourceArtifacts.allowStorage,
+        allowModelInput: sourceArtifacts.allowModelInput,
+        decisionRationale: sourceArtifacts.decisionRationale,
+        recheckAt: sourceArtifacts.recheckAt,
+      })
+      .from(sourceArtifacts)
+      .where(eq(sourceArtifacts.id, parsed.data.sourceArtifactId))
+      .for("update")
+      .limit(1);
+
+    if (!current) return false;
+
+    await transaction
+      .update(sourceArtifacts)
+      .set({
+        ...nextPolicy,
+        accessedAt: reviewedAt,
+        reviewedBy: reviewer.id,
+        updatedAt: reviewedAt,
+      })
+      .where(eq(sourceArtifacts.id, parsed.data.sourceArtifactId));
+    await transaction.insert(sourcePolicyReviews).values({
+      sourceArtifactId: parsed.data.sourceArtifactId,
+      reviewKind: "RECHECK",
+      previousPolicy: toPolicySnapshot(current),
+      resultingPolicy: toPolicySnapshot(nextPolicy),
+      reviewedBy: reviewer.id,
+      reviewedAt,
+    });
+    return true;
+  });
+
+  if (!updated) {
+    return { status: "error", message: "Source was not found." };
+  }
+
+  revalidatePath("/review/sources");
+  return {
+    status: "success",
+    message: "Source policy rechecked with immutable audit evidence.",
   };
 }
 
@@ -128,4 +246,24 @@ export async function recordCoverageObservation(
   });
   revalidatePath("/review/sources");
   return { status: "success", message: "Coverage observation recorded." };
+}
+
+function toPolicySnapshot(policy: {
+  accessClass: SourcePolicySnapshot["accessClass"];
+  decision: SourcePolicySnapshot["decision"];
+  statedLicense: string | null;
+  termsUrl: string | null;
+  robotsSummary: string | null;
+  allowMetadata: boolean;
+  allowCoverageAnalysis: boolean;
+  allowQuotation: boolean;
+  allowStorage: boolean;
+  allowModelInput: boolean;
+  decisionRationale: string;
+  recheckAt: Date | null;
+}): SourcePolicySnapshot {
+  return {
+    ...policy,
+    recheckAt: policy.recheckAt?.toISOString() ?? null,
+  };
 }

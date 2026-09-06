@@ -323,6 +323,54 @@ export const sourceArtifacts = pgTable(
   ],
 );
 
+export type SourcePolicySnapshot = {
+  accessClass: (typeof sourceAccessEnum.enumValues)[number];
+  decision: (typeof sourceDecisionEnum.enumValues)[number];
+  statedLicense: string | null;
+  termsUrl: string | null;
+  robotsSummary: string | null;
+  allowMetadata: boolean;
+  allowCoverageAnalysis: boolean;
+  allowQuotation: boolean;
+  allowStorage: boolean;
+  allowModelInput: boolean;
+  decisionRationale: string;
+  recheckAt: string | null;
+};
+
+export const sourcePolicyReviews = pgTable(
+  "source_policy_reviews",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceArtifactId: uuid("source_artifact_id")
+      .notNull()
+      .references(() => sourceArtifacts.id, { onDelete: "restrict" }),
+    reviewKind: varchar("review_kind", { length: 20 }).notNull(),
+    previousPolicy: jsonb("previous_policy").$type<SourcePolicySnapshot>(),
+    resultingPolicy: jsonb("resulting_policy")
+      .$type<SourcePolicySnapshot>()
+      .notNull(),
+    reviewedBy: varchar("reviewed_by", { length: 160 }).notNull(),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("source_policy_review_history_idx").on(
+      table.sourceArtifactId,
+      table.reviewedAt,
+    ),
+    check(
+      "source_policy_review_kind_check",
+      sql`${table.reviewKind} IN ('INITIAL', 'RECHECK')`,
+    ),
+    check(
+      "source_policy_review_previous_check",
+      sql`(${table.reviewKind} = 'INITIAL' AND ${table.previousPolicy} IS NULL) OR (${table.reviewKind} = 'RECHECK' AND ${table.previousPolicy} IS NOT NULL)`,
+    ),
+  ],
+);
+
 export const coverageObservations = pgTable(
   "coverage_observations",
   {

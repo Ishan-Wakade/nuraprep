@@ -73,6 +73,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 ## 6. Generation pipeline and scale
 
 - [x] Implement a fail-closed source/license registry and abstract coverage-intake workflow.
+- [x] Add due/overdue source-policy rechecks with immutable before-and-after audit evidence.
 - [x] Add a provider-neutral boundary, versioned template approval, idempotent regeneration requests, immutable lifecycle controls, and per-request cost ceilings.
 - [x] Add a strict bodyless metadata acquisition adapter contract that rejects returned content bodies.
 - [x] Add budgeted provider-worker orchestration and atomic, one-candidate-only draft persistence with regeneration-scope enforcement.

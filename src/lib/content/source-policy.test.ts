@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   deriveSourcePermissions,
   normalizeCanonicalUrl,
+  sourcePolicyReviewSchema,
   sourceRegistrationSchema,
 } from "./source-policy";
 
@@ -67,5 +68,32 @@ describe("source intake policy", () => {
     expect(
       normalizeCanonicalUrl("https://EXAMPLE.org/outline?q=math#section"),
     ).toBe("https://example.org/outline?q=math");
+  });
+
+  it("requires future-dated rechecks and reapplies fail-closed rights rules", () => {
+    const baseReview = {
+      sourceArtifactId: "00000000-0000-4000-8000-000000000001",
+      accessClass: "PUBLIC" as const,
+      decision: "COVERAGE_ANALYSIS" as const,
+      decisionRationale:
+        "The reviewer confirmed that only abstract topic coverage may be retained.",
+      nextRecheckAt: "2099-01-01",
+      rightsEvidenceAttestation: "on" as const,
+    };
+
+    expect(sourcePolicyReviewSchema.safeParse(baseReview).success).toBe(true);
+    expect(
+      sourcePolicyReviewSchema.safeParse({
+        ...baseReview,
+        nextRecheckAt: "2020-01-01",
+      }).success,
+    ).toBe(false);
+    expect(
+      sourcePolicyReviewSchema.safeParse({
+        ...baseReview,
+        accessClass: "OPEN_LICENSED",
+        decision: "LICENSED_STORAGE",
+      }).success,
+    ).toBe(false);
   });
 });

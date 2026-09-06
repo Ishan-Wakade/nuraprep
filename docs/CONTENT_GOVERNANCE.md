@@ -20,6 +20,8 @@ Automated collection is allowed only after a source-level decision records:
 
 NuraPrep must not bypass paywalls, authentication, CAPTCHAs, rate limits, or access controls. A publicly viewable page is not automatically licensed for storage, redistribution, or model training. If rights are unclear, record only bibliographic metadata and a human-authored abstract coverage observation, or exclude the source.
 
+Each registered source may have a scheduled policy recheck. The reviewer console surfaces overdue, due-soon, and unscheduled records. A completed recheck requires an explicit rights-evidence attestation, updates the current fail-closed permission snapshot, and appends the previous and resulting policy states to immutable audit history in the same database transaction. Rechecks never independently grant quotation or model-input rights.
+
 ## Source classes
 
 | Class                                             | Default handling                                                                                    |

@@ -12,6 +12,7 @@ import {
   questions,
   skills,
   sourceArtifacts,
+  sourcePolicyReviews,
 } from "@/db/schema";
 import { requireReviewer } from "@/lib/auth/reviewer";
 
@@ -20,7 +21,7 @@ export async function getSourceRegistry() {
   requireReviewer();
   const database = getDatabase();
 
-  const [sources, skillRows] = await Promise.all([
+  const [sources, skillRows, reviewRows] = await Promise.all([
     database
       .select({
         id: sourceArtifacts.id,
@@ -32,6 +33,7 @@ export async function getSourceRegistry() {
         decision: sourceArtifacts.decision,
         statedLicense: sourceArtifacts.statedLicense,
         termsUrl: sourceArtifacts.termsUrl,
+        robotsSummary: sourceArtifacts.robotsSummary,
         allowMetadata: sourceArtifacts.allowMetadata,
         allowCoverageAnalysis: sourceArtifacts.allowCoverageAnalysis,
         allowQuotation: sourceArtifacts.allowQuotation,
@@ -55,14 +57,70 @@ export async function getSourceRegistry() {
       .from(skills)
       .where(eq(skills.active, true))
       .orderBy(asc(skills.title)),
+    database
+      .select({
+        id: sourcePolicyReviews.id,
+        sourceArtifactId: sourcePolicyReviews.sourceArtifactId,
+        reviewKind: sourcePolicyReviews.reviewKind,
+        resultingPolicy: sourcePolicyReviews.resultingPolicy,
+        reviewedBy: sourcePolicyReviews.reviewedBy,
+        reviewedAt: sourcePolicyReviews.reviewedAt,
+      })
+      .from(sourcePolicyReviews)
+      .orderBy(desc(sourcePolicyReviews.reviewedAt))
+      .limit(1_000),
   ]);
 
-  return {
-    sources: sources.map((source) => ({
+  const reviewsBySource = new Map<string, (typeof reviewRows)[number][]>();
+  for (const review of reviewRows) {
+    const reviews = reviewsBySource.get(review.sourceArtifactId) ?? [];
+    reviews.push(review);
+    reviewsBySource.set(review.sourceArtifactId, reviews);
+  }
+
+  const now = Date.now();
+  const dueSoonBoundary = now + 30 * 24 * 60 * 60 * 1_000;
+  const serializedSources = sources.map((source) => {
+    const recheckTimestamp = source.recheckAt?.getTime();
+    const recheckStatus = !recheckTimestamp
+      ? ("UNSCHEDULED" as const)
+      : recheckTimestamp <= now
+        ? ("OVERDUE" as const)
+        : recheckTimestamp <= dueSoonBoundary
+          ? ("DUE_SOON" as const)
+          : ("CURRENT" as const);
+    return {
       ...source,
       accessedAt: source.accessedAt.toISOString(),
       recheckAt: source.recheckAt?.toISOString() ?? null,
-    })),
+      recheckStatus,
+      reviews: (reviewsBySource.get(source.id) ?? []).map((review) => ({
+        ...review,
+        reviewedAt: review.reviewedAt.toISOString(),
+      })),
+    };
+  });
+
+  const recheckPriority = ["OVERDUE", "DUE_SOON", "UNSCHEDULED", "CURRENT"];
+  serializedSources.sort(
+    (left, right) =>
+      recheckPriority.indexOf(left.recheckStatus) -
+      recheckPriority.indexOf(right.recheckStatus),
+  );
+
+  return {
+    sources: serializedSources,
+    recheckSummary: {
+      overdue: serializedSources.filter(
+        (source) => source.recheckStatus === "OVERDUE",
+      ).length,
+      dueSoon: serializedSources.filter(
+        (source) => source.recheckStatus === "DUE_SOON",
+      ).length,
+      unscheduled: serializedSources.filter(
+        (source) => source.recheckStatus === "UNSCHEDULED",
+      ).length,
+    },
     skills: skillRows,
   };
 }

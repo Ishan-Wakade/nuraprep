@@ -124,6 +124,67 @@ async function main() {
       );
     }
 
+    const sourceArtifactId = randomUUID();
+    const sourcePolicyReviewId = randomUUID();
+    await client.query(
+      `INSERT INTO source_artifacts
+       (id, canonical_url, publisher, title, artifact_type, accessed_at,
+        access_class, decision, allow_metadata, decision_rationale,
+        reviewed_by, recheck_at)
+       VALUES ($1, $2, 'CI publisher', 'CI governed source', 'WEB_PAGE', now(),
+               'PUBLIC', 'METADATA_ONLY', true, $3, 'ci-smoke-test',
+               now() + interval '90 days')`,
+      [
+        sourceArtifactId,
+        `https://example.invalid/governed-${sourceArtifactId}`,
+        "The smoke test retains metadata only and grants no content reuse rights.",
+      ],
+    );
+    await client.query(
+      `INSERT INTO source_policy_reviews
+       (id, source_artifact_id, review_kind, resulting_policy, reviewed_by)
+       VALUES ($1, $2, 'INITIAL', $3::jsonb, 'ci-smoke-test')`,
+      [
+        sourcePolicyReviewId,
+        sourceArtifactId,
+        JSON.stringify({
+          accessClass: "PUBLIC",
+          decision: "METADATA_ONLY",
+          allowMetadata: true,
+          allowCoverageAnalysis: false,
+          allowQuotation: false,
+          allowStorage: false,
+          allowModelInput: false,
+          decisionRationale:
+            "The smoke test retains metadata only and grants no content reuse rights.",
+          recheckAt: null,
+        }),
+      ],
+    );
+    await client.query("SAVEPOINT source_review_history_check");
+    let sourceReviewMutationWasBlocked = false;
+    try {
+      await client.query(
+        `UPDATE source_policy_reviews
+         SET reviewed_by = 'mutated'
+         WHERE id = $1`,
+        [sourcePolicyReviewId],
+      );
+    } catch (error) {
+      sourceReviewMutationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query("ROLLBACK TO SAVEPOINT source_review_history_check");
+    }
+    if (!sourceReviewMutationWasBlocked) {
+      throw new Error(
+        "The source-policy review audit allowed an in-place mutation.",
+      );
+    }
+
     const generationTemplateId = randomUUID();
     const generationRunId = randomUUID();
     const generationClaimToken = randomUUID();

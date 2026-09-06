@@ -125,21 +125,33 @@ test("registers governed source metadata and an abstract coverage note", async (
   await expect(
     page.getByRole("heading", { name: "Source and rights register" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Source recheck queue" }),
+  ).toBeVisible();
+  const registrationPanel = page
+    .getByRole("heading", { name: "Register a source" })
+    .locator("..");
 
-  await page
+  await registrationPanel
     .getByLabel("Canonical HTTPS URL")
     .fill(`https://example.org/nuraprep-ci/${Date.now()}`);
-  await page.getByLabel("Publisher").fill("Example education publisher");
-  await page.getByLabel("Title").fill(uniqueTitle);
-  await page.getByLabel("Artifact type").fill("CONTENT_OUTLINE");
-  await page.getByLabel("Access class").selectOption("PUBLIC");
-  await page.getByLabel("Policy decision").selectOption("COVERAGE_ANALYSIS");
-  await page
+  await registrationPanel
+    .getByLabel("Publisher")
+    .fill("Example education publisher");
+  await registrationPanel.getByLabel("Title").fill(uniqueTitle);
+  await registrationPanel.getByLabel("Artifact type").fill("CONTENT_OUTLINE");
+  await registrationPanel.getByLabel("Access class").selectOption("PUBLIC");
+  await registrationPanel
+    .getByLabel("Policy decision")
+    .selectOption("COVERAGE_ANALYSIS");
+  await registrationPanel
     .getByLabel("Decision rationale")
     .fill(
       "Retain only metadata and human-authored high-level coverage observations for this CI record.",
     );
-  await page.getByRole("button", { name: "Register source" }).click();
+  await registrationPanel
+    .getByRole("button", { name: "Register source" })
+    .click();
   await expect(
     page.getByText("Source registered with policy-derived permissions."),
   ).toBeVisible();
@@ -155,6 +167,21 @@ test("registers governed source metadata and an abstract coverage note", async (
   await sourceCard.getByRole("checkbox").check();
   await sourceCard.getByRole("button", { name: "Record observation" }).click();
   await expect(page.getByText("Coverage observation recorded.")).toBeVisible();
+
+  await sourceCard.getByText("Record policy recheck").click();
+  await sourceCard.getByLabel("Next recheck date").fill("2099-01-01");
+  await sourceCard
+    .getByLabel("Recheck rationale")
+    .fill(
+      "Rechecked the public access state and retained the conservative coverage-analysis decision.",
+    );
+  await sourceCard.getByLabel(/I reviewed the current access state/).check();
+  await sourceCard.getByRole("button", { name: "Save policy recheck" }).click();
+  await expect(
+    page.getByText("Source policy rechecked with immutable audit evidence."),
+  ).toBeVisible();
+  await expect(sourceCard.getByText(/^current$/i)).toBeVisible();
+  await expect(sourceCard.getByText("Policy audit history (2)")).toBeVisible();
 });
 
 test("turns recurring feedback into a separately approved improvement plan", async ({
