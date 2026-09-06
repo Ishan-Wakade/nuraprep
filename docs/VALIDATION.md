@@ -17,12 +17,17 @@ Tutor guidance uses a bounded, versioned sequence of reviewer-authored Socratic 
 
 The internal similarity pass compares different NuraPrep question families using exact normalized text, a number-invariant fingerprint, and five-token phrase containment. A blocking match fails the automated evidence, but a low score is not treated as proof of legal originality. Prior versions in the same family are excluded so legitimate revision history remains possible.
 
-Four checks still require explicit reviewer evidence:
+Seven checks require explicit reviewer evidence:
 
+- `difficulty-calibration`
+- `reading-level`
+- `calculator-policy`
 - `explanation-consistency`
 - `accessibility`
 - `topic-alignment`
 - `originality`
+
+The difficulty check uses NuraPrep's internal reasoning-step and prerequisite rubric; it is not presented as an official ATI difficulty label. Reading-level review separates necessary mathematical vocabulary from avoidable language complexity. Calculator-policy review checks the stored designation against the arithmetic load and documented exam-mode assumptions.
 
 The reviewer records a pass or failure with at least 40 characters of written evidence and must attest that they inspected the exact version, applied the current selected rubric, and made an independent judgment rather than accepting automation or model output alone. A failure requires a stable error code, while a pass rejects contradictory failure metadata. Every run is append-only, and the newest run for each validator determines publication readiness.
 
@@ -30,7 +35,7 @@ The reviewer records a pass or failure with at least 40 characters of written ev
 
 1. Create or revise an immutable question version.
 2. Run deterministic checks against that exact version.
-3. Record the four reviewer-only checks.
+3. Record the seven reviewer-only checks.
 4. Record an approval decision with rubric scores and notes.
 5. Publish the exact eligible version as a separate owner action.
 

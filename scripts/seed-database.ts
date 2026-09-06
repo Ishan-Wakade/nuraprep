@@ -890,6 +890,12 @@ function validatorDescription(
       "Stored response shape, choice identifiers, and distractor mappings are internally valid.",
     "mathematical-correctness":
       "The keyed answer is recomputed deterministically or symbolically.",
+    "difficulty-calibration":
+      "A reviewer confirms the assigned internal difficulty band against the documented reasoning-step and prerequisite rubric.",
+    "reading-level":
+      "A reviewer confirms the language is concise, necessary to the skill, and appropriate for an adult pre-nursing learner.",
+    "calculator-policy":
+      "A reviewer confirms the calculator designation matches the arithmetic load and the documented exam-mode assumptions.",
     "explanation-consistency":
       "The explanation reaches and supports the keyed answer.",
     accessibility:

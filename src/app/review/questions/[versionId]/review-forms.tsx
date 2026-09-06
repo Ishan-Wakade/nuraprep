@@ -188,6 +188,11 @@ export function ReviewerValidationForm({ versionId }: { versionId: string }) {
             name="validatorKey"
             className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
           >
+            <option value="difficulty-calibration">
+              Difficulty calibration
+            </option>
+            <option value="reading-level">Reading level</option>
+            <option value="calculator-policy">Calculator policy</option>
             <option value="explanation-consistency">
               Explanation consistency
             </option>

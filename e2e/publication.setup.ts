@@ -69,6 +69,9 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
   ).toBeVisible();
 
   for (const validatorKey of [
+    "difficulty-calibration",
+    "reading-level",
+    "calculator-policy",
     "explanation-consistency",
     "accessibility",
     "topic-alignment",

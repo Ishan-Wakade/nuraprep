@@ -19,6 +19,9 @@ export const REQUIRED_PUBLICATION_VALIDATORS = [
   "accessibility",
   "topic-alignment",
   "originality",
+  "difficulty-calibration",
+  "reading-level",
+  "calculator-policy",
 ] as const;
 
 export const AUTOMATED_PUBLICATION_VALIDATORS = [
@@ -27,6 +30,9 @@ export const AUTOMATED_PUBLICATION_VALIDATORS = [
 ] as const satisfies readonly (typeof REQUIRED_PUBLICATION_VALIDATORS)[number][];
 
 export const REVIEWER_PUBLICATION_VALIDATORS = [
+  "difficulty-calibration",
+  "reading-level",
+  "calculator-policy",
   "explanation-consistency",
   "accessibility",
   "topic-alignment",
