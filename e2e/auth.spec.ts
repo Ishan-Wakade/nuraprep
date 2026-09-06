@@ -32,6 +32,7 @@ async function createAuthenticatedSession() {
   return {
     pool,
     userId,
+    token,
     cookie: {
       name: "better-auth.session_token",
       value: `${token}.${signature}`,
@@ -124,6 +125,74 @@ test("requires a current database grant for reviewer access", async ({
       page.getByRole("heading", { name: "Question review queue" }),
     ).toBeVisible();
     await expect(page.getByText("Authorized reviewer")).toBeVisible();
+  } finally {
+    await authenticated.pool.end();
+  }
+});
+
+test("exports only portable learner data without credentials", async ({
+  page,
+}) => {
+  const authenticated = await createAuthenticatedSession();
+  try {
+    await authenticated.pool.query(
+      `INSERT INTO learner_profiles
+       (auth_user_id, auth_subject, display_name, email)
+       VALUES ($1, $2, 'Ada Learner', $3)`,
+      [
+        authenticated.userId,
+        `auth-user:${authenticated.userId}`,
+        `${authenticated.userId}@example.test`,
+      ],
+    );
+    await page.context().addCookies([authenticated.cookie]);
+
+    const response = await page.request.get("/api/account/export");
+    expect(response.ok()).toBe(true);
+    expect(response.headers()["cache-control"]).toContain("no-store");
+    expect(response.headers()["content-disposition"]).toContain(
+      'attachment; filename="nuraprep-data-',
+    );
+
+    const rawExport = await response.text();
+    const exportData = JSON.parse(rawExport) as {
+      exportVersion: string;
+      account: { displayName: string; mode: string };
+      profile: { authUserId: string };
+      accountSessions: Array<Record<string, unknown>>;
+    };
+    expect(exportData.exportVersion).toBe("nuraprep-learner-export-v1");
+    expect(exportData.account).toMatchObject({
+      displayName: "Ada Learner",
+      mode: "authenticated",
+    });
+    expect(exportData.profile.authUserId).toBe(authenticated.userId);
+    expect(exportData.accountSessions).toHaveLength(1);
+    expect(exportData.accountSessions[0]).not.toHaveProperty("token");
+    expect(rawExport).not.toContain(authenticated.token);
+  } finally {
+    await authenticated.pool.end();
+  }
+});
+
+test("requires a recent sign-in for an authenticated data export", async ({
+  page,
+}) => {
+  const authenticated = await createAuthenticatedSession();
+  try {
+    await authenticated.pool.query(
+      `UPDATE auth_sessions
+       SET created_at = now() - interval '16 minutes'
+       WHERE user_id = $1`,
+      [authenticated.userId],
+    );
+    await page.context().addCookies([authenticated.cookie]);
+
+    const response = await page.request.get("/api/account/export");
+    expect(response.status()).toBe(403);
+    expect(await response.json()).toEqual({
+      error: "A recent sign-in is required before downloading account data.",
+    });
   } finally {
     await authenticated.pool.end();
   }

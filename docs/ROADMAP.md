@@ -100,8 +100,9 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Threat-model Google OAuth, database sessions, authorization, account linking, export, and deletion before implementation.
 - [x] Add the Better Auth route, generated-compatible Drizzle tables, encrypted OAuth-token storage, revocable role grants, append-only account audit events, and production environment guards.
 - [x] Add an honest sign-in surface, signed database-session resolution, logout revocation, account-linked learner progress, and active database-role enforcement for reviewer access.
+- [x] Add a versioned learner-data export with fresh-session enforcement, no-store delivery, and explicit credential/answer-key/reviewer-note exclusions.
 - Configure real Google credentials and test successful, denied, malformed, and replayed provider callbacks before enabling production sign-in.
-- Add account export and the application-owned transactional deletion workflow.
+- Add the application-owned transactional deletion workflow.
 - Add CSRF/state/nonce protections, secure cookies, session rotation, audit events, and abuse controls.
 
 **Exit:** authorization tests cover learner/reviewer/admin boundaries and deletion behavior is documented and verified.

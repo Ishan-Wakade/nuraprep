@@ -1,6 +1,6 @@
 # Authentication and account-security design
 
-Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, sign-in and sign-out surfaces, account-scoped learner profiles, environment fail-closed checks, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation, and reviewer denial/approval without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's direct deletion endpoint is intentionally disabled until the application-owned transactional deletion workflow and its foreign-key tests are implemented.
+Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, sign-in and sign-out surfaces, account-scoped learner profiles, fresh-session-gated portable export, environment fail-closed checks, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation, reviewer denial/approval, export credential exclusion, and stale-session denial without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's direct deletion endpoint is intentionally disabled until the application-owned transactional deletion workflow and its foreign-key tests are implemented.
 
 NuraPrep will use Google OpenID Connect through Better Auth with its Drizzle/PostgreSQL adapter. The application will keep database-backed, revocable sessions and will not request access to Google APIs beyond the identity scopes needed for sign-in. Development identities remain available only behind explicit local switches that already fail closed when `APP_ENV=production`.
 
@@ -56,7 +56,7 @@ Account linking fails closed. An existing verified email does not silently merge
 
 ## Account export and deletion
 
-Export produces a user-scoped archive of profile, practice sessions, attempts, reports, tutor interactions, estimates, and study plans. It excludes internal reviewer notes about other users and all credentials.
+Export produces a versioned, user-scoped JSON archive of profile, non-token session metadata, practice sessions, attempts, reports, report-status history, tutor interactions, estimates, and study plans. It excludes provider credentials, session tokens, answer keys, and internal reviewer identities or notes. The response is rebuilt at request time, requires a fresh authenticated session outside local development, and is marked `no-store` and `nosniff`.
 
 Deletion requires a fresh session plus a typed confirmation. The transaction revokes every session first, detaches the Google account, deletes directly identifying auth/profile data, and deletes learner-owned practice data according to explicit foreign-key rules. Aggregate calibration records may be retained only after irreversible de-identification and only when the learner previously consented to outcome use. Failed or partial deletion is surfaced for retry and audit; the UI never reports success before the transaction completes.
 

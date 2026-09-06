@@ -36,6 +36,9 @@ export default async function PracticeLayout({
             <Link href="/practice" className="text-[#116b65]">
               Practice home
             </Link>
+            <Link href="/account" className="text-[#116b65]">
+              Account
+            </Link>
             {learner.mode === "authenticated" ? <SignOutButton /> : null}
           </div>
         </div>
