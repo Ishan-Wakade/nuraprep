@@ -20,6 +20,16 @@ test("presents the product accurately", async ({ page }) => {
   ).toHaveAttribute("href", "/practice");
 });
 
+test("reports application and database health without cacheable details", async ({
+  request,
+}) => {
+  const response = await request.get("/api/health");
+
+  expect(response.ok()).toBe(true);
+  expect(await response.json()).toEqual({ status: "ok" });
+  expect(response.headers()["cache-control"]).toContain("no-store");
+});
+
 test("has no horizontal overflow on a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");

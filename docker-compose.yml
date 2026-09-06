@@ -15,5 +15,44 @@ services:
     volumes:
       - nuraprep-postgres:/var/lib/postgresql/data
 
+  migrate:
+    profiles: [application]
+    build:
+      context: .
+      target: builder
+      args:
+        NEXT_PUBLIC_APP_URL: ${APP_URL:-http://localhost:3000}
+    command: pnpm db:migrate
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql://nuraprep:nuraprep@postgres:5432/nuraprep
+      DIRECT_URL: postgresql://nuraprep:nuraprep@postgres:5432/nuraprep
+      NEXT_PUBLIC_APP_URL: ${APP_URL:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    profiles: [application]
+    build:
+      context: .
+      target: runner
+      args:
+        NEXT_PUBLIC_APP_URL: ${APP_URL:-http://localhost:3000}
+    environment:
+      APP_ENV: development
+      BETTER_AUTH_SECRET: local-docker-only-secret-change-before-deploying
+      DATABASE_URL: postgresql://nuraprep:nuraprep@postgres:5432/nuraprep
+      DEV_LEARNER_ENABLED: "true"
+      DEV_REVIEWER_ENABLED: "true"
+      NEXT_PUBLIC_APP_URL: ${APP_URL:-http://localhost:3000}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    restart: unless-stopped
+
 volumes:
   nuraprep-postgres:

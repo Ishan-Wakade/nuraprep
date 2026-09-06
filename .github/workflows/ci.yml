@@ -83,6 +83,13 @@ jobs:
       - name: Build production application
         run: pnpm build
 
+      - name: Build production container
+        run: >-
+          docker build
+          --build-arg NEXT_PUBLIC_APP_URL=http://localhost:3100
+          --target runner
+          --tag nuraprep:ci .
+
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
