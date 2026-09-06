@@ -13,6 +13,10 @@ test("filters the review queue and opens full provenance", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText(/\d+ visible versions/)).toBeVisible();
   await expect(page.getByText("Local dev access")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Math question-bank coverage" }),
+  ).toBeVisible();
+  await expect(page.getByText("No published item").first()).toBeVisible();
 
   await page.getByLabel("Type").selectOption("NUMERIC");
   await page.getByRole("button", { name: "Apply filters" }).click();

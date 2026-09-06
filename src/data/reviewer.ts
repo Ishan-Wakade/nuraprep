@@ -1,12 +1,13 @@
 import "server-only";
 
-import { and, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { connection } from "next/server";
 
 import { getDatabase } from "@/db/client";
 import {
   generationRuns,
   generationTemplates,
+  examSpecifications,
   improvementProposalDecisions,
   improvementProposalEvidence,
   improvementProposals,
@@ -96,6 +97,8 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
     sourceRows,
     learnerReportRows,
     skillRows,
+    coverageRows,
+    [examSpecification],
   ] = await Promise.all([
     versionIds.length
       ? database
@@ -146,6 +149,63 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
       .from(skills)
       .where(eq(skills.active, true))
       .orderBy(skills.title),
+    database.execute<{
+      skill_id: string;
+      skill_code: string;
+      skill_title: string;
+      candidate_families: number;
+      published_families: number;
+      published_formats: string[];
+    }>(sql`
+      WITH leaf_skills AS (
+        SELECT skill.id, skill.code, skill.title
+        FROM skills AS skill
+        WHERE skill.active = true
+          AND skill.section = 'MATH'
+          AND NOT EXISTS (
+            SELECT 1
+            FROM skills AS child
+            WHERE child.parent_skill_id = skill.id
+              AND child.active = true
+          )
+      ), candidate_counts AS (
+        SELECT version.primary_skill_id AS skill_id,
+               count(DISTINCT version.question_id)::int AS candidate_families
+        FROM question_versions AS version
+        GROUP BY version.primary_skill_id
+      ), published_counts AS (
+        SELECT version.primary_skill_id AS skill_id,
+               count(DISTINCT publication.question_id)::int AS published_families,
+               array_agg(DISTINCT version.question_type::text) AS published_formats
+        FROM question_publications AS publication
+        INNER JOIN question_versions AS version
+          ON version.id = publication.question_version_id
+        WHERE publication.retired_at IS NULL
+        GROUP BY version.primary_skill_id
+      )
+      SELECT leaf.id AS skill_id,
+             leaf.code AS skill_code,
+             leaf.title AS skill_title,
+             coalesce(candidate.candidate_families, 0)::int AS candidate_families,
+             coalesce(published.published_families, 0)::int AS published_families,
+             coalesce(published.published_formats, ARRAY[]::text[]) AS published_formats
+      FROM leaf_skills AS leaf
+      LEFT JOIN candidate_counts AS candidate ON candidate.skill_id = leaf.id
+      LEFT JOIN published_counts AS published ON published.skill_id = leaf.id
+      ORDER BY coalesce(published.published_families, 0),
+               coalesce(candidate.candidate_families, 0), leaf.title
+    `),
+    database
+      .select({ totalQuestions: examSpecifications.totalQuestions })
+      .from(examSpecifications)
+      .where(
+        and(
+          eq(examSpecifications.section, "MATH"),
+          eq(examSpecifications.verificationStatus, "VERIFIED"),
+        ),
+      )
+      .orderBy(desc(examSpecifications.lastVerifiedAt))
+      .limit(1),
   ]);
 
   const latestDecision = new Map<string, (typeof decisionRows)[number]>();
@@ -206,6 +266,24 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
   return {
     items,
     skills: skillRows,
+    bankCoverage: {
+      rows: coverageRows.rows.map((row) => ({
+        skillId: row.skill_id,
+        skillCode: row.skill_code,
+        skillTitle: row.skill_title,
+        candidateFamilies: row.candidate_families,
+        publishedFamilies: row.published_families,
+        publishedFormats: row.published_formats,
+      })),
+      publishedFamilies: coverageRows.rows.reduce(
+        (total, row) => total + row.published_families,
+        0,
+      ),
+      questionTarget: examSpecification?.totalQuestions ?? 0,
+      skillsWithoutPublishedItems: coverageRows.rows.filter(
+        (row) => row.published_families === 0,
+      ).length,
+    },
     summary: {
       total: items.length,
       unreviewed: items.filter((item) => item.latestDecision === "UNREVIEWED")
