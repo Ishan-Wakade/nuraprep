@@ -43,11 +43,13 @@ const claimRequestSchema = z.object({
     .max(160)
     .regex(/^[A-Za-z0-9._:-]+$/),
   leaseSeconds: z.number().int().min(30).max(900),
+  maxClaimCostMicros: z.number().int().nonnegative(),
 });
 
 export async function claimNextGenerationRun(input: {
   workerId: string;
   leaseSeconds: number;
+  maxClaimCostMicros: number;
 }): Promise<GenerationClaim | undefined> {
   const claim = claimRequestSchema.parse(input);
   const claimToken = randomUUID();
@@ -56,6 +58,7 @@ export async function claimNextGenerationRun(input: {
     id: string;
     attempt_count: number;
     lease_expires_at: Date;
+    max_cost_micros: number;
   }>(sql`
     WITH candidate AS (
       SELECT run.id
@@ -69,6 +72,7 @@ export async function claimNextGenerationRun(input: {
         AND template.status = 'APPROVED'
         AND run.source_question_version_id IS NOT NULL
         AND run.request_kind <> 'NEW_QUESTION'
+        AND run.max_cost_micros <= ${claim.maxClaimCostMicros}
       ORDER BY run.started_at, run.id
       FOR UPDATE OF run SKIP LOCKED
       LIMIT 1
@@ -82,7 +86,7 @@ export async function claimNextGenerationRun(input: {
         attempt_count = run.attempt_count + 1
     FROM candidate
     WHERE run.id = candidate.id
-    RETURNING run.id, run.attempt_count, run.lease_expires_at
+    RETURNING run.id, run.attempt_count, run.lease_expires_at, run.max_cost_micros
   `);
   const row = result.rows[0];
   return row
@@ -92,6 +96,7 @@ export async function claimNextGenerationRun(input: {
         workerId: claim.workerId,
         attemptCount: row.attempt_count,
         leaseExpiresAt: row.lease_expires_at,
+        reservedCostMicros: row.max_cost_micros,
       }
     : undefined;
 }

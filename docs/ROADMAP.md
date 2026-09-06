@@ -72,9 +72,10 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Add a strict bodyless metadata acquisition adapter contract that rejects returned content bodies.
 - [x] Add budgeted provider-worker orchestration and atomic, one-candidate-only draft persistence with regeneration-scope enforcement.
 - [x] Add atomic worker claims, expiring leases, heartbeats, and stale-worker completion fencing.
+- [x] Add max-job and conservative worst-case-cost budgets for each queue batch.
 - [x] Add internal exact, number-invariant, and phrase-overlap rejection signals to deterministic review evidence.
 - [ ] Add a reviewed network transport and licensed-storage adapter; do not enable collection from gated or unclear-rights sources.
-- [ ] Add a configured provider and queue runner, batch budgets, and calibration cases for originality thresholds.
+- [ ] Add a configured provider and production queue host, wall-clock rate controls, and calibration cases for originality thresholds.
 - [x] Add recurring-error summaries and evidence-backed, separately approved improvement proposals that never auto-mutate prompts or rubrics.
 - [ ] Implement approved proposals only through reviewed version changes and regression suites.
 - Expand only at the rate human review and quality sampling can support.

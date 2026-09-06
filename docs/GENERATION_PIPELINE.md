@@ -13,6 +13,7 @@ The current slice supports:
 - stable idempotency keys, immutable request identity, and per-request cost ceilings;
 - a provider-neutral TypeScript interface and worker orchestrator;
 - atomic queue claims with worker attribution, expiring leases, heartbeats, and stale-claim fencing;
+- conservative batch limits that cap both claimed job count and the sum of worst-case per-job cost ceilings;
 - strict structured-output, answer-contract, symbolic-math, misconception, and regeneration-scope checks; and
 - atomic candidate persistence with database-enforced one-way completion linked to exactly one generated candidate version.
 
@@ -52,7 +53,7 @@ Templates are versioned. A draft becomes dispatchable only after the owner recor
 2. They select full revision, explanation only, or distractors only and enter a concrete instruction.
 3. The server creates a SHA-256 idempotency key over the source version, template, scope, normalized instruction, and cost ceiling.
 4. A duplicate submission resolves to the existing request.
-5. A worker atomically claims one eligible request with `FOR UPDATE SKIP LOCKED`, records its identity and attempt number, and receives a unique expiring claim token.
+5. A worker atomically claims one eligible request with `FOR UPDATE SKIP LOCKED`, records its identity and attempt number, and receives a unique expiring claim token. A batch may claim the request only when its full stored cost ceiling fits the remaining batch budget.
 6. The worker asks the provider for a worst-case estimate and rejects the request before dispatch when it exceeds the stored ceiling.
 7. Provider output is treated as untrusted. Its usage accounting, complete candidate schema, answer contract, symbolic math, misconception rules, and requested regeneration scope must pass.
 8. Success atomically writes exactly one complete linked candidate version and then closes the run. Partial fields never overwrite the source version.
@@ -64,6 +65,8 @@ PostgreSQL prevents request-identity edits, deletion, repeated terminal transiti
 The provider envelope carries the stable run ID and idempotency key so adapters can propagate the same key to providers that support idempotent requests. The database uniqueness boundary still protects candidate persistence when delivery is repeated.
 
 Only the current claim token may load, heartbeat, complete, or fail a running job. A stale worker cannot persist after another worker reclaims its expired lease. Provider timeouts must remain shorter than the lease or the host queue must renew it; heartbeat calls are bounded to 30–900 seconds. Claim tokens are operational secrets and are not displayed in the reviewer console.
+
+Batch accounting reserves each claimed job's full cost ceiling rather than optimistic estimated spend. `maxJobs` is bounded to 100, the batch budget is bounded to the corresponding 500,000,000-micro ceiling, and the runner stops when no eligible job fits the remaining budget. Actual provider usage is still recorded per run. This is a safety budget, not billing or a claim of provider-price accuracy.
 
 Explanation-only regeneration may change only the explanation. Distractor-only regeneration is limited to choice items, preserves the correct answer and its content, and may change only distractor choices and their rationales. Any hidden change fails the worker before persistence.
 
@@ -84,6 +87,6 @@ Before an external adapter is enabled, it must prove that it:
 - a configured provider adapter and queue runner;
 - licensed-storage ingestion with malware scanning and object-storage isolation;
 - calibration of the implemented internal exact, number-invariant, and phrase-overlap signals, plus any legally permitted external comparison corpus;
-- batch budgets, rate controls, cancellation, and operational metrics;
+- retry-attempt caps, wall-clock rate controls, cancellation, and operational metrics;
 - independent owner/educator approval of the 12-case engineering-draft gold evaluation set; and
 - implementation of approved feedback proposals as separately reviewed template, validator, rubric, policy, or evaluation-case versions. The proposal and approval ledger exists, but deliberately performs no automatic mutation.
