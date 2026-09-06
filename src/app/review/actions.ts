@@ -27,10 +27,10 @@ import {
   tutorGuidanceSchema,
 } from "@/lib/questions/contracts";
 import { findInternalSimilaritySignals } from "@/lib/questions/originality";
+import { reviewerValidationSubmissionSchema } from "@/lib/questions/reviewer-validation";
 import {
   AUTOMATED_PUBLICATION_VALIDATORS,
   evaluatePublicationGate,
-  REVIEWER_PUBLICATION_VALIDATORS,
   validateMathVerification,
   validateMisconceptionRules,
   validateQuestionContent,
@@ -192,34 +192,12 @@ export async function runDeterministicValidation(
   };
 }
 
-const reviewerValidationSchema = z
-  .object({
-    versionId: z.uuid(),
-    validatorKey: z.enum(REVIEWER_PUBLICATION_VALIDATORS),
-    outcome: z.enum(["PASS", "FAIL"]),
-    evidence: z.string().trim().min(10).max(5_000),
-    failureCode: z
-      .string()
-      .trim()
-      .max(120)
-      .regex(/^[A-Z0-9_-]*$/),
-  })
-  .superRefine((value, context) => {
-    if (value.outcome === "FAIL" && !value.failureCode) {
-      context.addIssue({
-        code: "custom",
-        path: ["failureCode"],
-        message: "A failure code is required for a failed validation.",
-      });
-    }
-  });
-
 export async function submitReviewerValidation(
   _previousState: ReviewerActionState,
   formData: FormData,
 ): Promise<ReviewerActionState> {
   const reviewer = requireReviewer();
-  const parsed = reviewerValidationSchema.safeParse(
+  const parsed = reviewerValidationSubmissionSchema.safeParse(
     Object.fromEntries(formData),
   );
   if (!parsed.success) {
@@ -265,6 +243,11 @@ export async function submitReviewerValidation(
       method: "reviewer-attestation",
       reviewerId: reviewer.id,
       notes: parsed.data.evidence,
+      attestations: {
+        inspectedExactVersion: true,
+        appliedCurrentRubric: true,
+        independentJudgment: true,
+      },
     },
   });
 

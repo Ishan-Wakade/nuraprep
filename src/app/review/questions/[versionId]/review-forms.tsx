@@ -212,12 +212,29 @@ export function ReviewerValidationForm({ versionId }: { versionId: string }) {
         <textarea
           name="evidence"
           required
-          minLength={10}
+          minLength={40}
           rows={4}
           className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
           placeholder="Describe exactly what you inspected and why this check passes or fails."
         />
       </label>
+      <fieldset className="space-y-2 rounded-xl border border-[#d8ded9] bg-[#faf9f4] p-3">
+        <legend className="px-1 text-xs font-bold text-[#52676a]">
+          Required attestations
+        </legend>
+        <Attestation
+          name="inspectedExactVersion"
+          label="I inspected the prompt, answer interaction, keyed answer, explanation, and relevant metadata for this exact version."
+        />
+        <Attestation
+          name="appliedCurrentRubric"
+          label="I applied the selected validator's current rubric rather than inferring this result from another check."
+        />
+        <Attestation
+          name="independentJudgment"
+          label="This is my review judgment; automated signals or model output alone did not determine it."
+        />
+      </fieldset>
       <label className="block text-xs font-bold text-[#52676a]">
         Failure code <span className="font-normal">(required on failure)</span>
         <input
@@ -599,6 +616,20 @@ function JsonField({
         spellCheck={false}
         className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-[#f8faf8] px-3 py-2.5 font-mono text-xs leading-5"
       />
+    </label>
+  );
+}
+
+function Attestation({ name, label }: { name: string; label: string }) {
+  return (
+    <label className="flex items-start gap-2 text-xs leading-5 text-[#52676a]">
+      <input
+        type="checkbox"
+        name={name}
+        required
+        className="mt-1 size-4 accent-[#116b65]"
+      />
+      <span>{label}</span>
     </label>
   );
 }

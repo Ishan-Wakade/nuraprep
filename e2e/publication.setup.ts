@@ -80,6 +80,9 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
       .fill(
         `E2E reviewer inspected ${validatorKey} against its documented rubric.`,
       );
+    await page.getByLabel(/I inspected the prompt/).check();
+    await page.getByLabel(/I applied the selected validator/).check();
+    await page.getByLabel(/This is my review judgment/).check();
     await page.getByRole("button", { name: "Append review evidence" }).click();
     await expect(
       page.getByText(`${validatorKey} evidence appended as pass.`),

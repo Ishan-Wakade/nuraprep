@@ -24,7 +24,7 @@ Four checks still require explicit reviewer evidence:
 - `topic-alignment`
 - `originality`
 
-The reviewer records a pass or failure with written evidence. A failure requires a stable error code. Every run is append-only, and the newest run for each validator determines publication readiness.
+The reviewer records a pass or failure with at least 40 characters of written evidence and must attest that they inspected the exact version, applied the current selected rubric, and made an independent judgment rather than accepting automation or model output alone. A failure requires a stable error code, while a pass rejects contradictory failure metadata. Every run is append-only, and the newest run for each validator determines publication readiness.
 
 ## Publication sequence
 
