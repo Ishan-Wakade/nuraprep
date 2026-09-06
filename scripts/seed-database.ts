@@ -165,6 +165,11 @@ const seedQuestions: SeedQuestion[] = [
     estimatedSeconds: 45,
     calculatorPolicy: "NOT_NEEDED",
     misconceptions: ["DIVIDES_NUMERATOR_INCORRECTLY"],
+    tutorGuidance: tutorGuidance(
+      "What operation converts a fraction into a decimal?",
+      "Divide 7 by 8; an equivalent-denominator method can also rewrite the fraction in thousandths.",
+      "How can multiplying your decimal by 8 check the conversion?",
+    ),
     content: {
       questionType: "NUMERIC",
       prompt: "Write 7/8 as a decimal.",
@@ -200,6 +205,11 @@ const seedQuestions: SeedQuestion[] = [
       "ADDS_SAME_AMOUNT_TO_BOTH_TERMS",
       "SELECTS_ONLY_ONE_VALID_RATIO",
     ],
+    tutorGuidance: tutorGuidance(
+      "What must happen to both terms for a ratio to remain equivalent?",
+      "Simplify each option or compare each quotient with 3 divided by 5.",
+      "Why does adding the same number to both terms usually change a ratio?",
+    ),
     content: {
       questionType: "MULTIPLE_SELECT",
       prompt: "Which ratios are equivalent to 3:5? Select all that apply.",
@@ -241,6 +251,11 @@ const seedQuestions: SeedQuestion[] = [
     estimatedSeconds: 65,
     calculatorPolicy: "NOT_NEEDED",
     misconceptions: ["COMPARES_DIGIT_COUNT_INSTEAD_OF_PLACE_VALUE"],
+    tutorGuidance: tutorGuidance(
+      "How could writing every decimal to the thousandths place make comparison easier?",
+      "Compare the tenths first, then hundredths, then thousandths.",
+      "Why do trailing zeros to the right of a decimal not change its value?",
+    ),
     content: {
       questionType: "ORDERED_RESPONSE",
       prompt: "Arrange the values from least to greatest.",
@@ -273,6 +288,11 @@ const seedQuestions: SeedQuestion[] = [
     estimatedSeconds: 90,
     calculatorPolicy: "NOT_NEEDED",
     misconceptions: ["COMPUTES_MEAN_INSTEAD_OF_MEDIAN", "DOES_NOT_ORDER_DATA"],
+    tutorGuidance: tutorGuidance(
+      "What should you do to the five counts before locating their middle value?",
+      "Order the counts from least to greatest and select the third value.",
+      "Why is the median unchanged by how the rows were originally arranged?",
+    ),
     content: {
       questionType: "SINGLE_CHOICE",
       prompt: "What is the median number of books returned per hour?",
@@ -322,6 +342,11 @@ const seedQuestions: SeedQuestion[] = [
     estimatedSeconds: 95,
     calculatorPolicy: "NOT_NEEDED",
     misconceptions: ["USES_AREA_FORMULA", "FORGETS_PAIRED_SIDES"],
+    tutorGuidance: tutorGuidance(
+      "How does the perimeter account for both lengths and both widths?",
+      "Subtract twice the length from 54, then divide the remaining paired-width total by 2.",
+      "How can adding all four side lengths verify the width?",
+    ),
     content: {
       questionType: "SINGLE_CHOICE",
       prompt:
@@ -1502,6 +1527,667 @@ const numbersAndAlgebraExpansion: SeedQuestion[] = [
 
 seedQuestions.push(...numbersAndAlgebraExpansion);
 
+const measurementDataExpansion: SeedQuestion[] = [
+  {
+    questionId: seedId("13", 25),
+    versionId: seedId("14", 25),
+    slug: "remaining-length-decimals-001",
+    primarySkillId: ids.measurement,
+    learningObjective: "Subtract decimal measurements in the same unit.",
+    difficulty: "FOUNDATIONAL",
+    difficultyRationale:
+      "Requires one decimal subtraction after identifying the remaining length.",
+    estimatedSeconds: 55,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["ADDS_REMOVED_LENGTH"],
+    misconceptionRules: numericMisconception(
+      "adds-removed-length",
+      "ADDS_REMOVED_LENGTH",
+      3.25,
+      "Remaining length requires subtraction, not adding the removed piece.",
+    ),
+    tutorGuidance: tutorGuidance(
+      "Which operation finds what remains after a piece is removed?",
+      "Align the decimal points in 2.40 − 0.85.",
+      "How can adding the removed and remaining lengths check your result?",
+    ),
+    content: {
+      questionType: "NUMERIC",
+      prompt:
+        "A board is 2.4 meters long. A 0.85-meter piece is cut off. How many meters remain?",
+      answerSpec: numericAnswer(1.55, "meters", ["meter", "m"]),
+      explanation: "Subtract the removed length: 2.40 − 0.85 = 1.55 meters.",
+      distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [2.4, 0.85, "subtract"],
+      tolerance: 1e-12,
+    },
+  },
+  {
+    questionId: seedId("13", 26),
+    versionId: seedId("14", 26),
+    slug: "combine-liquid-volumes-001",
+    primarySkillId: ids.measurement,
+    learningObjective: "Add decimal liquid volumes expressed in liters.",
+    difficulty: "FOUNDATIONAL",
+    difficultyRationale:
+      "Requires adding two decimal measurements with the same unit.",
+    estimatedSeconds: 50,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["MISALIGNS_DECIMAL_PLACES"],
+    misconceptionRules: selectedMisconception(
+      "misaligns-volume-decimals",
+      "MISALIGNS_DECIMAL_PLACES",
+      "b",
+      "Align tenths with tenths and hundredths with hundredths before adding.",
+    ),
+    tutorGuidance: tutorGuidance(
+      "Are both quantities already expressed in the same unit?",
+      "Write 0.6 as 0.60, align decimal points, and add.",
+      "Why is a result smaller than 1.25 liters impossible here?",
+    ),
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt:
+        "A container holds 1.25 liters of water. Another 0.6 liter is added. What is the new volume?",
+      choices: [
+        { id: "a", content: "1.31 liters" },
+        { id: "b", content: "1.45 liters" },
+        { id: "c", content: "1.85 liters" },
+        { id: "d", content: "7.25 liters" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "c" },
+      explanation: "Write 0.6 as 0.60, then add: 1.25 + 0.60 = 1.85 liters.",
+      distractorRationales: {
+        a: "This adds the 6 in the hundredths place instead of the tenths place.",
+        b: "This does not add six tenths to 1.25 correctly.",
+        d: "This treats 0.6 as 6 whole liters.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [1.25, 0.6, "add"],
+      tolerance: 1e-12,
+    },
+  },
+  {
+    questionId: seedId("13", 27),
+    versionId: seedId("14", 27),
+    slug: "elapsed-time-001",
+    primarySkillId: ids.measurement,
+    learningObjective: "Determine elapsed time across an hour boundary.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires decomposing elapsed time across two clock-hour intervals.",
+    estimatedSeconds: 70,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["SUBTRACTS_CLOCK_DIGITS_DIRECTLY"],
+    misconceptionRules: selectedMisconception(
+      "subtracts-time-as-decimal",
+      "SUBTRACTS_CLOCK_DIGITS_DIRECTLY",
+      "a",
+      "Clock minutes use groups of 60, so subtracting the displayed digits as decimals does not measure elapsed time.",
+    ),
+    tutorGuidance: tutorGuidance(
+      "How many minutes pass from 9:35 a.m. to 10:00 a.m.?",
+      "Add that interval to the 65 minutes from 10:00 a.m. to 11:05 a.m.",
+      "How can 1 hour 30 minutes confirm your answer in minutes?",
+    ),
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt:
+        "A class begins at 9:35 a.m. and ends at 11:05 a.m. How many minutes does the class last?",
+      choices: [
+        { id: "a", content: "70 minutes" },
+        { id: "b", content: "80 minutes" },
+        { id: "c", content: "90 minutes" },
+        { id: "d", content: "130 minutes" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "c" },
+      explanation:
+        "From 9:35 to 10:00 is 25 minutes, and from 10:00 to 11:05 is 65 minutes. The total is 90 minutes.",
+      distractorRationales: {
+        a: "This subtracts the displayed clock digits without accounting for 60 minutes per hour.",
+        b: "This omits 10 minutes from the full interval.",
+        d: "This treats 1 hour 30 minutes as 130 minutes.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [
+        11,
+        60,
+        "multiply",
+        5,
+        "add",
+        9,
+        60,
+        "multiply",
+        35,
+        "add",
+        "subtract",
+      ],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: seedId("13", 28),
+    versionId: seedId("14", 28),
+    slug: "drawing-scale-distance-001",
+    primarySkillId: ids.measurement,
+    learningObjective: "Use a drawing scale to determine an actual distance.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires interpreting a scale and multiplying a decimal drawing length.",
+    estimatedSeconds: 75,
+    calculatorPolicy: "ALLOWED",
+    misconceptions: ["DIVIDES_BY_SCALE_FACTOR"],
+    misconceptionRules: selectedMisconception(
+      "divides-drawing-scale",
+      "DIVIDES_BY_SCALE_FACTOR",
+      "a",
+      "Each drawing centimeter represents 4 actual meters, so multiply the drawing length by 4.",
+    ),
+    tutorGuidance: tutorGuidance(
+      "What actual distance does one centimeter represent?",
+      "Multiply 6.5 drawing centimeters by 4 meters per centimeter.",
+      "Why should the actual numerical distance be larger than the drawing length?",
+    ),
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt:
+        "On a floor plan, 1 centimeter represents 4 meters. A hallway measures 6.5 centimeters on the plan. What is its actual length?",
+      choices: [
+        { id: "a", content: "1.625 meters" },
+        { id: "b", content: "10.5 meters" },
+        { id: "c", content: "24 meters" },
+        { id: "d", content: "26 meters" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "d" },
+      explanation: "Multiply by the scale factor: 6.5 × 4 = 26 meters.",
+      distractorRationales: {
+        a: "This divides by the scale factor instead of multiplying.",
+        b: "This adds the scale factor to the drawing length.",
+        c: "This uses 6 centimeters and ignores the remaining 0.5 centimeter.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [6.5, 4, "multiply"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: seedId("13", 29),
+    versionId: seedId("14", 29),
+    slug: "triangle-area-001",
+    primarySkillId: ids.geometry,
+    learningObjective:
+      "Calculate the area of a triangle from its base and height.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires selecting and applying the triangle-area relationship.",
+    estimatedSeconds: 65,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["OMITS_ONE_HALF_FACTOR"],
+    misconceptionRules: numericMisconception(
+      "uses-rectangle-area",
+      "OMITS_ONE_HALF_FACTOR",
+      84,
+      "A triangle with the same base and height has half the area of the corresponding rectangle.",
+    ),
+    tutorGuidance: tutorGuidance(
+      "How does a triangle's area compare with a rectangle having the same base and height?",
+      "Multiply 12 by 7, then divide that product by 2.",
+      "How would doubling the height affect the area?",
+    ),
+    content: {
+      questionType: "NUMERIC",
+      prompt:
+        "A triangle has a base of 12 centimeters and a perpendicular height of 7 centimeters. What is its area in square centimeters?",
+      answerSpec: numericAnswer(42, "square centimeters", [
+        "square centimeter",
+        "cm2",
+      ]),
+      explanation:
+        "Use A = 1/2 × base × height: 1/2 × 12 × 7 = 42 square centimeters.",
+      distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [12, 7, "multiply", 2, "divide"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: seedId("13", 30),
+    versionId: seedId("14", 30),
+    slug: "circle-circumference-001",
+    primarySkillId: ids.geometry,
+    learningObjective: "Calculate circumference from a circle's diameter.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires distinguishing diameter from radius and applying a provided approximation for pi.",
+    estimatedSeconds: 70,
+    calculatorPolicy: "ALLOWED",
+    misconceptions: ["USES_RADIUS_WITH_DIAMETER_FORMULA"],
+    misconceptionRules: selectedMisconception(
+      "halves-diameter-before-pi",
+      "USES_RADIUS_WITH_DIAMETER_FORMULA",
+      "a",
+      "The circumference formula C = pi times diameter already uses the full diameter; do not halve it first.",
+    ),
+    tutorGuidance: tutorGuidance(
+      "Which circumference formula uses diameter directly?",
+      "Multiply the given diameter, 10, by 3.14.",
+      "Why is the circumference a little more than three times the diameter?",
+    ),
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt:
+        "A circular lid has a diameter of 10 inches. Using 3.14 for pi, what is its circumference?",
+      choices: [
+        { id: "a", content: "15.7 inches" },
+        { id: "b", content: "20 inches" },
+        { id: "c", content: "31.4 inches" },
+        { id: "d", content: "78.5 inches" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "c" },
+      explanation: "Use C = pi times diameter: 3.14 × 10 = 31.4 inches.",
+      distractorRationales: {
+        a: "This uses half the diameter and therefore finds only half the circumference.",
+        b: "This doubles the diameter but does not apply pi.",
+        d: "This applies an area calculation rather than circumference.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [3.14, 10, "multiply"],
+      tolerance: 1e-12,
+    },
+  },
+  {
+    questionId: seedId("13", 31),
+    versionId: seedId("14", 31),
+    slug: "rectangular-prism-volume-001",
+    primarySkillId: ids.geometry,
+    learningObjective: "Calculate the volume of a rectangular prism.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires multiplying three dimensions and reporting cubic units.",
+    estimatedSeconds: 70,
+    calculatorPolicy: "ALLOWED",
+    misconceptions: ["OMITS_ONE_DIMENSION"],
+    misconceptionRules: numericMisconception(
+      "uses-base-area-only",
+      "OMITS_ONE_DIMENSION",
+      24,
+      "Volume requires all three dimensions. A length-times-width product gives only the base area.",
+    ),
+    tutorGuidance: tutorGuidance(
+      "Which three dimensions determine the volume of a rectangular prism?",
+      "Multiply 8 × 3 × 2.5 and report cubic units.",
+      "How does the unit show that three dimensions were multiplied?",
+    ),
+    content: {
+      questionType: "NUMERIC",
+      prompt:
+        "A rectangular container is 8 inches long, 3 inches wide, and 2.5 inches high. What is its volume in cubic inches?",
+      answerSpec: numericAnswer(60, "cubic inches", ["cubic inch", "in3"]),
+      explanation:
+        "Volume is length × width × height: 8 × 3 × 2.5 = 60 cubic inches.",
+      distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [8, 3, "multiply", 2.5, "multiply"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: seedId("13", 32),
+    versionId: seedId("14", 32),
+    slug: "supplementary-angle-001",
+    primarySkillId: ids.geometry,
+    learningObjective: "Find an angle supplementary to a given angle.",
+    difficulty: "FOUNDATIONAL",
+    difficultyRationale:
+      "Requires recalling that a linear pair totals 180 degrees and subtracting once.",
+    estimatedSeconds: 55,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["USES_COMPLEMENTARY_TOTAL"],
+    misconceptionRules: selectedMisconception(
+      "uses-ninety-degree-total",
+      "USES_COMPLEMENTARY_TOTAL",
+      "a",
+      "Supplementary angles total 180 degrees; 90 degrees is the total for complementary angles.",
+    ),
+    tutorGuidance: tutorGuidance(
+      "What total measure do supplementary angles form?",
+      "Subtract 128 degrees from 180 degrees.",
+      "How can adding the two angle measures verify that they are supplementary?",
+    ),
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt:
+        "Two angles form a straight line. One angle measures 128 degrees. What is the measure of the other angle?",
+      choices: [
+        { id: "a", content: "38 degrees" },
+        { id: "b", content: "52 degrees" },
+        { id: "c", content: "62 degrees" },
+        { id: "d", content: "128 degrees" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "b" },
+      explanation:
+        "Angles on a straight line total 180 degrees, so 180 − 128 = 52 degrees.",
+      distractorRationales: {
+        a: "This incorrectly starts from 90 degrees instead of 180 degrees.",
+        c: "This subtraction does not produce a 180-degree total with 128 degrees.",
+        d: "The two angles are not necessarily equal; they must total 180 degrees.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [180, 128, "subtract"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: seedId("13", 33),
+    versionId: seedId("14", 33),
+    slug: "table-mean-001",
+    primarySkillId: ids.dataInterpretation,
+    learningObjective: "Read a table and calculate the mean of its values.",
+    difficulty: "PROFICIENT",
+    difficultyRationale:
+      "Requires extracting all table values, summing them, and dividing by the number of observations.",
+    estimatedSeconds: 90,
+    calculatorPolicy: "ALLOWED",
+    misconceptions: ["DIVIDES_BY_WRONG_OBSERVATION_COUNT"],
+    misconceptionRules: selectedMisconception(
+      "divides-by-four-rows",
+      "DIVIDES_BY_WRONG_OBSERVATION_COUNT",
+      "d",
+      "The table contains five daily observations, so divide the total by 5.",
+    ),
+    tutorGuidance: tutorGuidance(
+      "How many daily values appear in the table?",
+      "Add all five values, then divide the total by 5.",
+      "How does comparing your mean with the smallest and largest values help check it?",
+    ),
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt: "What is the mean number of calls answered per day?",
+      stimulus: {
+        type: "table",
+        caption: "Calls answered by a support desk",
+        columns: ["Day", "Calls answered"],
+        rows: [
+          ["Monday", "12"],
+          ["Tuesday", "15"],
+          ["Wednesday", "9"],
+          ["Thursday", "16"],
+          ["Friday", "8"],
+        ],
+      },
+      choices: [
+        { id: "a", content: "10 calls" },
+        { id: "b", content: "11 calls" },
+        { id: "c", content: "12 calls" },
+        { id: "d", content: "15 calls" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "c" },
+      explanation:
+        "Add the five values to get 60, then divide by 5: 60 ÷ 5 = 12 calls.",
+      distractorRationales: {
+        a: "This does not use the total of all five values divided by 5.",
+        b: "This is one below the calculated mean.",
+        d: "This divides the total by 4 instead of the five observations.",
+      },
+    },
+    verificationSpec: {
+      kind: "data_result",
+      operation: "mean",
+      values: [12, 15, 9, 16, 8],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: seedId("13", 34),
+    versionId: seedId("14", 34),
+    slug: "table-range-001",
+    primarySkillId: ids.dataInterpretation,
+    learningObjective: "Determine the range of values shown in a table.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires locating the largest and smallest table values and finding their difference.",
+    estimatedSeconds: 70,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["REPORTS_MAXIMUM_AS_RANGE"],
+    misconceptionRules: selectedMisconception(
+      "returns-table-maximum",
+      "REPORTS_MAXIMUM_AS_RANGE",
+      "d",
+      "The range is the maximum minus the minimum, not the maximum alone.",
+    ),
+    tutorGuidance: tutorGuidance(
+      "What are the greatest and least values in the table?",
+      "Subtract the least value from the greatest value.",
+      "Why does the range describe spread rather than a typical value?",
+    ),
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt: "What is the range of the recorded wait times?",
+      stimulus: {
+        type: "table",
+        caption: "Customer wait times",
+        columns: ["Customer", "Wait time (minutes)"],
+        rows: [
+          ["A", "18"],
+          ["B", "24"],
+          ["C", "15"],
+          ["D", "27"],
+        ],
+      },
+      choices: [
+        { id: "a", content: "3 minutes" },
+        { id: "b", content: "9 minutes" },
+        { id: "c", content: "12 minutes" },
+        { id: "d", content: "27 minutes" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "c" },
+      explanation:
+        "The maximum is 27 and the minimum is 15, so the range is 27 − 15 = 12 minutes.",
+      distractorRationales: {
+        a: "This is the difference between 27 and 24, not the full range.",
+        b: "This is the difference between 24 and 15, not the maximum-minus-minimum difference.",
+        d: "This reports the maximum value instead of subtracting the minimum.",
+      },
+    },
+    verificationSpec: {
+      kind: "data_result",
+      operation: "range",
+      values: [18, 24, 15, 27],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: seedId("13", 35),
+    versionId: seedId("14", 35),
+    slug: "order-data-values-001",
+    primarySkillId: ids.dataInterpretation,
+    learningObjective:
+      "Order quantitative table entries from greatest to least.",
+    difficulty: "FOUNDATIONAL",
+    difficultyRationale:
+      "Requires reading four labeled values and ordering them without additional calculation.",
+    estimatedSeconds: 60,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["ORDERS_LABELS_ALPHABETICALLY"],
+    tutorGuidance: tutorGuidance(
+      "Which category has the largest numerical value?",
+      "Compare the counts, not the alphabetical order of the category labels.",
+      "Which adjacent pair in your order has the smallest difference?",
+    ),
+    content: {
+      questionType: "ORDERED_RESPONSE",
+      prompt: "Arrange the routes from greatest to least number of riders.",
+      stimulus: {
+        type: "table",
+        caption: "Morning bus ridership",
+        columns: ["Route", "Riders"],
+        rows: [
+          ["North", "42"],
+          ["East", "37"],
+          ["South", "51"],
+          ["West", "46"],
+        ],
+      },
+      choices: [
+        { id: "north", content: "North: 42" },
+        { id: "east", content: "East: 37" },
+        { id: "south", content: "South: 51" },
+        { id: "west", content: "West: 46" },
+      ],
+      answerSpec: {
+        type: "ordered_response",
+        itemIds: ["south", "west", "north", "east"],
+      },
+      explanation:
+        "Compare the rider counts: 51 > 46 > 42 > 37, so the order is South, West, North, East.",
+      distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "ordered_values",
+      values: { north: 42, east: 37, south: 51, west: 46 },
+      direction: "descending",
+    },
+  },
+  {
+    questionId: seedId("13", 36),
+    versionId: seedId("14", 36),
+    slug: "fraction-probability-001",
+    primarySkillId: ids.probabilityStatistics,
+    learningObjective:
+      "Express a simple event probability as a reduced fraction.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires counting total outcomes, forming a probability, and reducing the fraction.",
+    estimatedSeconds: 70,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["USES_NONFAVORABLE_COUNT"],
+    misconceptionRules: selectedMisconception(
+      "counts-not-red-marbles",
+      "USES_NONFAVORABLE_COUNT",
+      "c",
+      "The numerator counts favorable red marbles, not all marbles that are not red.",
+    ),
+    tutorGuidance: tutorGuidance(
+      "How many marbles are in the bag in total?",
+      "Place the 4 favorable red outcomes over the 12 total outcomes, then reduce.",
+      "How can the probability of not drawing red help verify your fraction?",
+    ),
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt:
+        "A bag contains 4 red marbles, 5 blue marbles, and 3 white marbles. What is the probability of selecting a red marble at random?",
+      choices: [
+        { id: "a", content: "1/4" },
+        { id: "b", content: "1/3" },
+        { id: "c", content: "2/3" },
+        { id: "d", content: "3/4" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "b" },
+      explanation:
+        "There are 12 marbles total and 4 are red. The probability is 4/12 = 1/3.",
+      distractorRationales: {
+        a: "This uses the number of red marbles over an incorrect total of 16.",
+        c: "This is the probability of selecting a marble that is not red.",
+        d: "This does not represent 4 favorable outcomes out of 12 total outcomes.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [4, 12, "divide"],
+      tolerance: 1e-12,
+    },
+  },
+  {
+    questionId: seedId("13", 37),
+    versionId: seedId("14", 37),
+    slug: "calculate-mean-001",
+    primarySkillId: ids.probabilityStatistics,
+    learningObjective: "Calculate the arithmetic mean of a small data set.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires summing five values and dividing by the correct observation count.",
+    estimatedSeconds: 75,
+    calculatorPolicy: "ALLOWED",
+    misconceptions: ["DIVIDES_BY_SUM_INSTEAD_OF_COUNT"],
+    tutorGuidance: tutorGuidance(
+      "What is the sum of all five values?",
+      "Divide the sum by the number of values, which is 5.",
+      "Why must the mean fall between the smallest and largest values?",
+    ),
+    content: {
+      questionType: "NUMERIC",
+      prompt: "What is the mean of 7, 10, 13, 6, and 9?",
+      answerSpec: numericAnswer(9),
+      explanation: "Add the values to get 45, then divide by 5: 45 ÷ 5 = 9.",
+      distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "data_result",
+      operation: "mean",
+      values: [7, 10, 13, 6, 9],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: seedId("13", 38),
+    versionId: seedId("14", 38),
+    slug: "even-set-median-001",
+    primarySkillId: ids.probabilityStatistics,
+    learningObjective:
+      "Calculate the median of a data set with an even number of values.",
+    difficulty: "PROFICIENT",
+    difficultyRationale:
+      "Requires ordering an even-sized set and averaging its two middle values.",
+    estimatedSeconds: 80,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["SELECTS_ONE_MIDDLE_VALUE"],
+    misconceptionRules: numericMisconception(
+      "selects-lower-middle",
+      "SELECTS_ONE_MIDDLE_VALUE",
+      7,
+      "An even-sized set has two middle values; average both rather than selecting one.",
+    ),
+    tutorGuidance: tutorGuidance(
+      "What is the ordered form of the four values?",
+      "Average the two middle values after ordering the set.",
+      "How would adding a fifth value change the way the median is identified?",
+    ),
+    content: {
+      questionType: "NUMERIC",
+      prompt: "What is the median of 4, 11, 7, and 14?",
+      answerSpec: numericAnswer(9),
+      explanation:
+        "Order the values: 4, 7, 11, 14. Average the two middle values: (7 + 11) ÷ 2 = 9.",
+      distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "data_result",
+      operation: "median",
+      values: [4, 11, 7, 14],
+      tolerance: 0,
+    },
+  },
+];
+
+seedQuestions.push(...measurementDataExpansion);
+
 const requiredLeafSkillIds = [
   ids.arithmetic,
   ids.fractionsDecimalsPercent,
@@ -1516,6 +2202,67 @@ const requiredLeafSkillIds = [
   ids.dataInterpretation,
   ids.probabilityStatistics,
 ] as const;
+
+function seedId(prefix: "13" | "14", sequence: number) {
+  return `${prefix}000000-0000-4000-8000-${String(sequence).padStart(12, "0")}`;
+}
+
+function numericAnswer(
+  value: number,
+  unit?: string,
+  acceptedUnits: string[] = [],
+): Extract<QuestionContent["answerSpec"], { type: "numeric" }> {
+  return {
+    type: "numeric",
+    value,
+    tolerance: 0,
+    toleranceMode: "absolute",
+    unit,
+    acceptedUnits,
+    unitRequired: Boolean(unit),
+  };
+}
+
+function tutorGuidance(
+  question: string,
+  hint: string,
+  reflectionPrompt: string,
+): TutorGuidance {
+  return {
+    steps: [
+      { id: "plan-solution", kind: "SOCRATIC_QUESTION", content: question },
+      { id: "apply-plan", kind: "HINT", content: hint },
+    ],
+    reflectionPrompt,
+  };
+}
+
+function selectedMisconception(
+  id: string,
+  code: string,
+  choiceId: string,
+  learnerMessage: string,
+): MisconceptionRule[] {
+  return [{ id, code, learnerMessage, kind: "selected_choice", choiceId }];
+}
+
+function numericMisconception(
+  id: string,
+  code: string,
+  value: number,
+  learnerMessage: string,
+): MisconceptionRule[] {
+  return [
+    {
+      id,
+      code,
+      learnerMessage,
+      kind: "numeric_value",
+      value,
+      tolerance: 0,
+    },
+  ];
+}
 
 async function main() {
   assertSeedDatasetIntegrity();
@@ -2053,6 +2800,35 @@ function assertSeedDatasetIntegrity() {
   if (missingSkillIds.length > 0) {
     throw new Error(
       `Seed questions do not cover Math leaf skills: ${missingSkillIds.join(", ")}.`,
+    );
+  }
+
+  const numbersAndAlgebraSkillIds = new Set<string>([
+    ids.arithmetic,
+    ids.fractionsDecimalsPercent,
+    ids.ratiosProportions,
+    ids.conversions,
+    ids.algebraicExpressions,
+    ids.linearEquations,
+    ids.inequalities,
+    ids.wordProblems,
+  ]);
+  const numbersAndAlgebraCount = seedQuestions.filter((candidate) =>
+    numbersAndAlgebraSkillIds.has(candidate.primarySkillId),
+  ).length;
+  const measurementDataCount = seedQuestions.length - numbersAndAlgebraCount;
+  if (numbersAndAlgebraCount !== 20 || measurementDataCount !== 18) {
+    throw new Error(
+      `Seed blueprint requires 20 Numbers and Algebra and 18 Measurement and Data families; found ${numbersAndAlgebraCount} and ${measurementDataCount}.`,
+    );
+  }
+
+  const missingTutorGuidance = seedQuestions
+    .filter((candidate) => !candidate.tutorGuidance)
+    .map((candidate) => candidate.slug);
+  if (missingTutorGuidance.length > 0) {
+    throw new Error(
+      `Seed questions missing tutor guidance: ${missingTutorGuidance.join(", ")}.`,
     );
   }
 }
