@@ -101,9 +101,10 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Add the Better Auth route, generated-compatible Drizzle tables, encrypted OAuth-token storage, revocable role grants, append-only account audit events, and production environment guards.
 - [x] Add an honest sign-in surface, signed database-session resolution, logout revocation, account-linked learner progress, and active database-role enforcement for reviewer access.
 - [x] Add a versioned learner-data export with fresh-session enforcement, no-store delivery, and explicit credential/answer-key/reviewer-note exclusions.
+- [x] Add a signed-in-device view and transactional revoke-other-sessions control with an append-only audit event.
 - Configure real Google credentials and test successful, denied, malformed, and replayed provider callbacks before enabling production sign-in.
 - Add the application-owned transactional deletion workflow.
-- Add CSRF/state/nonce protections, secure cookies, session rotation, audit events, and abuse controls.
+- Verify provider CSRF/state/nonce and production cookie behavior; add remaining sign-in/sign-out audit events and abuse controls.
 
 **Exit:** authorization tests cover learner/reviewer/admin boundaries and deletion behavior is documented and verified.
 

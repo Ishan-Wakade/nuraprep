@@ -13,19 +13,19 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 **Generation-pipeline phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, persisted topic practice, a coverage-aware diagnostic, a versioned rules-based adaptive scheduler, full timed-test mechanics, a transparent readiness-estimation baseline, and a fail-closed source/generation control plane. Thirty-eight original seed candidates cover every current Math leaf skill and fill the internal 20-family Numbers-and-Algebra and 18-family Measurement-and-Data targets. They remain deliberately unapproved, and browser tests use disposable, explicitly test-only approvals to verify complete learner flows. There is no approved production question bank, configured generation provider, or externally validated score predictor yet.
 
-| Area                                        | Status                                                                                                      |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Public repository and engineering standards | Complete                                                                                                    |
-| Math taxonomy and question data model       | Implemented with migrations and seed data                                                                   |
-| Reviewer and provenance workflow            | Review, publication, coverage gaps, reports, pattern search, and approved improvement plans working locally |
-| Topic practice                              | Working local multi-format vertical slice                                                                   |
-| Diagnostic                                  | Working local flow with explicit coverage and starting signals                                              |
-| Adaptive mode                               | Working local, inspectable rules baseline                                                                   |
-| Timed Math practice test                    | Mechanics verified; production bank lacks 38 approved families                                              |
-| Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                              |
-| Source and generation controls              | Registry, leased request queue, and worker gates working; provider intentionally off                        |
-| Google sign-in                              | Session, UI, logout, and role enforcement implemented; real provider callback awaits credentials            |
-| Billing and AWS deployment                  | Deferred until authenticated core flows and content review are complete                                     |
+| Area                                        | Status                                                                                                             |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Public repository and engineering standards | Complete                                                                                                           |
+| Math taxonomy and question data model       | Implemented with migrations and seed data                                                                          |
+| Reviewer and provenance workflow            | Review, publication, coverage gaps, reports, pattern search, and approved improvement plans working locally        |
+| Topic practice                              | Working local multi-format vertical slice                                                                          |
+| Diagnostic                                  | Working local flow with explicit coverage and starting signals                                                     |
+| Adaptive mode                               | Working local, inspectable rules baseline                                                                          |
+| Timed Math practice test                    | Mechanics verified; production bank lacks 38 approved families                                                     |
+| Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                                     |
+| Source and generation controls              | Registry, leased request queue, and worker gates working; provider intentionally off                               |
+| Google sign-in                              | Session, UI, logout, device revocation, export, and role enforcement implemented; real callback awaits credentials |
+| Billing and AWS deployment                  | Deferred until authenticated core flows and content review are complete                                            |
 
 ## Product preview
 
@@ -86,7 +86,7 @@ Important boundaries:
 - Source material is never copied into generated questions. Acquisition requires a recorded license/terms/robots decision.
 - Objective math is checked in code wherever possible. LLM review supplements deterministic checks; it does not replace them.
 - Adaptive recommendations and score estimates retain their inputs, model version, explanation, and uncertainty.
-- Authentication and billing are deferred so the practice and review loops can be validated first.
+- Authentication foundations now protect learner and reviewer flows; billing remains deferred until the authenticated core and reviewed content are ready.
 
 See [Architecture](docs/ARCHITECTURE.md), [authentication and account security](docs/AUTHENTICATION.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Practice-test blueprint](docs/PRACTICE_TEST.md), [Score estimation](docs/SCORE_ESTIMATION.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), [source research log](docs/SOURCE_RESEARCH_LOG.md), [generation pipeline](docs/GENERATION_PIPELINE.md), and [Roadmap](docs/ROADMAP.md).
 
@@ -161,7 +161,7 @@ No cloud resources are provisioned by this repository yet. A cost estimate, tear
 - Never store raw payment-card data; Stripe-hosted checkout will handle payment details.
 - Keep generation prompts, answer keys, reviewer operations, and provider secrets server-side.
 - Separate learner, reviewer, and administrator permissions and record sensitive review actions.
-- Allow account export/deletion and define retention before public launch.
+- Keep portable account export available; complete transactional deletion and retention verification before public launch.
 - Describe predictions as estimates, show uncertainty, and never present them as official ATI scores.
 - Require review before generated questions reach learners and provide a visible error-report path.
 - Do not claim official equivalence, pass-rate improvements, or predictive accuracy without evidence.

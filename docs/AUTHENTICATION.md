@@ -1,6 +1,6 @@
 # Authentication and account-security design
 
-Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, sign-in and sign-out surfaces, account-scoped learner profiles, fresh-session-gated portable export, environment fail-closed checks, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation, reviewer denial/approval, export credential exclusion, and stale-session denial without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's direct deletion endpoint is intentionally disabled until the application-owned transactional deletion workflow and its foreign-key tests are implemented.
+Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, sign-in and sign-out surfaces, account-scoped learner profiles, fresh-session-gated portable export, signed-in-device visibility, transactional revocation of other sessions, environment fail-closed checks, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation without exposing tokens, reviewer denial/approval, export credential exclusion, and stale-session denial without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's direct deletion endpoint is intentionally disabled until the application-owned transactional deletion workflow and its foreign-key tests are implemented.
 
 NuraPrep will use Google OpenID Connect through Better Auth with its Drizzle/PostgreSQL adapter. The application will keep database-backed, revocable sessions and will not request access to Google APIs beyond the identity scopes needed for sign-in. Development identities remain available only behind explicit local switches that already fail closed when `APP_ENV=production`.
 
@@ -38,6 +38,8 @@ The authentication foundation includes:
 - Use a seven-day absolute session lifetime, a 24-hour rolling update interval, and require a session created within 15 minutes for role changes, export, or account deletion.
 - Store no email, role, access token, or learner progress in browser-readable storage.
 - Do not request or retain a Google refresh token because NuraPrep does not call Google APIs after sign-in.
+
+The account page shows coarse device type, session timestamps, and IP address only to the owning authenticated user. The revoke-other-devices action obtains the current session server-side, deletes every sibling session in one database transaction, preserves the current session, and appends the number revoked to the account audit log. Raw session tokens never enter page props or the portable export.
 
 ## Google configuration
 
@@ -83,7 +85,7 @@ The implementation is not complete until automated tests cover:
 - learner isolation across reads and every Server Action;
 - learner denial from reviewer routes and mutations;
 - reviewer grant/revocation with fresh-session enforcement and audit evidence;
-- logout on one device and revoke-all behavior;
+- logout on one device and revoke-other-devices behavior;
 - export scope and credential exclusion;
 - full account deletion, rollback on injected failure, and post-deletion access denial; and
 - secure cookie attributes in a production-mode integration test.

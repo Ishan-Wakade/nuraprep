@@ -4,6 +4,9 @@ import Link from "next/link";
 import { SignOutButton } from "@/app/sign-out-button";
 import { buildLearnerDataExport } from "@/data/account";
 import { requireLearner } from "@/lib/auth/learner";
+import { getCurrentSession } from "@/lib/auth/session";
+
+import { SessionControls } from "./session-controls";
 
 export const metadata: Metadata = {
   title: "Account and data",
@@ -12,9 +15,16 @@ export const metadata: Metadata = {
 
 export default async function AccountPage() {
   const identity = await requireLearner();
-  const data = await buildLearnerDataExport(identity);
+  const [data, currentSession] = await Promise.all([
+    buildLearnerDataExport(identity),
+    getCurrentSession(),
+  ]);
   const attemptCount = data.practiceItems.filter(
     (item) => item.attemptId !== null,
+  ).length;
+  const currentSessionId = currentSession?.session.id ?? null;
+  const otherSessionCount = data.accountSessions.filter(
+    (session) => session.id !== currentSessionId,
   ).length;
 
   return (
@@ -111,6 +121,56 @@ export default async function AccountPage() {
           </section>
         </div>
 
+        {identity.mode === "authenticated" ? (
+          <section className="mt-6 rounded-2xl border border-[#d5ddd7] bg-[#fffdf8] p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold tracking-[0.12em] text-[#116b65] uppercase">
+                  Session security
+                </p>
+                <h2 className="mt-2 font-serif text-2xl">Signed-in devices</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[#587073]">
+                  Review active sessions and revoke every session except this
+                  one if you no longer recognize a device.
+                </p>
+              </div>
+              <span className="rounded-full bg-[#e0eee9] px-3 py-1 text-xs font-bold text-[#116b65]">
+                {data.accountSessions.length} active
+              </span>
+            </div>
+
+            <ul className="mt-5 grid gap-3" aria-label="Active sessions">
+              {data.accountSessions.map((session) => {
+                const isCurrent = session.id === currentSessionId;
+                return (
+                  <li
+                    key={session.id}
+                    className="rounded-xl border border-[#dde3df] bg-white p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-bold text-[#29494c]">
+                        {summarizeDevice(session.userAgent)}
+                      </p>
+                      {isCurrent ? (
+                        <span className="rounded-full bg-[#116b65] px-2.5 py-1 text-[11px] font-bold text-white">
+                          Current session
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-xs leading-5 text-[#66797b]">
+                      Started {formatSessionDate(session.createdAt)} · Last
+                      active {formatSessionDate(session.updatedAt)}
+                      {session.ipAddress ? ` · IP ${session.ipAddress}` : ""}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <SessionControls otherSessionCount={otherSessionCount} />
+          </section>
+        ) : null}
+
         <section className="mt-6 rounded-2xl border border-[#e0c9a6] bg-[#fff8e9] p-6">
           <h2 className="font-serif text-2xl">Account deletion</h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-[#665b49]">
@@ -123,6 +183,25 @@ export default async function AccountPage() {
       </main>
     </div>
   );
+}
+
+function summarizeDevice(userAgent: string | null) {
+  if (!userAgent) return "Unknown device";
+  if (/iPhone/i.test(userAgent)) return "iPhone browser";
+  if (/iPad/i.test(userAgent)) return "iPad browser";
+  if (/Android/i.test(userAgent)) return "Android browser";
+  if (/Macintosh|Mac OS X/i.test(userAgent)) return "Mac browser";
+  if (/Windows/i.test(userAgent)) return "Windows browser";
+  if (/Linux/i.test(userAgent)) return "Linux browser";
+  return "Web browser";
+}
+
+function formatSessionDate(value: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(value);
 }
 
 function SummaryCard({ label, value }: { label: string; value: number }) {

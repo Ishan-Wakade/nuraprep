@@ -32,6 +32,7 @@ async function createAuthenticatedSession() {
   return {
     pool,
     userId,
+    sessionId,
     token,
     cookie: {
       name: "better-auth.session_token",
@@ -193,6 +194,58 @@ test("requires a recent sign-in for an authenticated data export", async ({
     expect(await response.json()).toEqual({
       error: "A recent sign-in is required before downloading account data.",
     });
+  } finally {
+    await authenticated.pool.end();
+  }
+});
+
+test("revokes other sessions without ending the current session", async ({
+  page,
+}) => {
+  const authenticated = await createAuthenticatedSession();
+  const otherSessionId = `e2e-other-session-${randomUUID()}`;
+  try {
+    await authenticated.pool.query(
+      `INSERT INTO auth_sessions
+       (id, token, user_id, expires_at, user_agent)
+       VALUES ($1, $2, $3, now() + interval '1 hour', 'Other test browser')`,
+      [otherSessionId, `e2e-other-token-${randomUUID()}`, authenticated.userId],
+    );
+    await page.context().addCookies([authenticated.cookie]);
+    await page.goto("/account");
+
+    await expect(page.getByText("2 active")).toBeVisible();
+    await expect(page.getByText("Current session")).toBeVisible();
+    await page.getByRole("button", { name: "Sign out other devices" }).click();
+    await expect(page.getByText("1 other session signed out.")).toBeVisible();
+    await expect(page.getByText("1 active")).toBeVisible();
+
+    const remaining = await authenticated.pool.query<{ id: string }>(
+      "SELECT id FROM auth_sessions WHERE user_id = $1",
+      [authenticated.userId],
+    );
+    expect(remaining.rows).toEqual([{ id: authenticated.sessionId }]);
+
+    const audit = await authenticated.pool.query<{
+      event_type: string;
+      revoked_count: number;
+    }>(
+      `SELECT event_type, (metadata->>'revokedCount')::int AS revoked_count
+       FROM account_audit_events
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [authenticated.userId],
+    );
+    expect(audit.rows[0]).toEqual({
+      event_type: "OTHER_SESSIONS_REVOKED",
+      revoked_count: 1,
+    });
+
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { name: "Your NuraPrep data" }),
+    ).toBeVisible();
   } finally {
     await authenticated.pool.end();
   }
