@@ -807,6 +807,701 @@ const seedQuestions: SeedQuestion[] = [
   },
 ];
 
+const numbersAndAlgebraExpansion: SeedQuestion[] = [
+  {
+    questionId: "13000000-0000-4000-8000-000000000014",
+    versionId: "14000000-0000-4000-8000-000000000014",
+    slug: "order-of-operations-001",
+    primarySkillId: ids.arithmetic,
+    learningObjective:
+      "Evaluate a numerical expression using the order of operations.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires completing division and multiplication before addition.",
+    estimatedSeconds: 65,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["EVALUATES_LEFT_TO_RIGHT_ONLY"],
+    misconceptionRules: [
+      {
+        id: "left-to-right-operation-order",
+        code: "EVALUATES_LEFT_TO_RIGHT_ONLY",
+        learnerMessage:
+          "You may have worked strictly from left to right. Complete division and multiplication before addition.",
+        kind: "numeric_value",
+        value: 45,
+        tolerance: 0,
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "identify-priority-operations",
+          kind: "SOCRATIC_QUESTION",
+          content:
+            "Which operations in the expression must be completed before addition?",
+        },
+        {
+          id: "evaluate-products-quotients",
+          kind: "HINT",
+          content:
+            "Evaluate 48 ÷ 6 and 7 × 3 separately, then add those results.",
+        },
+      ],
+      reflectionPrompt:
+        "Why does multiplication not automatically come before division when both appear?",
+    },
+    content: {
+      questionType: "NUMERIC",
+      prompt: "Evaluate 48 ÷ 6 + 7 × 3.",
+      answerSpec: {
+        type: "numeric",
+        value: 29,
+        tolerance: 0,
+        toleranceMode: "absolute",
+        acceptedUnits: [],
+        unitRequired: false,
+      },
+      explanation:
+        "Complete division and multiplication first: 48 ÷ 6 = 8 and 7 × 3 = 21. Then add: 8 + 21 = 29.",
+      distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [48, 6, "divide", 7, 3, "multiply", "add"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000015",
+    versionId: "14000000-0000-4000-8000-000000000015",
+    slug: "integer-temperature-change-001",
+    primarySkillId: ids.arithmetic,
+    learningObjective: "Add a positive change to a negative integer.",
+    difficulty: "FOUNDATIONAL",
+    difficultyRationale:
+      "Requires one signed-number addition in a familiar temperature context.",
+    estimatedSeconds: 50,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["IGNORES_NEGATIVE_STARTING_VALUE"],
+    misconceptionRules: [
+      {
+        id: "treats-start-as-positive",
+        code: "IGNORES_NEGATIVE_STARTING_VALUE",
+        learnerMessage:
+          "You may have treated the starting temperature as positive. Begin at −4 on a number line, then move 11 units upward.",
+        kind: "selected_choice",
+        choiceId: "d",
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "model-on-number-line",
+          kind: "SOCRATIC_QUESTION",
+          content:
+            "If you begin at −4 on a number line, in which direction does an increase move?",
+        },
+        {
+          id: "cross-zero",
+          kind: "HINT",
+          content:
+            "It takes 4 degrees of the increase to reach 0; apply the remaining increase from there.",
+        },
+      ],
+      reflectionPrompt:
+        "How much would the temperature need to rise to end at exactly 0°C?",
+    },
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt:
+        "At sunrise, the temperature was −4°C. By noon, it had risen 11°C. What was the temperature at noon?",
+      choices: [
+        { id: "a", content: "−15 degrees Celsius" },
+        { id: "b", content: "−7 degrees Celsius" },
+        { id: "c", content: "7 degrees Celsius" },
+        { id: "d", content: "15 degrees Celsius" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "c" },
+      explanation:
+        "An increase of 11°C means add 11: −4 + 11 = 7. The noon temperature was 7°C.",
+      distractorRationales: {
+        a: "This subtracts the increase from the negative starting value.",
+        b: "This reverses the subtraction order and keeps a negative sign.",
+        d: "This treats the starting temperature as positive 4°C.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [-4, 11, "add"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000016",
+    versionId: "14000000-0000-4000-8000-000000000016",
+    slug: "percent-of-quantity-001",
+    primarySkillId: ids.fractionsDecimalsPercent,
+    learningObjective: "Find a percent of a whole-number quantity.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires converting a percent to a decimal and multiplying.",
+    estimatedSeconds: 70,
+    calculatorPolicy: "ALLOWED",
+    misconceptions: ["USES_PERCENT_AS_WHOLE_NUMBER"],
+    misconceptionRules: [
+      {
+        id: "multiplies-by-thirty-five",
+        code: "USES_PERCENT_AS_WHOLE_NUMBER",
+        learnerMessage:
+          "Convert 35% to 0.35 before multiplying. Percent means per hundred.",
+        kind: "numeric_value",
+        value: 8400,
+        tolerance: 0,
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "convert-percent-decimal",
+          kind: "SOCRATIC_QUESTION",
+          content: "What decimal is equivalent to 35%?",
+        },
+        {
+          id: "multiply-whole",
+          kind: "HINT",
+          content: "Multiply 240 by the decimal equivalent of 35%.",
+        },
+      ],
+      reflectionPrompt:
+        "How can estimating one third of 240 help you check whether your result is reasonable?",
+    },
+    content: {
+      questionType: "NUMERIC",
+      prompt: "What is 35% of 240?",
+      answerSpec: {
+        type: "numeric",
+        value: 84,
+        tolerance: 0,
+        toleranceMode: "absolute",
+        acceptedUnits: [],
+        unitRequired: false,
+      },
+      explanation: "Convert 35% to 0.35, then multiply: 0.35 × 240 = 84.",
+      distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [35, 100, "divide", 240, "multiply"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000017",
+    versionId: "14000000-0000-4000-8000-000000000017",
+    slug: "add-mixed-numbers-001",
+    primarySkillId: ids.fractionsDecimalsPercent,
+    learningObjective: "Add mixed numbers with unlike denominators.",
+    difficulty: "PROFICIENT",
+    difficultyRationale:
+      "Requires finding a common denominator and combining whole and fractional parts.",
+    estimatedSeconds: 90,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["ADDS_DENOMINATORS"],
+    misconceptionRules: [
+      {
+        id: "adds-fraction-denominators",
+        code: "ADDS_DENOMINATORS",
+        learnerMessage:
+          "You may have added denominators. Rewrite both fractions with a common denominator before adding their numerators.",
+        kind: "selected_choice",
+        choiceId: "b",
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "find-common-denominator",
+          kind: "SOCRATIC_QUESTION",
+          content: "What is the least common denominator of 4 and 3?",
+        },
+        {
+          id: "rewrite-fractions",
+          kind: "HINT",
+          content:
+            "Rewrite 1/4 and 2/3 in twelfths, then add the whole-number and fraction parts.",
+        },
+      ],
+      reflectionPrompt:
+        "Why must the fractional parts refer to equal-size pieces before their numerators can be added?",
+    },
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt: "What is 2 1/4 + 1 2/3?",
+      choices: [
+        { id: "a", content: "3 3/7" },
+        { id: "b", content: "3 3/12" },
+        { id: "c", content: "3 11/12" },
+        { id: "d", content: "4 1/12" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "c" },
+      explanation:
+        "Use twelfths: 1/4 = 3/12 and 2/3 = 8/12. Then 2 + 1 + 3/12 + 8/12 = 3 11/12.",
+      distractorRationales: {
+        a: "This adds the numerators and denominators directly.",
+        b: "This changes the denominator but does not create equivalent fractions.",
+        d: "The fractional parts total 11/12, which is less than one whole.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [2.25, 1, 2, 3, "divide", "add", "add"],
+      tolerance: 1e-12,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000018",
+    versionId: "14000000-0000-4000-8000-000000000018",
+    slug: "solve-proportion-001",
+    primarySkillId: ids.ratiosProportions,
+    learningObjective: "Solve for a missing value in an equivalent proportion.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires recognizing a scale factor or solving one multiplication-division relationship.",
+    estimatedSeconds: 65,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["SCALES_ONLY_ONE_TERM_INCONSISTENTLY"],
+    misconceptionRules: [
+      {
+        id: "adds-denominator-change",
+        code: "SCALES_ONLY_ONE_TERM_INCONSISTENTLY",
+        learnerMessage:
+          "Equivalent ratios multiply both corresponding terms by the same scale factor. Determine how 7 became 35 first.",
+        kind: "numeric_value",
+        value: 32,
+        tolerance: 0,
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "identify-scale-factor",
+          kind: "SOCRATIC_QUESTION",
+          content: "What number multiplies 7 to produce 35?",
+        },
+        {
+          id: "apply-scale-factor",
+          kind: "HINT",
+          content:
+            "Multiply the corresponding numerator, 4, by that same factor.",
+        },
+      ],
+      reflectionPrompt:
+        "How could cross multiplication confirm the value you found?",
+    },
+    content: {
+      questionType: "NUMERIC",
+      prompt: "Solve the proportion 4/7 = x/35 for x.",
+      answerSpec: {
+        type: "numeric",
+        value: 20,
+        tolerance: 0,
+        toleranceMode: "absolute",
+        acceptedUnits: [],
+        unitRequired: false,
+      },
+      explanation:
+        "Because 7 × 5 = 35, multiply the numerator by the same factor: 4 × 5 = 20. Therefore, x = 20.",
+      distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [4, 35, "multiply", 7, "divide"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000019",
+    versionId: "14000000-0000-4000-8000-000000000019",
+    slug: "unit-price-scale-001",
+    primarySkillId: ids.ratiosProportions,
+    learningObjective: "Use a unit price to scale a proportional cost.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires finding cost per item and scaling it to a new item count.",
+    estimatedSeconds: 75,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["MULTIPLIES_TOTAL_COST_WITHOUT_UNIT_RATE"],
+    misconceptionRules: [
+      {
+        id: "multiplies-total-by-new-count",
+        code: "MULTIPLIES_TOTAL_COST_WITHOUT_UNIT_RATE",
+        learnerMessage:
+          "The $18 price covers six items, not one. Find the price of one item before scaling to eleven.",
+        kind: "selected_choice",
+        choiceId: "d",
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "find-price-per-item",
+          kind: "SOCRATIC_QUESTION",
+          content: "What is the cost of one filter if six cost $18?",
+        },
+        {
+          id: "scale-to-eleven",
+          kind: "HINT",
+          content: "Multiply the unit price by 11 filters.",
+        },
+      ],
+      reflectionPrompt:
+        "How can you compare your answer with the cost of 12 filters to check it?",
+    },
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt:
+        "Six replacement filters cost $18 at a constant unit price. How much do 11 filters cost?",
+      choices: [
+        { id: "a", content: "23 dollars" },
+        { id: "b", content: "29 dollars" },
+        { id: "c", content: "33 dollars" },
+        { id: "d", content: "198 dollars" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "c" },
+      explanation:
+        "The unit price is $18 ÷ 6 = $3 per filter. For 11 filters, $3 × 11 = $33.",
+      distractorRationales: {
+        a: "This adds the five additional filters to the original total cost.",
+        b: "This adds the new item count to the original total cost.",
+        d: "This multiplies the six-filter price directly by 11.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [18, 6, "divide", 11, "multiply"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000020",
+    versionId: "14000000-0000-4000-8000-000000000020",
+    slug: "minutes-to-hours-001",
+    primarySkillId: ids.conversions,
+    learningObjective: "Convert a duration from minutes to hours.",
+    difficulty: "FOUNDATIONAL",
+    difficultyRationale:
+      "Requires dividing by the familiar relationship of 60 minutes per hour.",
+    estimatedSeconds: 55,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["TREATS_BASE_SIXTY_AS_BASE_TEN"],
+    misconceptionRules: [
+      {
+        id: "moves-decimal-for-time",
+        code: "TREATS_BASE_SIXTY_AS_BASE_TEN",
+        learnerMessage:
+          "Time conversion uses 60 minutes per hour, not a decimal-place shift. Divide the minutes by 60.",
+        kind: "selected_choice",
+        choiceId: "b",
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "recall-minutes-per-hour",
+          kind: "SOCRATIC_QUESTION",
+          content: "How many minutes make one hour?",
+        },
+        {
+          id: "divide-by-sixty",
+          kind: "HINT",
+          content: "Divide 150 by 60 to express the duration in hours.",
+        },
+      ],
+      reflectionPrompt:
+        "How can 2 hours 30 minutes confirm the decimal-hour result?",
+    },
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt: "A workshop lasts 150 minutes. How long is it in hours?",
+      choices: [
+        { id: "a", content: "1.5 hours" },
+        { id: "b", content: "2.05 hours" },
+        { id: "c", content: "2.5 hours" },
+        { id: "d", content: "3.0 hours" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "c" },
+      explanation:
+        "There are 60 minutes in an hour. Divide: 150 ÷ 60 = 2.5 hours, which is 2 hours 30 minutes.",
+      distractorRationales: {
+        a: "This treats the conversion as a decimal-place change rather than division by 60.",
+        b: "This treats 30 minutes as 0.05 hour instead of one-half hour.",
+        d: "This rounds up to the next whole hour instead of retaining the half hour.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [150, 60, "divide"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000021",
+    versionId: "14000000-0000-4000-8000-000000000021",
+    slug: "evaluate-parenthesized-expression-001",
+    primarySkillId: ids.algebraicExpressions,
+    learningObjective:
+      "Evaluate an algebraic expression containing parentheses.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires substitution and correct evaluation of grouping, multiplication, and subtraction.",
+    estimatedSeconds: 70,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["IGNORES_GROUPING_SYMBOLS"],
+    misconceptionRules: [
+      {
+        id: "multiplies-only-variable",
+        code: "IGNORES_GROUPING_SYMBOLS",
+        learnerMessage:
+          "The 2 applies to the entire quantity inside parentheses. Evaluate the grouped sum before multiplying.",
+        kind: "numeric_value",
+        value: 10,
+        tolerance: 0,
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "substitute-and-group",
+          kind: "SOCRATIC_QUESTION",
+          content:
+            "After replacing a with 4, what is the value inside parentheses?",
+        },
+        {
+          id: "finish-expression",
+          kind: "HINT",
+          content: "Multiply the grouped result by 2, then subtract 3.",
+        },
+      ],
+      reflectionPrompt:
+        "How would the result differ if the expression were 2a + 5 − 3 instead?",
+    },
+    content: {
+      questionType: "NUMERIC",
+      prompt: "Evaluate 2(a + 5) − 3 when a = 4.",
+      answerSpec: {
+        type: "numeric",
+        value: 15,
+        tolerance: 0,
+        toleranceMode: "absolute",
+        acceptedUnits: [],
+        unitRequired: false,
+      },
+      explanation:
+        "Substitute 4 for a and evaluate the parentheses first: 2(4 + 5) − 3 = 2(9) − 3 = 15.",
+      distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [4, 5, "add", 2, "multiply", 3, "subtract"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000022",
+    versionId: "14000000-0000-4000-8000-000000000022",
+    slug: "solve-linear-equation-subtraction-001",
+    primarySkillId: ids.linearEquations,
+    learningObjective:
+      "Solve a two-step linear equation involving subtraction.",
+    difficulty: "DEVELOPING",
+    difficultyRationale:
+      "Requires undoing subtraction and then a whole-number coefficient.",
+    estimatedSeconds: 70,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["SUBTRACTS_CONSTANT_FROM_WRONG_SIDE"],
+    misconceptionRules: [
+      {
+        id: "subtracts-six-from-thirty",
+        code: "SUBTRACTS_CONSTANT_FROM_WRONG_SIDE",
+        learnerMessage:
+          "To undo −6, add 6 to both sides. Subtracting 6 again moves farther from isolating the variable term.",
+        kind: "numeric_value",
+        value: 6,
+        tolerance: 0,
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "undo-subtracted-constant",
+          kind: "SOCRATIC_QUESTION",
+          content: "What inverse operation will undo the −6?",
+        },
+        {
+          id: "divide-coefficient-four",
+          kind: "HINT",
+          content: "After obtaining 4y = 36, divide both sides by 4.",
+        },
+      ],
+      reflectionPrompt:
+        "What value results when your answer is substituted into 4y − 6?",
+    },
+    content: {
+      questionType: "NUMERIC",
+      prompt: "Solve 4y − 6 = 30 for y.",
+      answerSpec: {
+        type: "numeric",
+        value: 9,
+        tolerance: 0,
+        toleranceMode: "absolute",
+        acceptedUnits: [],
+        unitRequired: false,
+      },
+      explanation:
+        "Add 6 to both sides to get 4y = 36. Divide both sides by 4, so y = 9.",
+      distractorRationales: {},
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [30, 6, "add", 4, "divide"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000023",
+    versionId: "14000000-0000-4000-8000-000000000023",
+    slug: "budget-inequality-001",
+    primarySkillId: ids.inequalities,
+    learningObjective:
+      "Interpret a budget constraint as an inequality and identify its greatest whole-number solution.",
+    difficulty: "PROFICIENT",
+    difficultyRationale:
+      "Requires translating an at-most constraint and interpreting the whole-number boundary.",
+    estimatedSeconds: 85,
+    calculatorPolicy: "NOT_NEEDED",
+    misconceptions: ["REVERSES_AT_MOST_INEQUALITY"],
+    misconceptionRules: [
+      {
+        id: "selects-one-above-budget",
+        code: "REVERSES_AT_MOST_INEQUALITY",
+        learnerMessage:
+          "At most means the total cannot exceed the budget. Check the cost of the selected number against $49.",
+        kind: "selected_choice",
+        choiceId: "c",
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "write-budget-constraint",
+          kind: "SOCRATIC_QUESTION",
+          content:
+            "If n is the number of notebooks, what expression gives their total cost?",
+        },
+        {
+          id: "find-whole-boundary",
+          kind: "HINT",
+          content:
+            "Solve 7n ≤ 49, then choose the greatest whole number that remains within the limit.",
+        },
+      ],
+      reflectionPrompt:
+        "Why would one additional notebook violate the budget constraint?",
+    },
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt:
+        "Notebooks cost $7 each. A student can spend at most $49. What is the greatest number of notebooks the student can buy?",
+      choices: [
+        { id: "a", content: "6 notebooks" },
+        { id: "b", content: "7 notebooks" },
+        { id: "c", content: "8 notebooks" },
+        { id: "d", content: "42 notebooks" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "b" },
+      explanation:
+        "The constraint is 7n ≤ 49. Dividing both sides by 7 gives n ≤ 7, so the greatest possible whole number is 7.",
+      distractorRationales: {
+        a: "Six notebooks fit the budget, but it is not the greatest possible number.",
+        c: "Eight notebooks cost $56, which exceeds the budget.",
+        d: "This is the cost of six notebooks, not a number of notebooks that can be bought.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [49, 7, "divide"],
+      tolerance: 0,
+    },
+  },
+  {
+    questionId: "13000000-0000-4000-8000-000000000024",
+    versionId: "14000000-0000-4000-8000-000000000024",
+    slug: "sale-price-word-problem-001",
+    primarySkillId: ids.wordProblems,
+    learningObjective:
+      "Solve a percent-discount word problem by subtracting the discount from the original price.",
+    difficulty: "PROFICIENT",
+    difficultyRationale:
+      "Requires finding a percentage amount and distinguishing discount from final price.",
+    estimatedSeconds: 90,
+    calculatorPolicy: "ALLOWED",
+    misconceptions: ["REPORTS_DISCOUNT_AS_FINAL_PRICE"],
+    misconceptionRules: [
+      {
+        id: "returns-discount-amount",
+        code: "REPORTS_DISCOUNT_AS_FINAL_PRICE",
+        learnerMessage:
+          "You found the amount saved. Subtract that discount from the original price to find the sale price.",
+        kind: "selected_choice",
+        choiceId: "a",
+      },
+    ],
+    tutorGuidance: {
+      steps: [
+        {
+          id: "find-discount-amount",
+          kind: "SOCRATIC_QUESTION",
+          content: "How many dollars is 15% of $80?",
+        },
+        {
+          id: "subtract-discount",
+          kind: "HINT",
+          content:
+            "The sale price is the original $80 minus the discount amount.",
+        },
+      ],
+      reflectionPrompt:
+        "Why should a 15% discount leave a price that is 85% of the original?",
+    },
+    content: {
+      questionType: "SINGLE_CHOICE",
+      prompt:
+        "A study lamp originally costs $80 and is discounted by 15%. What is the sale price before tax?",
+      choices: [
+        { id: "a", content: "12 dollars" },
+        { id: "b", content: "65 dollars" },
+        { id: "c", content: "68 dollars" },
+        { id: "d", content: "92 dollars" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "c" },
+      explanation:
+        "The discount is 0.15 × $80 = $12. Subtract it from the original price: $80 − $12 = $68.",
+      distractorRationales: {
+        a: "This is the discount amount, not the sale price.",
+        b: "This subtracts 15 dollars rather than 15% of $80.",
+        d: "This adds the discount amount instead of subtracting it.",
+      },
+    },
+    verificationSpec: {
+      kind: "numeric_result",
+      expression: [80, 15, 100, "divide", 80, "multiply", "subtract"],
+      tolerance: 0,
+    },
+  },
+];
+
+seedQuestions.push(...numbersAndAlgebraExpansion);
+
 const requiredLeafSkillIds = [
   ids.arithmetic,
   ids.fractionsDecimalsPercent,
