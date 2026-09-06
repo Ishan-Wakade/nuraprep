@@ -28,7 +28,7 @@ export async function createImprovementProposal(
   _previous: ImprovementActionState,
   formData: FormData,
 ): Promise<ImprovementActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = improvementProposalSchema.safeParse(
     Object.fromEntries(formData),
   );
@@ -176,7 +176,7 @@ export async function decideImprovementProposal(
   _previous: ImprovementActionState,
   formData: FormData,
 ): Promise<ImprovementActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = improvementDecisionSchema.safeParse(
     Object.fromEntries(formData),
   );

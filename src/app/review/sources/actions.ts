@@ -36,7 +36,7 @@ export async function registerSource(
   _previous: GovernanceActionState,
   formData: FormData,
 ): Promise<GovernanceActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = sourceRegistrationSchema.safeParse(
     Object.fromEntries(formData),
   );
@@ -115,7 +115,7 @@ export async function recheckSourcePolicy(
   _previous: GovernanceActionState,
   formData: FormData,
 ): Promise<GovernanceActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = sourcePolicyReviewSchema.safeParse(
     Object.fromEntries(formData),
   );
@@ -199,7 +199,7 @@ export async function recordCoverageObservation(
   _previous: GovernanceActionState,
   formData: FormData,
 ): Promise<GovernanceActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = coverageObservationSchema.safeParse(
     Object.fromEntries(formData),
   );

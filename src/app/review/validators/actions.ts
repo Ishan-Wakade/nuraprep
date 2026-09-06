@@ -25,7 +25,7 @@ export async function createValidatorRuleRevision(
   _previous: ValidatorRuleActionState,
   formData: FormData,
 ): Promise<ValidatorRuleActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = revisionSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return {

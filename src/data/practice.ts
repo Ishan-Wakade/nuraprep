@@ -23,12 +23,19 @@ export async function ensureLearnerProfile(identity: LearnerIdentity) {
   const [profile] = await getDatabase()
     .insert(learnerProfiles)
     .values({
+      authUserId: identity.authUserId,
       authSubject: identity.subject,
       displayName: identity.displayName,
+      email: identity.email,
     })
     .onConflictDoUpdate({
       target: learnerProfiles.authSubject,
-      set: { displayName: identity.displayName, updatedAt: new Date() },
+      set: {
+        authUserId: identity.authUserId,
+        displayName: identity.displayName,
+        email: identity.email,
+        updatedAt: new Date(),
+      },
     })
     .returning();
 
@@ -38,7 +45,7 @@ export async function ensureLearnerProfile(identity: LearnerIdentity) {
 
 export async function getPracticeSetupData() {
   await connection();
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const database = getDatabase();
 
   const [availability, recentSessions] = await Promise.all([
@@ -103,7 +110,7 @@ export async function getPracticeSessionView(
   requestedPosition?: number,
 ) {
   await connection();
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const database = getDatabase();
 
   const [session] = await database

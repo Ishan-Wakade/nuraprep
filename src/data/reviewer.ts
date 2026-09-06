@@ -50,7 +50,7 @@ export type FeedbackOverviewFilters = {
 
 export async function getReviewQueue(filters: ReviewQueueFilters) {
   await connection();
-  requireReviewer();
+  await requireReviewer();
   const database = getDatabase();
 
   const rows = await database
@@ -309,7 +309,7 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
 
 export async function getQuestionReviewDetail(versionId: string) {
   await connection();
-  requireReviewer();
+  await requireReviewer();
   const database = getDatabase();
 
   const [question] = await database
@@ -622,7 +622,7 @@ export async function getQuestionReviewDetail(versionId: string) {
 
 export async function getFeedbackOverview(filters: FeedbackOverviewFilters) {
   await connection();
-  requireReviewer();
+  await requireReviewer();
   const database = getDatabase();
 
   const [reviewerRows, learnerRows, proposalRows] = await Promise.all([

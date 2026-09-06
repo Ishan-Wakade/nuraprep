@@ -56,7 +56,7 @@ export async function startPracticeSession(
   _previousState: PracticeActionState,
   formData: FormData,
 ): Promise<PracticeActionState> {
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const raw = startSessionInputSchema.safeParse(Object.fromEntries(formData));
   if (!raw.success) {
     return { status: "error", message: "Choose valid practice settings." };
@@ -209,7 +209,7 @@ export async function startDiagnosticSession(
 ): Promise<PracticeActionState> {
   void _previousState;
   void _formData;
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const database = getDatabase();
   const learner = await ensureLearnerProfile(identity);
   const candidates = await database
@@ -287,7 +287,7 @@ export async function startAdaptiveSession(
   formData: FormData,
 ): Promise<PracticeActionState> {
   void _previousState;
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const parsed = startAdaptiveInputSchema.safeParse(
     Object.fromEntries(formData),
   );
@@ -347,7 +347,7 @@ export async function startPracticeTestSession(
 ): Promise<PracticeActionState> {
   void _previousState;
   void _formData;
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const database = getDatabase();
   const learner = await ensureLearnerProfile(identity);
   const test = await buildPracticeTest(randomUUID());
@@ -415,7 +415,7 @@ export async function submitPracticeAnswer(
   _previousState: PracticeActionState,
   formData: FormData,
 ): Promise<PracticeActionState> {
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const parsed = answerSubmissionSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return {
@@ -576,7 +576,7 @@ export async function setPracticeItemReviewFlag(
   formData: FormData,
 ): Promise<PracticeActionState> {
   void _previousState;
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const parsed = reviewFlagSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { status: "error", message: "Invalid review-flag request." };
@@ -641,7 +641,7 @@ async function endPracticeTest(
   formData: FormData,
   requireExpired: boolean,
 ): Promise<PracticeActionState> {
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const parsed = sessionMutationSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { status: "error", message: "Invalid practice-test request." };
@@ -704,7 +704,7 @@ export async function submitQuestionReport(
   _previousState: PracticeActionState,
   formData: FormData,
 ): Promise<PracticeActionState> {
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const parsed = learnerQuestionReportSchema.safeParse(
     Object.fromEntries(formData),
   );
@@ -792,7 +792,7 @@ export async function requestTutorStep(
   _previousState: PracticeActionState,
   formData: FormData,
 ): Promise<PracticeActionState> {
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const parsed = tutorRequestSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { status: "error", message: "Invalid tutor request." };

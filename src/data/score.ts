@@ -31,7 +31,7 @@ const domainSkills = alias(skills, "score_domain_skills");
 
 export async function getScoreDashboardData(selectedEstimateId?: string) {
   await connection();
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const learner = await ensureLearnerProfile(identity);
   const database = getDatabase();
   const estimateConditions = [eq(scoreEstimates.learnerId, learner.id)];

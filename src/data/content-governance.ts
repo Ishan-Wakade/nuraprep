@@ -20,7 +20,7 @@ import { requireReviewer } from "@/lib/auth/reviewer";
 
 export async function getSourceRegistry() {
   await connection();
-  requireReviewer();
+  await requireReviewer();
   const database = getDatabase();
 
   const [sources, skillRows, reviewRows] = await Promise.all([
@@ -129,7 +129,7 @@ export async function getSourceRegistry() {
 
 export async function getValidatorRuleRegistry() {
   await connection();
-  requireReviewer();
+  await requireReviewer();
   const rows = await getDatabase()
     .select({
       id: validatorRules.id,
@@ -163,7 +163,7 @@ export async function getValidatorRuleRegistry() {
 
 export async function getGenerationConsole() {
   await connection();
-  requireReviewer();
+  await requireReviewer();
   const database = getDatabase();
 
   const [templates, runs, [metrics]] = await Promise.all([

@@ -99,7 +99,9 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 - [x] Threat-model Google OAuth, database sessions, authorization, account linking, export, and deletion before implementation.
 - [x] Add the Better Auth route, generated-compatible Drizzle tables, encrypted OAuth-token storage, revocable role grants, append-only account audit events, and production environment guards.
-- Add sign-in, logout, role enforcement, progress persistence, export, and deletion.
+- [x] Add an honest sign-in surface, signed database-session resolution, logout revocation, account-linked learner progress, and active database-role enforcement for reviewer access.
+- Configure real Google credentials and test successful, denied, malformed, and replayed provider callbacks before enabling production sign-in.
+- Add account export and the application-owned transactional deletion workflow.
 - Add CSRF/state/nonce protections, secure cookies, session rotation, audit events, and abuse controls.
 
 **Exit:** authorization tests cover learner/reviewer/admin boundaries and deletion behavior is documented and verified.
@@ -120,7 +122,17 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 **Exit:** staging passes security, backup/restore, observability, accessibility, and cost reviews before any production approval.
 
-## 10. Final engineering handoff
+## 10. GitHub portfolio polish
+
+- Audit the NuraPrep repository for redundant tracked files, navigability, metadata, screenshots, contribution ergonomics, and employer-facing clarity.
+- Preserve files required for builds, tests, migrations, governance, and reproducibility; remove or consolidate only demonstrably redundant material.
+- Create a concise professional GitHub profile README and truthful account metadata.
+- Audit every public repository for descriptions, topics, licenses, documentation, build health, and presentation; prioritize a small set of defensible featured projects over cosmetic activity.
+- Do not fabricate adoption, performance, impact, work history, or contribution metrics.
+
+**Exit:** a recruiter can understand the owner's strengths, inspect the strongest work quickly, reproduce it, and distinguish implemented results from roadmap claims.
+
+## 11. Final engineering handoff
 
 - Produce an exhaustive, plain-language engineering walkthrough of the completed system.
 - Explain every major product, architecture, data-model, security, educational-quality, testing, infrastructure, and operational decision, including alternatives and tradeoffs.

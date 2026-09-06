@@ -23,7 +23,7 @@ const domainSkills = alias(skills, "domain_skills");
 
 export async function getPracticeTestSetupData() {
   await connection();
-  requireLearner();
+  await requireLearner();
   const data = await loadPracticeTestData();
   if (!data) return undefined;
   const assembly = assemblePracticeTest({

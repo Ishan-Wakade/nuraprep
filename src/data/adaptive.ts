@@ -29,7 +29,7 @@ const prerequisiteSkills = alias(skills, "prerequisite_skills");
 
 export async function getAdaptiveSetupData() {
   await connection();
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const learner = await ensureLearnerProfile(identity);
   const planningData = await loadAdaptivePlanningData(learner.id);
   const plan = selectAdaptiveQuestions({

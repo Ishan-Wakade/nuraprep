@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 15
     env:
       APP_ENV: test
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3100
       DATABASE_URL: postgresql://nuraprep:nuraprep@localhost:5432/nuraprep
       DIRECT_URL: postgresql://nuraprep:nuraprep@localhost:5432/nuraprep
       E2E_DATABASE_URL: postgresql://nuraprep:nuraprep@localhost:5432/nuraprep_e2e

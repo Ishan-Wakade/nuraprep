@@ -139,14 +139,17 @@ export default async function PracticeSetupPage({
         <aside className="space-y-5">
           <section className="rounded-2xl bg-[#15383a] p-5 text-white shadow-sm">
             <p className="text-[11px] font-bold tracking-[0.12em] text-[#acd7cc] uppercase">
-              Signed in locally
+              {data.identity.mode === "authenticated"
+                ? "Signed in securely"
+                : "Local development access"}
             </p>
             <h2 className="mt-2 font-serif text-2xl">
               {data.identity.displayName}
             </h2>
             <p className="mt-3 text-xs leading-5 text-[#d3e4df]">
-              This temporary identity is disabled in production. Google sign-in
-              comes after the core learning loop is proven.
+              {data.identity.mode === "authenticated"
+                ? "Your saved progress is scoped to this account. NuraPrep never stores your Google password."
+                : "This temporary identity is automatically unavailable in production."}
             </p>
           </section>
 

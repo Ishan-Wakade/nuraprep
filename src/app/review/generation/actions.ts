@@ -36,7 +36,7 @@ export async function approveGenerationTemplate(
   _previous: GenerationActionState,
   formData: FormData,
 ): Promise<GenerationActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = templateApprovalSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return {
@@ -76,7 +76,7 @@ export async function requestQuestionRegeneration(
   _previous: GenerationActionState,
   formData: FormData,
 ): Promise<GenerationActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = generationRequestSchema.safeParse(
     Object.fromEntries(formData),
   );
@@ -193,7 +193,7 @@ export async function cancelPendingGenerationRun(
   _previous: GenerationActionState,
   formData: FormData,
 ): Promise<GenerationActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = generationCancellationSchema.safeParse(
     Object.fromEntries(formData),
   );

@@ -1,12 +1,21 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { SignOutButton } from "@/app/sign-out-button";
+import { requireLearner } from "@/lib/auth/learner";
+
 export const metadata = {
   title: "Math practice | NuraPrep",
   robots: { index: false, follow: false },
 };
 
-export default function PracticeLayout({ children }: { children: ReactNode }) {
+export default async function PracticeLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const learner = await requireLearner();
+
   return (
     <div className="min-h-screen bg-[#f4f1e9] text-[#15383a]">
       <header className="border-b border-[#d7ddd7] bg-[#fffdf8]">
@@ -21,12 +30,13 @@ export default function PracticeLayout({ children }: { children: ReactNode }) {
             NuraPrep
           </Link>
           <div className="flex items-center gap-3 text-xs font-semibold text-[#587073]">
-            <span className="hidden rounded-full bg-[#e8f2ee] px-3 py-1.5 sm:inline">
-              Development learner
+            <span className="hidden max-w-48 truncate rounded-full bg-[#e8f2ee] px-3 py-1.5 sm:inline">
+              {learner.displayName}
             </span>
             <Link href="/practice" className="text-[#116b65]">
               Practice home
             </Link>
+            {learner.mode === "authenticated" ? <SignOutButton /> : null}
           </div>
         </div>
       </header>

@@ -1,28 +1,25 @@
 import "server-only";
 
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
+import {
+  resolveLearnerIdentity,
+  type LearnerIdentity,
+} from "@/lib/auth/authorization";
+import { getCurrentSession } from "@/lib/auth/session";
 import { getServerEnvironment } from "@/lib/env/server";
 
-export type LearnerIdentity = {
-  subject: string;
-  displayName: string;
-  mode: "development";
-};
+export type { LearnerIdentity } from "@/lib/auth/authorization";
 
-export function requireLearner(): LearnerIdentity {
+export async function requireLearner(): Promise<LearnerIdentity> {
   const environment = getServerEnvironment();
+  const session = await getCurrentSession();
 
-  if (
-    !environment.DEV_LEARNER_ENABLED ||
-    environment.APP_ENV === "production"
-  ) {
-    notFound();
-  }
+  const identity = resolveLearnerIdentity(
+    session?.user,
+    environment.APP_ENV !== "production" && environment.DEV_LEARNER_ENABLED,
+  );
 
-  return {
-    subject: "development-learner",
-    displayName: "Development learner",
-    mode: "development",
-  };
+  if (!identity) redirect("/sign-in?returnTo=/practice");
+  return identity;
 }

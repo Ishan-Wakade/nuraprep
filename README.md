@@ -24,7 +24,8 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 | Timed Math practice test                    | Mechanics verified; production bank lacks 38 approved families                                              |
 | Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                              |
 | Source and generation controls              | Registry, leased request queue, and worker gates working; provider intentionally off                        |
-| Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works                                                            |
+| Google sign-in                              | Session, UI, logout, and role enforcement implemented; real provider callback awaits credentials            |
+| Billing and AWS deployment                  | Deferred until authenticated core flows and content review are complete                                     |
 
 ## Product preview
 
@@ -121,7 +122,7 @@ pnpm db:seed
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Local topic practice is at [http://localhost:3000/practice](http://localhost:3000/practice); diagnostic, adaptive, and timed-test entry points are nested beneath it. The owner review queue is at [http://localhost:3000/review](http://localhost:3000/review), with source governance at `/review/sources` and generation controls at `/review/generation`. Temporary development identities are rejected whenever `APP_ENV=production`.
+Open [http://localhost:3000](http://localhost:3000). The account entry point is [http://localhost:3000/sign-in](http://localhost:3000/sign-in), and local topic practice is at [http://localhost:3000/practice](http://localhost:3000/practice); diagnostic, adaptive, and timed-test entry points are nested beneath it. The owner review queue is at [http://localhost:3000/review](http://localhost:3000/review), with source governance at `/review/sources` and generation controls at `/review/generation`. Optional development identities are rejected whenever `APP_ENV=production`; Google sign-in is shown only when both provider credentials are configured.
 
 ## Environment variables
 

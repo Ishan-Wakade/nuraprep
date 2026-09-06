@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { SignOutButton } from "@/app/sign-out-button";
 import { requireReviewer } from "@/lib/auth/reviewer";
 
 export const metadata: Metadata = {
@@ -9,8 +10,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function ReviewLayout({ children }: { children: ReactNode }) {
-  const reviewer = requireReviewer();
+export default async function ReviewLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const reviewer = await requireReviewer();
 
   return (
     <div className="min-h-screen bg-[#f3f5f2] text-[#123136]">
@@ -31,8 +36,11 @@ export default function ReviewLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3 text-xs text-[#5f7376]">
             <span className="hidden sm:inline">{reviewer.name}</span>
             <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 font-bold tracking-wide text-amber-800 uppercase">
-              Local dev access
+              {reviewer.mode === "development"
+                ? "Local dev access"
+                : "Authorized reviewer"}
             </span>
+            {reviewer.mode === "authenticated" ? <SignOutButton /> : null}
           </div>
         </div>
       </header>

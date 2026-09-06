@@ -47,7 +47,7 @@ export async function runDeterministicValidation(
   _previousState: ReviewerActionState,
   formData: FormData,
 ): Promise<ReviewerActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = versionIdSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { status: "error", message: "Invalid question version." };
@@ -196,7 +196,7 @@ export async function submitReviewerValidation(
   _previousState: ReviewerActionState,
   formData: FormData,
 ): Promise<ReviewerActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = reviewerValidationSubmissionSchema.safeParse(
     Object.fromEntries(formData),
   );
@@ -273,7 +273,7 @@ export async function submitReviewDecision(
   _previousState: ReviewerActionState,
   formData: FormData,
 ): Promise<ReviewerActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = decisionSchema.safeParse(Object.fromEntries(formData));
 
   if (!parsed.success) {
@@ -339,7 +339,7 @@ export async function submitReviewerFeedback(
   _previousState: ReviewerActionState,
   formData: FormData,
 ): Promise<ReviewerActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = feedbackSchema.safeParse(Object.fromEntries(formData));
 
   if (!parsed.success) {
@@ -377,7 +377,7 @@ export async function triageLearnerQuestionReport(
   _previousState: ReviewerActionState,
   formData: FormData,
 ): Promise<ReviewerActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = learnerReportTriageSchema.safeParse(
     Object.fromEntries(formData),
   );
@@ -423,7 +423,7 @@ export async function publishQuestionVersion(
   _previousState: ReviewerActionState,
   formData: FormData,
 ): Promise<ReviewerActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = versionIdSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { status: "error", message: "Invalid question version." };
@@ -521,7 +521,7 @@ export async function createQuestionRevision(
   _previousState: ReviewerActionState,
   formData: FormData,
 ): Promise<ReviewerActionState> {
-  const reviewer = requireReviewer();
+  const reviewer = await requireReviewer();
   const parsed = revisionSchema.safeParse(Object.fromEntries(formData));
 
   if (!parsed.success) {

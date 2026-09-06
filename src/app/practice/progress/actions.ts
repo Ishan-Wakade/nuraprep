@@ -28,7 +28,7 @@ export async function generateScoreEstimate(
 ): Promise<ScoreActionState> {
   void _previousState;
   void _formData;
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const learner = await ensureLearnerProfile(identity);
   const { result, skillIds } = await calculateLearnerScoreEstimate(learner.id);
   const database = getDatabase();
@@ -102,7 +102,7 @@ export async function updateStudyPlanItem(
   formData: FormData,
 ): Promise<ScoreActionState> {
   void _previousState;
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const parsed = itemUpdateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { status: "error", message: "Choose a valid plan status and time." };
@@ -145,7 +145,7 @@ export async function updateStudyPlan(
   formData: FormData,
 ): Promise<ScoreActionState> {
   void _previousState;
-  const identity = requireLearner();
+  const identity = await requireLearner();
   const parsed = planUpdateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { status: "error", message: "Enter valid plan preferences." };
