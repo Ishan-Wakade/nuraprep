@@ -7,6 +7,9 @@ import { getDatabase } from "@/db/client";
 import {
   generationRuns,
   generationTemplates,
+  improvementProposalDecisions,
+  improvementProposalEvidence,
+  improvementProposals,
   learnerProfiles,
   learnerQuestionReportEvents,
   learnerQuestionReports,
@@ -503,7 +506,7 @@ export async function getFeedbackOverview(filters: FeedbackOverviewFilters) {
   requireReviewer();
   const database = getDatabase();
 
-  const [reviewerRows, learnerRows] = await Promise.all([
+  const [reviewerRows, learnerRows, proposalRows] = await Promise.all([
     database
       .select({
         id: reviewerFeedback.id,
@@ -546,7 +549,52 @@ export async function getFeedbackOverview(filters: FeedbackOverviewFilters) {
       .innerJoin(skills, eq(skills.id, questionVersions.primarySkillId))
       .orderBy(desc(learnerQuestionReports.createdAt))
       .limit(200),
+    database
+      .select({
+        id: improvementProposals.id,
+        patternKey: improvementProposals.patternKey,
+        category: improvementProposals.category,
+        target: improvementProposals.target,
+        title: improvementProposals.title,
+        problemSummary: improvementProposals.problemSummary,
+        proposedChange: improvementProposals.proposedChange,
+        regressionPlan: improvementProposals.regressionPlan,
+        createdBy: improvementProposals.createdBy,
+        createdAt: improvementProposals.createdAt,
+      })
+      .from(improvementProposals)
+      .orderBy(desc(improvementProposals.createdAt))
+      .limit(100),
   ]);
+
+  const proposalIds = proposalRows.map((proposal) => proposal.id);
+  const [proposalEvidenceRows, proposalDecisionRows] = proposalIds.length
+    ? await Promise.all([
+        database
+          .select({
+            id: improvementProposalEvidence.id,
+            proposalId: improvementProposalEvidence.proposalId,
+            evidenceKey: improvementProposalEvidence.evidenceKey,
+            source: improvementProposalEvidence.sourceKind,
+            questionVersionId: improvementProposalEvidence.questionVersionId,
+            details: improvementProposalEvidence.detailsSnapshot,
+          })
+          .from(improvementProposalEvidence)
+          .where(inArray(improvementProposalEvidence.proposalId, proposalIds))
+          .orderBy(improvementProposalEvidence.evidenceKey)
+          .limit(2_000),
+        database
+          .select({
+            proposalId: improvementProposalDecisions.proposalId,
+            decision: improvementProposalDecisions.decision,
+            notes: improvementProposalDecisions.notes,
+            decidedBy: improvementProposalDecisions.decidedBy,
+            decidedAt: improvementProposalDecisions.decidedAt,
+          })
+          .from(improvementProposalDecisions)
+          .where(inArray(improvementProposalDecisions.proposalId, proposalIds)),
+      ])
+    : [[], []];
 
   const learnerEvents = learnerRows.length
     ? await database
@@ -634,6 +682,38 @@ export async function getFeedbackOverview(filters: FeedbackOverviewFilters) {
     patterns.set(key, pattern);
   }
 
+  const evidenceByProposal = new Map<
+    string,
+    Array<{
+      id: string;
+      source: "LEARNER" | "REVIEWER";
+      questionVersionId: string;
+      details: string;
+    }>
+  >();
+  for (const evidence of proposalEvidenceRows) {
+    if (!["LEARNER", "REVIEWER"].includes(evidence.source)) continue;
+    const normalized = {
+      id: evidence.id,
+      source: evidence.source as "LEARNER" | "REVIEWER",
+      questionVersionId: evidence.questionVersionId,
+      details: evidence.details,
+    };
+    evidenceByProposal.set(evidence.proposalId, [
+      ...(evidenceByProposal.get(evidence.proposalId) ?? []),
+      normalized,
+    ]);
+  }
+  const decisionByProposal = new Map(
+    proposalDecisionRows.map((decision) => [
+      decision.proposalId,
+      {
+        ...decision,
+        decidedAt: decision.decidedAt.toISOString(),
+      },
+    ]),
+  );
+
   return {
     items: items.map((item) => ({
       ...item,
@@ -643,6 +723,12 @@ export async function getFeedbackOverview(filters: FeedbackOverviewFilters) {
       (left, right) =>
         right.count - left.count || left.key.localeCompare(right.key),
     ),
+    proposals: proposalRows.map((proposal) => ({
+      ...proposal,
+      createdAt: proposal.createdAt.toISOString(),
+      evidence: evidenceByProposal.get(proposal.id) ?? [],
+      decision: decisionByProposal.get(proposal.id) ?? null,
+    })),
     summary: {
       total: items.length,
       open: items.filter((item) => item.status === "OPEN").length,

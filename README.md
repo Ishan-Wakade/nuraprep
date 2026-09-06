@@ -13,18 +13,18 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 **Generation-pipeline phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, persisted topic practice, a coverage-aware diagnostic, a versioned rules-based adaptive scheduler, full timed-test mechanics, a transparent readiness-estimation baseline, and a fail-closed source/generation control plane. The six seed candidates remain deliberately unapproved; browser tests add disposable, explicitly test-only fixtures to verify complete learner flows. There is no approved production question bank, configured generation provider, or externally validated score predictor yet.
 
-| Area                                        | Status                                                           |
-| ------------------------------------------- | ---------------------------------------------------------------- |
-| Public repository and engineering standards | Complete                                                         |
-| Math taxonomy and question data model       | Implemented with migrations and seed data                        |
-| Reviewer and provenance workflow            | Review, publication, reports, and pattern search working locally |
-| Topic practice                              | Working local multi-format vertical slice                        |
-| Diagnostic                                  | Working local flow with explicit coverage and starting signals   |
-| Adaptive mode                               | Working local, inspectable rules baseline                        |
-| Timed Math practice test                    | Mechanics verified; production bank lacks 38 approved families   |
-| Score estimate and study plan               | Working, versioned baseline; external calibration remains open   |
-| Source and generation controls              | Registry and request queue working; provider intentionally off   |
-| Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works                 |
+| Area                                        | Status                                                                                                  |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Public repository and engineering standards | Complete                                                                                                |
+| Math taxonomy and question data model       | Implemented with migrations and seed data                                                               |
+| Reviewer and provenance workflow            | Review, publication, reports, pattern search, and separately approved improvement plans working locally |
+| Topic practice                              | Working local multi-format vertical slice                                                               |
+| Diagnostic                                  | Working local flow with explicit coverage and starting signals                                          |
+| Adaptive mode                               | Working local, inspectable rules baseline                                                               |
+| Timed Math practice test                    | Mechanics verified; production bank lacks 38 approved families                                          |
+| Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                          |
+| Source and generation controls              | Registry and request queue working; provider intentionally off                                          |
+| Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works                                                        |
 
 ## Product preview
 

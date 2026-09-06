@@ -94,6 +94,10 @@ Each validator result is immutable and records validator name/version, execution
 
 The feedback-pattern view preserves learner-report and reviewer-feedback provenance while grouping repeated stable issue codes or categories. Its counts are operational review signals, not claims about question correctness until an owner investigates the underlying versions.
 
+`ImprovementProposal` turns a pattern into an immutable, human-authored change plan. It records the pattern and category, target artifact class, problem summary, proposed change, regression plan, creator, and a deterministic idempotency key. Creation requires at least two matching open signals. `ImprovementProposalEvidence` links each exact reviewer-feedback or learner-report record and freezes its source kind, question-version ID, and displayed text so later triage cannot rewrite what the approver saw.
+
+`ImprovementProposalDecision` is a separate append-only approval or rejection. PostgreSQL rejects decisions with fewer than two evidence links and allows only one final decision per proposal. Approval authorizes only the plan: it does not edit templates, validators, rubrics, policies, evaluation cases, or questions. Implementation remains a normal reviewed code/content change with its own tests and history.
+
 Editing creates a new `QuestionVersion`. Approval never mutates an older version.
 
 `QuestionPublication` identifies the one current learner-eligible version in a question family and retains retired publication history. Approval alone does not publish content.

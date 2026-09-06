@@ -5,6 +5,11 @@ import {
   type FeedbackOverviewFilters,
 } from "@/data/reviewer";
 
+import {
+  ImprovementDecisionForm,
+  ImprovementProposalForm,
+} from "./improvement-forms";
+
 const categories = [
   "MATHEMATICAL_ERROR",
   "AMBIGUITY",
@@ -140,12 +145,110 @@ export default async function FeedbackPatternsPage({
                   {pattern.openCount} open · {pattern.learnerCount} learner ·{" "}
                   {pattern.reviewerCount} reviewer
                 </p>
+                {pattern.openCount >= 2 ? (
+                  <ImprovementProposalForm
+                    patternKey={pattern.key}
+                    category={pattern.category}
+                  />
+                ) : (
+                  <p className="mt-3 border-t border-[#d8ded9] pt-3 text-xs text-[#687a7c]">
+                    Two matching open signals are required before drafting a
+                    recurring-issue proposal.
+                  </p>
+                )}
               </article>
             ))
           ) : (
             <p className="text-sm text-[#687a7c]">
               No recurring signals match these filters.
             </p>
+          )}
+        </div>
+      </section>
+
+      <section className="mt-8" aria-labelledby="proposals-heading">
+        <h2 id="proposals-heading" className="font-serif text-2xl">
+          Improvement proposals
+        </h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5b7073]">
+          Proposals snapshot exact feedback evidence. Approval authorizes only
+          the plan; it never edits a prompt, rubric, validator, or question.
+        </p>
+        <div className="mt-3 space-y-4">
+          {overview.proposals.length ? (
+            overview.proposals.map((proposal) => (
+              <article
+                key={proposal.id}
+                className="rounded-2xl border border-[#d8ded9] bg-[#fffdf8] p-5 shadow-sm"
+              >
+                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                  <div>
+                    <p className="text-[11px] font-bold tracking-wide text-[#116b65] uppercase">
+                      {proposal.decision?.decision ?? "DRAFT"} ·{" "}
+                      {formatLabel(proposal.target)}
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold">
+                      {proposal.title}
+                    </h3>
+                    <p className="mt-1 text-xs text-[#687a7c]">
+                      {proposal.patternKey} · {formatLabel(proposal.category)} ·{" "}
+                      {proposal.evidence.length} evidence links
+                    </p>
+                  </div>
+                  <span className="text-xs text-[#687a7c]">
+                    {proposal.createdAt}
+                  </span>
+                </div>
+                <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                  <ProposalField
+                    label="Problem summary"
+                    value={proposal.problemSummary}
+                  />
+                  <ProposalField
+                    label="Proposed change"
+                    value={proposal.proposedChange}
+                  />
+                  <ProposalField
+                    label="Regression plan"
+                    value={proposal.regressionPlan}
+                  />
+                </div>
+                <details className="mt-4 rounded-xl border border-[#d8ded9] bg-white p-3">
+                  <summary className="cursor-pointer text-xs font-bold text-[#116b65]">
+                    Inspect linked evidence ({proposal.evidence.length})
+                  </summary>
+                  <ul className="mt-3 space-y-2">
+                    {proposal.evidence.map((evidence) => (
+                      <li key={evidence.id} className="text-xs leading-5">
+                        <span className="font-bold">
+                          {formatLabel(evidence.source)}:
+                        </span>{" "}
+                        {evidence.details}{" "}
+                        <Link
+                          href={`/review/questions/${evidence.questionVersionId}`}
+                          className="font-bold text-[#116b65] underline"
+                        >
+                          Inspect version
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+                {proposal.decision ? (
+                  <p className="mt-4 rounded-lg bg-[#edf3ef] px-3 py-2 text-xs leading-5 text-[#385b59]">
+                    {formatLabel(proposal.decision.decision)} by{" "}
+                    {proposal.decision.decidedBy} at{" "}
+                    {proposal.decision.decidedAt}: {proposal.decision.notes}
+                  </p>
+                ) : (
+                  <ImprovementDecisionForm proposalId={proposal.id} />
+                )}
+              </article>
+            ))
+          ) : (
+            <div className="rounded-2xl border border-dashed border-[#bccac4] bg-white/60 px-6 py-10 text-center text-sm text-[#687a7c]">
+              No evidence-backed improvement proposals yet.
+            </div>
           )}
         </div>
       </section>
@@ -191,6 +294,15 @@ export default async function FeedbackPatternsPage({
           )}
         </div>
       </section>
+    </div>
+  );
+}
+
+function ProposalField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-white p-3 text-xs leading-5">
+      <h4 className="font-bold text-[#52676a]">{label}</h4>
+      <p className="mt-1">{value}</p>
     </div>
   );
 }

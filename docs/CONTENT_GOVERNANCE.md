@@ -66,6 +66,8 @@ Thresholds must be calibrated on known original/near-copy pairs. When source tex
 6. Automated checks and blind human review compare the candidate behavior.
 7. Only approved question versions and approved generation-system changes reach production.
 
+The reviewer console implements steps 1 through 4 as an evidence-backed proposal ledger. A proposal requires two matching open signals, links to their exact feedback/report records, freezes the question-version and displayed-text evidence, and receives a separate append-only approval or rejection. Approval is intentionally non-executable: no template, validator, rubric, policy, evaluation case, or question is changed until a contributor implements the reviewed proposal and runs the relevant regression suite.
+
 Regeneration creates a new run and new question version. Regenerating only an explanation or distractors still creates a new complete version so published records remain reproducible.
 
 ## Takedowns and corrections

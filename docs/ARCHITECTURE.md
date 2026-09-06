@@ -85,6 +85,8 @@ PostgreSQL triggers reject updates and deletes on question versions, validation 
 
 The source registry derives permissions from reviewed decisions and fails closed for paid, gated, and user-submitted material. Generation requests use approved versioned templates, stable idempotency keys, and cost ceilings. Their database guard permits one `PENDING`-to-terminal transition, and `SUCCEEDED` requires a linked candidate version. The provider interface exists, but no external provider is configured yet; see [Controlled question-generation pipeline](GENERATION_PIPELINE.md).
 
+The feedback console groups reviewer and learner signals without erasing their provenance. At least two matching open signals are required to create an immutable improvement proposal; its evidence links and separate approval/rejection are append-only. An approved proposal is a plan, not executable configuration, so the system cannot silently rewrite a template, validator, rubric, policy, evaluation case, or question from feedback.
+
 ## Adaptive baseline
 
 The diagnostic is the first implemented input to this layer. It assembles at most one current published question per available skill, requires at least four skills, stores the exact immutable item manifest, and derives a starting recommendation from saved correctness, confidence, and time evidence. A one-item result is deliberately called an early signal rather than mastery.

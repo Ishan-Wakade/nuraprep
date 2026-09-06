@@ -153,6 +153,77 @@ test("registers governed source metadata and an abstract coverage note", async (
   await expect(page.getByText("Coverage observation recorded.")).toBeVisible();
 });
 
+test("turns recurring feedback into a separately approved improvement plan", async ({
+  page,
+}) => {
+  const issueCode = `CI_PATTERN_${Date.now()}`;
+  const proposalTitle = `Improve originality regression ${Date.now()}`;
+  await page.goto(`/review/questions/${firstVersionId}`);
+
+  for (const feedback of [
+    "The scenario structure is too close to a previously reviewed pattern.",
+    "The distractor arrangement repeats a distinctive structure seen before.",
+  ]) {
+    await page.getByLabel("Category").selectOption("ORIGINALITY");
+    await page.getByLabel(/Recurring issue code/).fill(issueCode);
+    await page.getByLabel("Feedback").fill(feedback);
+    await page.getByRole("button", { name: "Save feedback" }).click();
+    await expect(
+      page.getByText("Feedback saved for controlled batch analysis."),
+    ).toBeVisible();
+  }
+
+  await page.goto(`/review/feedback?q=${issueCode}`);
+  const patternCard = page.locator("article").filter({ hasText: issueCode });
+  await expect(patternCard.getByText("2 open")).toBeVisible();
+  await patternCard.getByText("Draft an improvement proposal").click();
+  await patternCard.getByLabel("Proposal title").fill(proposalTitle);
+  await patternCard.getByLabel("Change target").selectOption("EVALUATION_CASE");
+  await patternCard
+    .getByLabel("Evidence-backed problem summary")
+    .fill(
+      "Two reviewer reports identify a possible repeated structure that needs controlled evaluation.",
+    );
+  await patternCard
+    .getByLabel("Proposed change")
+    .fill(
+      "Add an adversarial near-copy fixture to the originality evaluation set without changing thresholds yet.",
+    );
+  await patternCard
+    .getByLabel("Regression plan")
+    .fill(
+      "Verify that the known near-copy fails and independently authored controls continue to pass.",
+    );
+  await patternCard
+    .getByRole("button", { name: "Create draft proposal" })
+    .click();
+  await expect(
+    page.getByText(/draft proposal created with 2 immutable evidence links/i),
+  ).toBeVisible();
+
+  const proposalSection = page.locator(
+    'section[aria-labelledby="proposals-heading"]',
+  );
+  const proposalCard = proposalSection
+    .locator("article")
+    .filter({ hasText: proposalTitle });
+  await expect(proposalCard.getByText(/DRAFT/)).toBeVisible();
+  await expect(proposalCard.getByText("2 evidence links")).toBeVisible();
+  await proposalCard
+    .locator('select[name="decision"]')
+    .selectOption("APPROVED");
+  await proposalCard
+    .locator('input[name="notes"]')
+    .fill(
+      "Approve this regression-case plan only; implementation still requires a reviewed code change.",
+    );
+  await proposalCard.getByRole("button", { name: "Record decision" }).click();
+  await expect(proposalCard.getByText(/APPROVED/)).toBeVisible();
+  await expect(
+    proposalCard.getByText(/approve this regression-case plan only/i),
+  ).toBeVisible();
+});
+
 test("approves a template and deduplicates regeneration requests", async ({
   page,
 }) => {

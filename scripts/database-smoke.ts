@@ -575,6 +575,140 @@ async function main() {
       }
     }
 
+    const reviewerFeedbackIds = [randomUUID(), randomUUID()];
+    await client.query(
+      `INSERT INTO reviewer_feedback
+       (id, question_version_id, reviewer_id, category, feedback,
+        recurring_issue_code, status)
+       VALUES
+       ($1, $3, 'ci-smoke-test', 'ORIGINALITY', $4,
+        'CI_RECURRING_PATTERN', 'OPEN'),
+       ($2, $3, 'ci-smoke-test', 'ORIGINALITY', $5,
+        'CI_RECURRING_PATTERN', 'OPEN')`,
+      [
+        reviewerFeedbackIds[0],
+        reviewerFeedbackIds[1],
+        versionId,
+        "First temporary signal for the improvement-proposal smoke test.",
+        "Second temporary signal for the improvement-proposal smoke test.",
+      ],
+    );
+    const proposalId = randomUUID();
+    await client.query(
+      `INSERT INTO improvement_proposals
+       (id, proposal_key, pattern_key, category, target, title,
+        problem_summary, proposed_change, regression_plan, created_by)
+       VALUES ($1, $2, 'CI_RECURRING_PATTERN', 'ORIGINALITY',
+               'EVALUATION_CASE', 'CI recurring-pattern proposal', $3, $4, $5,
+               'ci-smoke-test')`,
+      [
+        proposalId,
+        `ci-proposal-${proposalId}`,
+        "Two temporary reports describe the same recurring originality risk.",
+        "Add a regression case that distinguishes original and near-copy candidates.",
+        "Run the originality evaluator against positive and adversarial fixtures before implementation.",
+      ],
+    );
+
+    await client.query("SAVEPOINT proposal_evidence_minimum_check");
+    let evidenceMinimumWasBlocked = false;
+    try {
+      await client.query(
+        `INSERT INTO improvement_proposal_decisions
+         (proposal_id, decision, notes, decided_by)
+         VALUES ($1, 'APPROVED', $2, 'ci-smoke-test')`,
+        [
+          proposalId,
+          "This premature decision must fail without two linked evidence records.",
+        ],
+      );
+    } catch (error) {
+      evidenceMinimumWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23514";
+    } finally {
+      await client.query(
+        "ROLLBACK TO SAVEPOINT proposal_evidence_minimum_check",
+      );
+    }
+    if (!evidenceMinimumWasBlocked) {
+      throw new Error(
+        "An improvement proposal was decided without enough linked evidence.",
+      );
+    }
+
+    const evidenceIds = [randomUUID(), randomUUID()];
+    await client.query(
+      `INSERT INTO improvement_proposal_evidence
+       (id, proposal_id, evidence_key, source_kind, question_version_id,
+        details_snapshot, reviewer_feedback_id)
+       VALUES ($1, $3, $4, 'REVIEWER', $5, $6, $7),
+              ($2, $3, $8, 'REVIEWER', $5, $9, $10)`,
+      [
+        evidenceIds[0],
+        evidenceIds[1],
+        proposalId,
+        `REVIEWER:${reviewerFeedbackIds[0]}`,
+        versionId,
+        "First temporary signal for the improvement-proposal smoke test.",
+        reviewerFeedbackIds[0],
+        `REVIEWER:${reviewerFeedbackIds[1]}`,
+        "Second temporary signal for the improvement-proposal smoke test.",
+        reviewerFeedbackIds[1],
+      ],
+    );
+    const proposalDecisionId = randomUUID();
+    await client.query(
+      `INSERT INTO improvement_proposal_decisions
+       (id, proposal_id, decision, notes, decided_by)
+       VALUES ($1, $2, 'APPROVED', $3, 'ci-smoke-test')`,
+      [
+        proposalDecisionId,
+        proposalId,
+        "Approve only the plan represented by this rolled-back smoke fixture.",
+      ],
+    );
+
+    for (const [savepoint, query, id, label] of [
+      [
+        "proposal_immutability_check",
+        "UPDATE improvement_proposals SET title = 'mutated' WHERE id = $1",
+        proposalId,
+        "improvement proposal",
+      ],
+      [
+        "proposal_evidence_immutability_check",
+        "DELETE FROM improvement_proposal_evidence WHERE id = $1",
+        evidenceIds[0],
+        "improvement proposal evidence",
+      ],
+      [
+        "proposal_decision_immutability_check",
+        "UPDATE improvement_proposal_decisions SET notes = 'mutated decision' WHERE id = $1",
+        proposalDecisionId,
+        "improvement proposal decision",
+      ],
+    ] as const) {
+      await client.query(`SAVEPOINT ${savepoint}`);
+      let mutationBlocked = false;
+      try {
+        await client.query(query, [id]);
+      } catch (error) {
+        mutationBlocked =
+          typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          error.code === "55000";
+      } finally {
+        await client.query(`ROLLBACK TO SAVEPOINT ${savepoint}`);
+      }
+      if (!mutationBlocked) {
+        throw new Error(`The ${label} allowed an audit-history mutation.`);
+      }
+    }
+
     const result = await client.query<{ version_count: number }>(
       `SELECT count(*)::int AS version_count
      FROM question_versions qv

@@ -74,7 +74,8 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Add internal exact, number-invariant, and phrase-overlap rejection signals to deterministic review evidence.
 - [ ] Add a reviewed network transport and licensed-storage adapter; do not enable collection from gated or unclear-rights sources.
 - [ ] Add a configured provider and queue runner, batch budgets, and calibration cases for originality thresholds.
-- Add recurring-error summaries and regression suites; keep prompt/rubric changes human-approved.
+- [x] Add recurring-error summaries and evidence-backed, separately approved improvement proposals that never auto-mutate prompts or rubrics.
+- [ ] Implement approved proposals only through reviewed version changes and regression suites.
 - Expand only at the rate human review and quality sampling can support.
 
 **Exit:** a batch moves from approved inputs through checks and review without copying source content or silently publishing failures.

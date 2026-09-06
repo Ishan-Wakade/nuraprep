@@ -82,4 +82,4 @@ Before an external adapter is enabled, it must prove that it:
 - calibration of the implemented internal exact, number-invariant, and phrase-overlap signals, plus any legally permitted external comparison corpus;
 - batch budgets, rate controls, cancellation, and operational metrics;
 - independent owner/educator approval of the 12-case engineering-draft gold evaluation set; and
-- recurring-feedback proposals that create, but never auto-approve, new template or rubric versions.
+- implementation of approved feedback proposals as separately reviewed template, validator, rubric, policy, or evaluation-case versions. The proposal and approval ledger exists, but deliberately performs no automatic mutation.

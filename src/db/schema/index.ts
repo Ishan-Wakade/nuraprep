@@ -137,6 +137,17 @@ export const feedbackStatusEnum = pgEnum("feedback_status", [
   "RESOLVED",
   "WONT_FIX",
 ]);
+export const improvementTargetEnum = pgEnum("improvement_target", [
+  "GENERATION_TEMPLATE",
+  "VALIDATOR_RULE",
+  "DIFFICULTY_RUBRIC",
+  "EVALUATION_CASE",
+  "CONTENT_POLICY",
+]);
+export const improvementDecisionEnum = pgEnum("improvement_decision", [
+  "APPROVED",
+  "REJECTED",
+]);
 export const practiceModeEnum = pgEnum("practice_mode", [
   "TOPIC_PRACTICE",
   "DIAGNOSTIC",
@@ -1028,5 +1039,103 @@ export const learnerQuestionReportEvents = pgTable(
       table.createdAt,
     ),
     check("learner_report_event_notes_check", sql`length(${table.notes}) >= 5`),
+  ],
+);
+
+export const improvementProposals = pgTable(
+  "improvement_proposals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    proposalKey: varchar("proposal_key", { length: 64 }).notNull(),
+    patternKey: varchar("pattern_key", { length: 120 }).notNull(),
+    category: feedbackCategoryEnum("category").notNull(),
+    target: improvementTargetEnum("target").notNull(),
+    title: varchar("title", { length: 240 }).notNull(),
+    problemSummary: text("problem_summary").notNull(),
+    proposedChange: text("proposed_change").notNull(),
+    regressionPlan: text("regression_plan").notNull(),
+    createdBy: varchar("created_by", { length: 160 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("improvement_proposal_key_idx").on(table.proposalKey),
+    index("improvement_proposal_pattern_idx").on(
+      table.patternKey,
+      table.category,
+      table.createdAt,
+    ),
+    check(
+      "improvement_proposal_content_check",
+      sql`length(${table.problemSummary}) >= 20 AND length(${table.proposedChange}) >= 20 AND length(${table.regressionPlan}) >= 20`,
+    ),
+  ],
+);
+
+export const improvementProposalEvidence = pgTable(
+  "improvement_proposal_evidence",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    proposalId: uuid("proposal_id")
+      .notNull()
+      .references(() => improvementProposals.id, { onDelete: "restrict" }),
+    evidenceKey: varchar("evidence_key", { length: 200 }).notNull(),
+    sourceKind: varchar("source_kind", { length: 20 }).notNull(),
+    questionVersionId: uuid("question_version_id")
+      .notNull()
+      .references(() => questionVersions.id, { onDelete: "restrict" }),
+    detailsSnapshot: text("details_snapshot").notNull(),
+    reviewerFeedbackId: uuid("reviewer_feedback_id").references(
+      () => reviewerFeedback.id,
+      { onDelete: "restrict" },
+    ),
+    learnerReportId: uuid("learner_report_id").references(
+      () => learnerQuestionReports.id,
+      { onDelete: "restrict" },
+    ),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("improvement_proposal_evidence_key_idx").on(
+      table.proposalId,
+      table.evidenceKey,
+    ),
+    index("improvement_evidence_reviewer_idx").on(table.reviewerFeedbackId),
+    index("improvement_evidence_learner_idx").on(table.learnerReportId),
+    index("improvement_evidence_question_idx").on(table.questionVersionId),
+    check(
+      "improvement_evidence_exactly_one_source_check",
+      sql`(${table.reviewerFeedbackId} IS NOT NULL AND ${table.learnerReportId} IS NULL) OR (${table.reviewerFeedbackId} IS NULL AND ${table.learnerReportId} IS NOT NULL)`,
+    ),
+    check(
+      "improvement_evidence_snapshot_check",
+      sql`${table.sourceKind} IN ('LEARNER', 'REVIEWER') AND length(${table.detailsSnapshot}) >= 5`,
+    ),
+  ],
+);
+
+export const improvementProposalDecisions = pgTable(
+  "improvement_proposal_decisions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    proposalId: uuid("proposal_id")
+      .notNull()
+      .references(() => improvementProposals.id, { onDelete: "restrict" }),
+    decision: improvementDecisionEnum("decision").notNull(),
+    notes: text("notes").notNull(),
+    decidedBy: varchar("decided_by", { length: 160 }).notNull(),
+    decidedAt: timestamp("decided_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("improvement_proposal_decision_idx").on(table.proposalId),
+    check(
+      "improvement_proposal_decision_notes_check",
+      sql`length(${table.notes}) >= 20`,
+    ),
   ],
 );
