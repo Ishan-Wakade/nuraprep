@@ -1088,6 +1088,91 @@ async function main() {
       }
     }
 
+    const authUserId = `smoke-user-${randomUUID()}`;
+    await client.query(
+      `INSERT INTO auth_users
+       (id, name, email, email_verified)
+       VALUES ($1, 'Smoke learner', $2, true)`,
+      [authUserId, `${authUserId}@example.invalid`],
+    );
+    const roleGrantId = randomUUID();
+    await client.query(
+      `INSERT INTO auth_role_grants
+       (id, user_id, role, granted_by, reason)
+       VALUES ($1, $2, 'LEARNER', 'ci-smoke-test', $3)`,
+      [roleGrantId, authUserId, "Temporary rolled-back auth constraint test."],
+    );
+    const accountAuditId = randomUUID();
+    await client.query(
+      `INSERT INTO account_audit_events
+       (id, user_id, event_type, actor_id, metadata)
+       VALUES ($1, $2, 'SMOKE_AUTH_EVENT', 'ci-smoke-test', '{}'::jsonb)`,
+      [accountAuditId, authUserId],
+    );
+
+    for (const [savepoint, query, id, label] of [
+      [
+        "account_audit_immutability_check",
+        "UPDATE account_audit_events SET event_type = 'MUTATED' WHERE id = $1",
+        accountAuditId,
+        "account audit event",
+      ],
+      [
+        "role_identity_immutability_check",
+        "UPDATE auth_role_grants SET reason = 'mutated' WHERE id = $1",
+        roleGrantId,
+        "auth role grant identity",
+      ],
+    ] as const) {
+      await client.query(`SAVEPOINT ${savepoint}`);
+      let mutationBlocked = false;
+      try {
+        await client.query(query, [id]);
+      } catch (error) {
+        mutationBlocked =
+          typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          error.code === "55000";
+      } finally {
+        await client.query(`ROLLBACK TO SAVEPOINT ${savepoint}`);
+      }
+      if (!mutationBlocked) {
+        throw new Error(`The ${label} allowed an audit-history mutation.`);
+      }
+    }
+
+    await client.query(
+      `UPDATE auth_role_grants
+       SET revoked_at = now(), revoked_by = 'ci-smoke-test',
+           revocation_reason = 'Complete the rolled-back lifecycle test.'
+       WHERE id = $1`,
+      [roleGrantId],
+    );
+    await client.query("SAVEPOINT revoked_role_immutability_check");
+    let revokedRoleMutationBlocked = false;
+    try {
+      await client.query(
+        `UPDATE auth_role_grants
+         SET revocation_reason = 'mutated after revocation'
+         WHERE id = $1`,
+        [roleGrantId],
+      );
+    } catch (error) {
+      revokedRoleMutationBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query(
+        "ROLLBACK TO SAVEPOINT revoked_role_immutability_check",
+      );
+    }
+    if (!revokedRoleMutationBlocked) {
+      throw new Error("A revoked auth role grant allowed another update.");
+    }
+
     const result = await client.query<{ version_count: number }>(
       `SELECT count(*)::int AS version_count
      FROM question_versions qv

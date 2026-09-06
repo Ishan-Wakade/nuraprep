@@ -98,6 +98,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 ## 7. Authentication and account lifecycle
 
 - [x] Threat-model Google OAuth, database sessions, authorization, account linking, export, and deletion before implementation.
+- [x] Add the Better Auth route, generated-compatible Drizzle tables, encrypted OAuth-token storage, revocable role grants, append-only account audit events, and production environment guards.
 - Add sign-in, logout, role enforcement, progress persistence, export, and deletion.
 - Add CSRF/state/nonce protections, secure cookies, session rotation, audit events, and abuse controls.
 

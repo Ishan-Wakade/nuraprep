@@ -1,6 +1,6 @@
 # Authentication and account-security design
 
-Status: reviewed implementation plan; production authentication is not enabled.
+Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database session endpoint, environment fail-closed checks, role-grant constraints, and account-audit boundaries implemented. Google sign-in UI and production authentication remain disabled until credentials and authorization tests are complete. Better Auth's direct deletion endpoint is intentionally disabled until the application-owned transactional deletion workflow and its foreign-key tests are implemented.
 
 NuraPrep will use Google OpenID Connect through Better Auth with its Drizzle/PostgreSQL adapter. The application will keep database-backed, revocable sessions and will not request access to Google APIs beyond the identity scopes needed for sign-in. Development identities remain available only behind explicit local switches that already fail closed when `APP_ENV=production`.
 
@@ -18,13 +18,13 @@ Route-shell or Proxy checks may improve navigation, but they are never an author
 
 ## Data model direction
 
-The authentication migration will add:
+The authentication foundation includes:
 
-- `auth_users`: local identifier, display name, normalized email, verified-email state, optional image URL, timestamps, and deletion state;
+- `auth_users`: local identifier, display name, normalized email, verified-email state, optional image URL, and timestamps;
 - `auth_accounts`: provider identifier, provider subject, owning user, minimal provider-token fields required by the library, and a unique provider/subject boundary;
 - `auth_sessions`: unique credential token, user, expiry, creation/update timestamps, and optional coarse device metadata;
 - `auth_verifications`: short-lived verification state required by the library;
-- `role_grants`: user, `LEARNER`/`REVIEWER`/`ADMIN` role, granting principal, reason, and immutable timestamps; and
+- `auth_role_grants`: user, `LEARNER`/`REVIEWER`/`ADMIN` role, granting principal, reason, and immutable timestamps; and
 - `account_audit_events`: append-only sign-in, sign-out, revocation, role, export, and deletion events with no raw credential values.
 
 `learner_profiles` will reference the local auth user rather than trusting a caller-provided email or Google subject. Existing development data will receive an explicit development principal. Reviewer access is granted from a database role record; possession of a particular email address alone never creates reviewer privileges.

@@ -1,38 +1,15 @@
 import "server-only";
 
-import { z } from "zod";
-
-const serverEnvironmentSchema = z.object({
-  APP_ENV: z.enum(["development", "test", "production"]).default("development"),
-  DATABASE_URL: z.url(),
-  DIRECT_URL: z.url().optional(),
-  DEV_REVIEWER_ENABLED: z
-    .enum(["true", "false"])
-    .default("false")
-    .transform((value) => value === "true"),
-  DEV_LEARNER_ENABLED: z
-    .enum(["true", "false"])
-    .default("false")
-    .transform((value) => value === "true"),
-});
-
-export type ServerEnvironment = z.infer<typeof serverEnvironmentSchema>;
+import {
+  parseServerEnvironment,
+  type ServerEnvironment,
+} from "@/lib/env/validation";
 
 let cachedEnvironment: ServerEnvironment | undefined;
 
 export function getServerEnvironment(): ServerEnvironment {
   if (!cachedEnvironment) {
-    cachedEnvironment = serverEnvironmentSchema.parse(process.env);
-
-    if (
-      cachedEnvironment.APP_ENV === "production" &&
-      (cachedEnvironment.DEV_REVIEWER_ENABLED ||
-        cachedEnvironment.DEV_LEARNER_ENABLED)
-    ) {
-      throw new Error(
-        "Development identity bypasses cannot be enabled in production.",
-      );
-    }
+    cachedEnvironment = parseServerEnvironment(process.env);
   }
 
   return cachedEnvironment;

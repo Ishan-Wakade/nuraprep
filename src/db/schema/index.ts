@@ -172,6 +172,154 @@ export const studyPlanItemStatusEnum = pgEnum("study_plan_item_status", [
   "COMPLETED",
   "SKIPPED",
 ]);
+export const authRoleEnum = pgEnum("auth_role", [
+  "LEARNER",
+  "REVIEWER",
+  "ADMIN",
+]);
+
+export const authUsers = pgTable("auth_users", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").notNull().default(false),
+  image: text("image"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export const authSessions = pgTable(
+  "auth_sessions",
+  {
+    id: text("id").primaryKey(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    token: text("token").notNull().unique(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+  },
+  (table) => [index("auth_session_user_idx").on(table.userId)],
+);
+
+export const authAccounts = pgTable(
+  "auth_accounts",
+  {
+    id: text("id").primaryKey(),
+    issuer: text("issuer").notNull(),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", {
+      withTimezone: true,
+    }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+      withTimezone: true,
+    }),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex("auth_account_issuer_subject_idx").on(
+      table.issuer,
+      table.accountId,
+    ),
+    index("auth_account_user_idx").on(table.userId),
+  ],
+);
+
+export const authVerifications = pgTable(
+  "auth_verifications",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [index("auth_verification_identifier_idx").on(table.identifier)],
+);
+
+export const authRoleGrants = pgTable(
+  "auth_role_grants",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    role: authRoleEnum("role").notNull(),
+    grantedBy: varchar("granted_by", { length: 160 }).notNull(),
+    reason: text("reason").notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    revokedBy: varchar("revoked_by", { length: 160 }),
+    revocationReason: text("revocation_reason"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("auth_role_active_idx")
+      .on(table.userId, table.role)
+      .where(sql`${table.revokedAt} IS NULL`),
+    check(
+      "auth_role_revocation_check",
+      sql`(${table.revokedAt} IS NULL AND ${table.revokedBy} IS NULL AND ${table.revocationReason} IS NULL) OR (${table.revokedAt} IS NOT NULL AND ${table.revokedBy} IS NOT NULL AND ${table.revocationReason} IS NOT NULL)`,
+    ),
+  ],
+);
+
+export const accountAuditEvents = pgTable(
+  "account_audit_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id").references(() => authUsers.id, {
+      onDelete: "set null",
+    }),
+    eventType: varchar("event_type", { length: 80 }).notNull(),
+    actorId: varchar("actor_id", { length: 160 }).notNull(),
+    metadata: jsonb("metadata")
+      .$type<Record<string, string | number | boolean | null>>()
+      .notNull()
+      .default({}),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("account_audit_user_created_idx").on(table.userId, table.createdAt),
+  ],
+);
 
 export const examSpecifications = pgTable(
   "exam_specifications",
@@ -812,12 +960,18 @@ export const learnerProfiles = pgTable(
   "learner_profiles",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    authUserId: text("auth_user_id").references(() => authUsers.id, {
+      onDelete: "restrict",
+    }),
     authSubject: varchar("auth_subject", { length: 240 }).notNull(),
     displayName: varchar("display_name", { length: 160 }).notNull(),
     email: varchar("email", { length: 320 }),
     ...auditColumns,
   },
-  (table) => [uniqueIndex("learner_auth_subject_idx").on(table.authSubject)],
+  (table) => [
+    uniqueIndex("learner_auth_subject_idx").on(table.authSubject),
+    uniqueIndex("learner_auth_user_idx").on(table.authUserId),
+  ],
 );
 
 export const scoreEstimates = pgTable(

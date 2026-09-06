@@ -125,7 +125,7 @@ Open [http://localhost:3000](http://localhost:3000). Local topic practice is at 
 
 ## Environment variables
 
-`.env.example` is the authoritative inventory. Variables are grouped by delivery phase, and secrets must never use the `NEXT_PUBLIC_` prefix. Local database values are development-only; planned integrations use separate staging and production credentials.
+`.env.example` is the authoritative inventory. Variables are grouped by delivery phase, and secrets must never use the `NEXT_PUBLIC_` prefix. Local database values are development-only; planned integrations use separate staging and production credentials. Production startup requires `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET`; the auth secret must be unique per environment and at least 32 characters.
 
 ## Quality checks
 
