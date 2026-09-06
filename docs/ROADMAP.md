@@ -129,9 +129,11 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 ## 10. GitHub portfolio polish
 
-- Audit the NuraPrep repository for redundant tracked files, navigability, metadata, screenshots, contribution ergonomics, and employer-facing clarity.
+- [x] Audit the NuraPrep repository for redundant tracked files, navigability, metadata, screenshots, contribution ergonomics, and employer-facing clarity.
 - Preserve files required for builds, tests, migrations, governance, and reproducibility; remove or consolidate only demonstrably redundant material.
-- Create a concise professional GitHub profile README and truthful account metadata.
+- [x] Remove unused framework starter assets and suppress unreviewed Docker runtime major-version upgrades.
+- [x] Create a concise professional GitHub profile README.
+- Add truthful account metadata and pin NuraPrep after explicit confirmation for the public profile changes.
 - Audit every public repository for descriptions, topics, licenses, documentation, build health, and presentation; prioritize a small set of defensible featured projects over cosmetic activity.
 - Do not fabricate adoption, performance, impact, work history, or contribution metrics.
 

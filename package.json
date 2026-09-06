@@ -5,7 +5,7 @@
   "description": "An independent, open-source TEAS Math preparation platform with adaptive practice and reviewable question quality.",
   "license": "MIT",
   "engines": {
-    "node": ">=22 <27"
+    "node": ">=24 <25"
   },
   "scripts": {
     "dev": "next dev",

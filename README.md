@@ -11,7 +11,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 ## Project status
 
-**Generation-pipeline phase — not yet a production study tool.** The repository now contains the PostgreSQL content model, deterministic answer and math checks, a local owner-review and publication workflow, persisted topic practice, a coverage-aware diagnostic, a versioned rules-based adaptive scheduler, full timed-test mechanics, a transparent readiness-estimation baseline, and a fail-closed source/generation control plane. Thirty-eight original seed candidates cover every current Math leaf skill and fill the internal 20-family Numbers-and-Algebra and 18-family Measurement-and-Data targets. They remain deliberately unapproved, and browser tests use disposable, explicitly test-only approvals to verify complete learner flows. There is no approved production question bank, configured generation provider, or externally validated score predictor yet.
+**Working local alpha — content review remains the release gate.** The repository contains the PostgreSQL content model, deterministic answer and math checks, owner-review and publication workflows, persisted topic practice, a coverage-aware diagnostic, a versioned rules-based adaptive scheduler, full timed-test mechanics, a transparent readiness-estimation baseline, and a fail-closed source/generation control plane. Thirty-eight original seed candidates cover every current Math leaf skill and fill the internal 20-family Numbers-and-Algebra and 18-family Measurement-and-Data targets. They remain deliberately unapproved, and browser tests use disposable, explicitly test-only approvals to verify complete learner flows. There is no approved production question bank, configured generation provider, or externally validated score predictor yet.
 
 | Area                                        | Status                                                                                                                |
 | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -42,6 +42,16 @@ The interface shown is a product-direction preview. The example readiness state 
 ![NuraPrep diagnostic results with conservative skill signals and a personalized starting point](public/screenshots/diagnostic-results.png)
 
 These screens are backed by the local PostgreSQL practice flow. The diagnostic samples one current published item per available skill and labels every result as preliminary; it does not infer mastery from one answer. A learner can also report an answered item, and the owner can append an auditable triage decision against that exact question version and attempt. The owner workspace searches learner and reviewer evidence together and summarizes recurring categories or stable issue codes without erasing source attribution. Displayed items are disposable browser-test fixtures; they are not production-approved content.
+
+![NuraPrep session summary separating practice accuracy from official or validated scores](public/screenshots/session-summary.png)
+
+## Engineering highlights
+
+- **Publication safety:** immutable question versions, independent reviewer attestations, versioned validator rubrics, and a database-enforced learner publication boundary.
+- **Deterministic educational checks:** typed answer contracts plus programmatic math, formatting, uniqueness, distractor, and originality signals instead of LLM-only grading.
+- **Inspectable personalization:** prerequisite-aware diagnostic signals, adaptive scheduling reasons, spaced-review dates, and versioned score-estimate inputs remain explainable.
+- **Privacy-aware accounts:** database sessions, revocable roles, fresh-session export and erasure controls, token-safe audit events, and shared authentication rate limits.
+- **Production-shaped delivery:** isolated browser-test databases, transactional failure tests, a non-root standalone container, one-shot migrations, health checks, and CI that builds the real image.
 
 ## Product direction
 
@@ -107,7 +117,7 @@ No vector database or separate API service is planned for version 1. They will b
 
 Requirements:
 
-- Node.js 22–26
+- Node.js 24 LTS
 - pnpm 11+
 - Docker Desktop
 
