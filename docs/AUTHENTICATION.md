@@ -1,6 +1,6 @@
 # Authentication and account-security design
 
-Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, sign-in and sign-out surfaces, account-scoped learner profiles, fresh-session-gated portable export, signed-in-device visibility, transactional session revocation, transactional learner erasure, environment fail-closed checks, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation without exposing tokens, reviewer denial/approval, export credential exclusion, stale-session denial, complete learner erasure, and privileged-account refusal without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's broad direct deletion endpoint remains disabled because NuraPrep owns its narrower data-erasure transaction.
+Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, shared database rate limiting, session lifecycle/export audit events, sign-in and sign-out surfaces, account-scoped learner profiles, fresh-session-gated portable export, signed-in-device visibility, transactional session revocation, transactional learner erasure, environment fail-closed checks, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation without exposing tokens, audit creation, rate-limit enforcement, reviewer denial/approval, export credential exclusion, stale-session denial, complete learner erasure, and privileged-account refusal without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's broad direct deletion endpoint remains disabled because NuraPrep owns its narrower data-erasure transaction.
 
 NuraPrep will use Google OpenID Connect through Better Auth with its Drizzle/PostgreSQL adapter. The application will keep database-backed, revocable sessions and will not request access to Google APIs beyond the identity scopes needed for sign-in. Development identities remain available only behind explicit local switches that already fail closed when `APP_ENV=production`.
 
@@ -24,6 +24,7 @@ The authentication foundation includes:
 - `auth_accounts`: provider identifier, provider subject, owning user, minimal provider-token fields required by the library, and a unique provider/subject boundary;
 - `auth_sessions`: unique credential token, user, expiry, creation/update timestamps, and optional coarse device metadata;
 - `auth_verifications`: short-lived verification state required by the library;
+- `auth_rate_limits`: a short-lived, shared request bucket used to enforce atomic limits across application replicas;
 - `auth_role_grants`: user, `LEARNER`/`REVIEWER`/`ADMIN` role, granting principal, reason, and immutable timestamps; and
 - `account_audit_events`: append-only sign-in, sign-out, revocation, role, export, and deletion events with no raw credential values.
 
@@ -40,6 +41,10 @@ The authentication foundation includes:
 - Do not request or retain a Google refresh token because NuraPrep does not call Google APIs after sign-in.
 
 The account page shows coarse device type, session timestamps, and IP address only to the owning authenticated user. The revoke-other-devices action obtains the current session server-side, deletes every sibling session in one database transaction, preserves the current session, and appends the number revoked to the account audit log. Raw session tokens never enter page props or the portable export.
+
+PostgreSQL records `SESSION_CREATED` and `SESSION_REVOKED` from the session table itself, so direct library and application writes have the same transaction-bound audit behavior. A completed portable export records `DATA_EXPORT_DOWNLOADED`; failed freshness checks do not. Account erasure suppresses new lifecycle events only inside its transaction because it removes the account's audit history and writes a separate non-identifying receipt.
+
+Better Auth rate limiting is enabled in every environment and stored in PostgreSQL so multiple containers cannot each grant a separate in-memory allowance. The general auth limit is 120 requests per 60 seconds, while social sign-in is limited to five starts per 60 seconds for one client/path key. Better Auth atomically consumes a bucket and prunes records older than the longest configured window. The bucket key may contain a client IP but is not linked to a user and has minute-scale retention. The load balancer must sanitize forwarded-IP headers before production; broad, user-controlled proxy trust is not configured in application code.
 
 ## Google configuration
 
@@ -58,7 +63,7 @@ Account linking fails closed. An existing verified email does not silently merge
 
 ## Account export and deletion
 
-Export produces a versioned, user-scoped JSON archive of profile, non-token session metadata, practice sessions, attempts, reports, report-status history, tutor interactions, estimates, and study plans. It excludes provider credentials, session tokens, answer keys, and internal reviewer identities or notes. The response is rebuilt at request time, requires a fresh authenticated session outside local development, and is marked `no-store` and `nosniff`.
+Export produces a versioned, user-scoped JSON archive of profile, non-token session metadata, practice sessions, attempts, reports, report-status history, tutor interactions, estimates, and study plans. It excludes provider credentials, session tokens, answer keys, and internal reviewer identities or notes. The response is rebuilt at request time, requires a fresh authenticated session outside local development, is marked `no-store` and `nosniff`, and records an audit event only after the archive is built successfully.
 
 Deletion requires a session created within the last 15 minutes plus an exact typed `DELETE` confirmation. The application calls one PostgreSQL erasure procedure that locks the account; removes learner-derived improvement evidence; deletes report history, practice and tutor history, score estimates, and study plans in dependency order; removes the learner profile, account audit events, role grants, provider credentials, sessions, and email-linked verification records; then deletes the auth user. No calibration record is retained in version 1. The procedure writes a receipt containing only per-table deletion counts, a schema version, and completion time; it stores no user ID, email, provider subject, token, answer, or report text.
 

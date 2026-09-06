@@ -6,6 +6,7 @@ import { betterAuth } from "better-auth/minimal";
 import { getDatabase } from "@/db/client";
 import {
   authAccounts,
+  authRateLimits,
   authSessions,
   authUsers,
   authVerifications,
@@ -30,6 +31,7 @@ export const auth = betterAuth({
       session: authSessions,
       account: authAccounts,
       verification: authVerifications,
+      rateLimit: authRateLimits,
     },
   }),
   emailAndPassword: { enabled: false },
@@ -46,6 +48,20 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24,
     freshAge: 60 * 15,
     cookieCache: { enabled: false },
+  },
+  rateLimit: {
+    enabled: true,
+    storage: "database",
+    window: 60,
+    max: 120,
+    customRules: {
+      "/sign-in/social": { window: 60, max: 5 },
+    },
+  },
+  advanced: {
+    useSecureCookies: environment.APP_ENV === "production",
+    disableCSRFCheck: false,
+    disableOriginCheck: false,
   },
   // Keep Better Auth's direct deletion endpoint disabled until NuraPrep's
   // application-owned, transactional export/deletion workflow is complete.

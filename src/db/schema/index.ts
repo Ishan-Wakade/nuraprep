@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
+  bigint,
   boolean,
   check,
   index,
@@ -270,6 +271,13 @@ export const authVerifications = pgTable(
   },
   (table) => [index("auth_verification_identifier_idx").on(table.identifier)],
 );
+
+export const authRateLimits = pgTable("auth_rate_limits", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
 
 export const authRoleGrants = pgTable(
   "auth_role_grants",

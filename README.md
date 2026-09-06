@@ -95,6 +95,7 @@ See [Architecture](docs/ARCHITECTURE.md), [authentication and account security](
 - Next.js 16 App Router, React 19, and TypeScript
 - Tailwind CSS 4
 - PostgreSQL 17 with Drizzle ORM and append-only audit records
+- Database-backed sessions, account lifecycle controls, and shared authentication rate limits
 - Vitest, Testing Library, and Playwright
 - Docker Compose for local PostgreSQL
 - Provider-neutral generation interface and auditable request queue; external provider adapter intentionally not configured

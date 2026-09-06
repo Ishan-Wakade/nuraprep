@@ -103,9 +103,10 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Add a versioned learner-data export with fresh-session enforcement, no-store delivery, and explicit credential/answer-key/reviewer-note exclusions.
 - [x] Add a signed-in-device view and transactional revoke-other-sessions control with an append-only audit event.
 - [x] Add fresh-session and typed-confirmation learner account erasure, including linked reviewer evidence, rollback verification, and a non-identifying receipt.
+- [x] Add database-transaction session lifecycle/export audit events, shared atomic auth rate limits, and global browser-safety response headers.
 - Configure real Google credentials and test successful, denied, malformed, and replayed provider callbacks before enabling production sign-in.
 - Design administrator-assisted erasure for accounts with reviewer or administrator history without breaking content-audit integrity.
-- Verify provider CSRF/state/nonce and production cookie behavior; add remaining sign-in/sign-out audit events and abuse controls.
+- Verify provider CSRF/state/nonce and production cookie behavior; add load-balanced forwarded-IP validation and broader application abuse controls.
 
 **Exit:** authorization tests cover learner/reviewer/admin boundaries and deletion behavior is documented and verified.
 

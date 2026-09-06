@@ -30,6 +30,20 @@ test("reports application and database health without cacheable details", async 
   expect(response.headers()["cache-control"]).toContain("no-store");
 });
 
+test("applies browser safety headers to application responses", async ({
+  request,
+}) => {
+  const response = await request.get("/");
+
+  expect(response.headers()["x-content-type-options"]).toBe("nosniff");
+  expect(response.headers()["x-frame-options"]).toBe("DENY");
+  expect(response.headers()["referrer-policy"]).toBe(
+    "strict-origin-when-cross-origin",
+  );
+  expect(response.headers()["permissions-policy"]).toContain("camera=()");
+  expect(response.headers()["x-dns-prefetch-control"]).toBe("off");
+});
+
 test("has no horizontal overflow on a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");

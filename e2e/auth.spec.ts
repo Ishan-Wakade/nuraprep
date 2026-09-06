@@ -79,6 +79,41 @@ test("returns an uncached anonymous session before sign-in", async ({
   expect(response.headers()["cache-control"]).toContain("no-store");
 });
 
+test("rate limits repeated auth requests in shared storage", async ({
+  request,
+}) => {
+  const responses = [];
+  for (let attempt = 0; attempt < 121; attempt += 1) {
+    responses.push(
+      await request.get("/api/auth/get-session", {
+        headers: {
+          "x-forwarded-for": "198.51.100.42",
+        },
+      }),
+    );
+  }
+
+  expect(
+    responses.slice(0, 120).every((response) => response.status() === 200),
+  ).toBe(true);
+  expect(responses[120]?.status()).toBe(429);
+  expect(responses[120]?.headers()["x-retry-after"]).toBeTruthy();
+
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error("Rate-limit test requires DATABASE_URL.");
+  const pool = new Pool({ connectionString: databaseUrl });
+  try {
+    const stored = await pool.query<{ count: number }>(
+      `SELECT count(*)::int AS count
+       FROM auth_rate_limits
+       WHERE key LIKE '%/get-session'`,
+    );
+    expect(stored.rows[0]?.count).toBeGreaterThan(0);
+  } finally {
+    await pool.end();
+  }
+});
+
 test("resolves an authenticated learner and revokes the session on sign-out", async ({
   page,
 }) => {
@@ -99,6 +134,16 @@ test("resolves an authenticated learner and revokes the session on sign-out", as
       [authenticated.userId],
     );
     expect(sessionCount.rows[0]?.count).toBe(0);
+
+    const revocationAudit = await authenticated.pool.query<{
+      count: number;
+    }>(
+      `SELECT count(*)::int AS count
+       FROM account_audit_events
+       WHERE user_id = $1 AND event_type = 'SESSION_REVOKED'`,
+      [authenticated.userId],
+    );
+    expect(revocationAudit.rows[0]?.count).toBe(1);
   } finally {
     await authenticated.pool.end();
   }
@@ -171,6 +216,14 @@ test("exports only portable learner data without credentials", async ({
     expect(exportData.accountSessions).toHaveLength(1);
     expect(exportData.accountSessions[0]).not.toHaveProperty("token");
     expect(rawExport).not.toContain(authenticated.token);
+
+    const exportAudit = await authenticated.pool.query<{ count: number }>(
+      `SELECT count(*)::int AS count
+       FROM account_audit_events
+       WHERE user_id = $1 AND event_type = 'DATA_EXPORT_DOWNLOADED'`,
+      [authenticated.userId],
+    );
+    expect(exportAudit.rows[0]?.count).toBe(1);
   } finally {
     await authenticated.pool.end();
   }
