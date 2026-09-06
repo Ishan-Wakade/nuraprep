@@ -75,6 +75,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Add max-job and conservative worst-case-cost budgets for each queue batch.
 - [x] Bound generation execution to three attempts and terminally fail exhausted stale leases.
 - [x] Add reviewer-attributed, reason-required cancellation for pending generation requests.
+- [x] Surface queue status, stale lease, outcome, and conservative cost metrics to reviewers.
 - [x] Add internal exact, number-invariant, and phrase-overlap rejection signals to deterministic review evidence.
 - [ ] Add a reviewed network transport and licensed-storage adapter; do not enable collection from gated or unclear-rights sources.
 - [ ] Add a configured provider and production queue host, wall-clock rate controls, and calibration cases for originality thresholds.

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { asc, count, desc, eq } from "drizzle-orm";
+import { asc, count, desc, eq, sql } from "drizzle-orm";
 import { connection } from "next/server";
 
 import { getDatabase } from "@/db/client";
@@ -72,7 +72,7 @@ export async function getGenerationConsole() {
   requireReviewer();
   const database = getDatabase();
 
-  const [templates, runs] = await Promise.all([
+  const [templates, runs, [metrics]] = await Promise.all([
     database
       .select({
         id: generationTemplates.id,
@@ -127,6 +127,26 @@ export async function getGenerationConsole() {
       .leftJoin(questions, eq(questions.id, questionVersions.questionId))
       .orderBy(desc(generationRuns.startedAt))
       .limit(100),
+    database
+      .select({
+        total: sql<number>`count(*)::int`,
+        pending: sql<number>`count(*) filter (where ${generationRuns.status} = 'PENDING')::int`,
+        running: sql<number>`count(*) filter (where ${generationRuns.status} = 'RUNNING')::int`,
+        staleLeases: sql<number>`count(*) filter (where ${generationRuns.status} = 'RUNNING' and ${generationRuns.leaseExpiresAt} <= now())::int`,
+        succeeded: sql<number>`count(*) filter (where ${generationRuns.status} = 'SUCCEEDED')::int`,
+        failed: sql<number>`count(*) filter (where ${generationRuns.status} = 'FAILED')::int`,
+        cancelled: sql<number>`count(*) filter (where ${generationRuns.status} = 'CANCELLED')::int`,
+        retryExhausted: sql<number>`count(*) filter (where ${generationRuns.failureCode} = 'LEASE_ATTEMPTS_EXHAUSTED')::int`,
+        activeCeilingMicros:
+          sql<number>`coalesce(sum(${generationRuns.maxCostMicros}) filter (where ${generationRuns.status} in ('PENDING', 'RUNNING')), 0)`.mapWith(
+            Number,
+          ),
+        recordedCostMicros:
+          sql<number>`coalesce(sum(${generationRuns.estimatedCostMicros}), 0)`.mapWith(
+            Number,
+          ),
+      })
+      .from(generationRuns),
   ]);
 
   return {
@@ -140,5 +160,17 @@ export async function getGenerationConsole() {
       leaseExpiresAt: run.leaseExpiresAt?.toISOString() ?? null,
       completedAt: run.completedAt?.toISOString() ?? null,
     })),
+    metrics: metrics ?? {
+      total: 0,
+      pending: 0,
+      running: 0,
+      staleLeases: 0,
+      succeeded: 0,
+      failed: 0,
+      cancelled: 0,
+      retryExhausted: 0,
+      activeCeilingMicros: 0,
+      recordedCostMicros: 0,
+    },
   };
 }

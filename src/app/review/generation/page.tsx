@@ -23,6 +23,50 @@ export default async function GenerationConsolePage() {
         plus human-authored abstract coverage notes.
       </p>
 
+      <section className="mt-7" aria-labelledby="queue-health-heading">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="text-[11px] font-bold tracking-wide text-[#116b65] uppercase">
+              Operations
+            </p>
+            <h2 id="queue-health-heading" className="mt-1 font-serif text-2xl">
+              Queue health
+            </h2>
+          </div>
+          <p className="text-xs text-[#687a7c]">
+            {consoleData.metrics.total} immutable run records
+          </p>
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <MetricCard
+            label="Ready / running"
+            value={`${consoleData.metrics.pending} / ${consoleData.metrics.running}`}
+            note="Queued and actively leased"
+          />
+          <MetricCard
+            label="Stale leases"
+            value={String(consoleData.metrics.staleLeases)}
+            note={`${consoleData.metrics.retryExhausted} retry-exhausted failures recorded`}
+            alert={consoleData.metrics.staleLeases > 0}
+          />
+          <MetricCard
+            label="Active worst-case ceiling"
+            value={formatDollars(consoleData.metrics.activeCeilingMicros)}
+            note="Full ceilings, not forecast spend"
+          />
+          <MetricCard
+            label="Recorded provider cost"
+            value={formatDollars(consoleData.metrics.recordedCostMicros)}
+            note="Run-reported estimate, not billing truth"
+          />
+          <MetricCard
+            label="Terminal outcomes"
+            value={`${consoleData.metrics.succeeded} / ${consoleData.metrics.failed} / ${consoleData.metrics.cancelled}`}
+            note="Succeeded / failed / cancelled"
+          />
+        </div>
+      </section>
+
       <section className="mt-7 grid gap-4 lg:grid-cols-2">
         {consoleData.templates.map((template) => (
           <article
@@ -146,4 +190,39 @@ export default async function GenerationConsolePage() {
       </section>
     </div>
   );
+}
+
+function MetricCard({
+  label,
+  value,
+  note,
+  alert = false,
+}: {
+  label: string;
+  value: string;
+  note: string;
+  alert?: boolean;
+}) {
+  return (
+    <article
+      className={`rounded-2xl border bg-white p-4 shadow-sm ${alert ? "border-amber-400" : "border-[#d8ded9]"}`}
+    >
+      <p className="text-[11px] font-bold tracking-wide text-[#52676a] uppercase">
+        {label}
+      </p>
+      <p className={`mt-2 text-2xl font-bold ${alert ? "text-amber-800" : ""}`}>
+        {value}
+      </p>
+      <p className="mt-1 text-[11px] leading-4 text-[#687a7c]">{note}</p>
+    </article>
+  );
+}
+
+function formatDollars(micros: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 4,
+    maximumFractionDigits: 4,
+  }).format(micros / 1_000_000);
 }

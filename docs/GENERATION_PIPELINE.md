@@ -70,6 +70,8 @@ A run receives at most three execution attempts: the initial claim and up to two
 
 A reviewer may cancel only a still-pending request. Cancellation requires a 20–2,000 character reason and stores the authenticated reviewer identity; the database rejects missing evidence, cancellation after a worker claim, and any later mutation of the terminal audit record.
 
+The reviewer console reports global queue counts, stale leases, historical retry exhaustion, active worst-case cost exposure, recorded provider-cost estimates, and terminal outcomes. These are operational indicators; cost figures are explicitly not represented as billing truth.
+
 Batch accounting reserves each claimed job's full cost ceiling rather than optimistic estimated spend. `maxJobs` is bounded to 100, the batch budget is bounded to the corresponding 500,000,000-micro ceiling, and the runner stops when no eligible job fits the remaining budget. Actual provider usage is still recorded per run. This is a safety budget, not billing or a claim of provider-price accuracy.
 
 Explanation-only regeneration may change only the explanation. Distractor-only regeneration is limited to choice items, preserves the correct answer and its content, and may change only distractor choices and their rationales. Any hidden change fails the worker before persistence.
@@ -91,6 +93,6 @@ Before an external adapter is enabled, it must prove that it:
 - a configured provider adapter and queue runner;
 - licensed-storage ingestion with malware scanning and object-storage isolation;
 - calibration of the implemented internal exact, number-invariant, and phrase-overlap signals, plus any legally permitted external comparison corpus;
-- a production exhaustion-sweep schedule, wall-clock rate controls, and operational metrics;
+- a production exhaustion-sweep schedule, wall-clock rate controls, durable time-series metrics, and alerts;
 - independent owner/educator approval of the 12-case engineering-draft gold evaluation set; and
 - implementation of approved feedback proposals as separately reviewed template, validator, rubric, policy, or evaluation-case versions. The proposal and approval ledger exists, but deliberately performs no automatic mutation.

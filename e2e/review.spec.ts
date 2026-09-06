@@ -233,6 +233,11 @@ test("approves a template and deduplicates regeneration requests", async ({
       name: "Templates and generation requests",
     }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Queue health" }),
+  ).toBeVisible();
+  await expect(page.getByText("Active worst-case ceiling")).toBeVisible();
+  await expect(page.getByText("Recorded provider cost")).toBeVisible();
 
   const templateCard = page
     .locator("article")
