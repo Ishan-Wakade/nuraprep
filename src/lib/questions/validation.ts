@@ -76,6 +76,9 @@ export function validateQuestionContent(
   const choices = content.choices ?? [];
   const choiceIds = choices.map((choice) => choice.id);
   const uniqueChoiceIds = new Set(choiceIds);
+  const normalizedChoiceContent = choices.map((choice) =>
+    normalizeDisplayedChoice(choice.content),
+  );
 
   if (
     questionTypeByAnswerType[content.answerSpec.type] !== content.questionType
@@ -97,6 +100,49 @@ export function validateQuestionContent(
     });
   }
 
+  if (
+    new Set(normalizedChoiceContent).size !== normalizedChoiceContent.length
+  ) {
+    issues.push({
+      code: "DUPLICATE_CHOICE_CONTENT",
+      message: "Displayed answer choices must be distinct.",
+      path: "choices",
+      severity: "error",
+    });
+  }
+
+  if (content.questionType === "SINGLE_CHOICE") {
+    const simpleNumericChoices = choices
+      .map((choice) => ({
+        id: choice.id,
+        numeric: parseSimpleNumericChoice(choice.content),
+      }))
+      .filter(
+        (
+          choice,
+        ): choice is { id: string; numeric: { value: number; unit: string } } =>
+          Boolean(choice.numeric),
+      );
+    const duplicateNumericChoice = simpleNumericChoices.some((choice, index) =>
+      simpleNumericChoices
+        .slice(index + 1)
+        .some(
+          (other) =>
+            choice.numeric.unit === other.numeric.unit &&
+            Math.abs(choice.numeric.value - other.numeric.value) <= 1e-12,
+        ),
+    );
+    if (duplicateNumericChoice) {
+      issues.push({
+        code: "DUPLICATE_NUMERIC_CHOICE_VALUE",
+        message:
+          "Single-choice numeric options must not contain equivalent values.",
+        path: "choices",
+        severity: "error",
+      });
+    }
+  }
+
   if (content.questionType === "NUMERIC" && choices.length > 0) {
     issues.push({
       code: "NUMERIC_HAS_CHOICES",
@@ -113,6 +159,21 @@ export function validateQuestionContent(
       path: "choices",
       severity: "error",
     });
+  }
+
+  if (content.answerSpec.type === "numeric") {
+    const units = [
+      content.answerSpec.unit,
+      ...content.answerSpec.acceptedUnits,
+    ].filter((unit): unit is string => Boolean(unit));
+    if (new Set(units.map(normalizeUnit)).size !== units.length) {
+      issues.push({
+        code: "DUPLICATE_ACCEPTED_UNIT",
+        message: "Canonical and accepted numeric units must be distinct.",
+        path: "answerSpec.acceptedUnits",
+        severity: "error",
+      });
+    }
   }
 
   const correctIds = getCorrectIds(content.answerSpec);
@@ -452,8 +513,15 @@ function misconceptionRuleMatches(
 }
 
 export function parseNumericInput(input: string): number | undefined {
-  const normalized = input.trim().replaceAll(",", "").replaceAll("−", "-");
+  let normalized = input.trim().replaceAll("−", "-");
   if (!normalized) return undefined;
+
+  if (normalized.includes(",")) {
+    if (!/^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(normalized)) {
+      return undefined;
+    }
+    normalized = normalized.replaceAll(",", "");
+  }
 
   const mixedNumberMatch = normalized.match(/^([+-]?\d+)\s+(\d+)\/(\d+)$/);
   if (mixedNumberMatch) {
@@ -488,6 +556,29 @@ function equalSets(left: string[], right: string[]) {
 
 function normalizeUnit(unit: string) {
   return unit.trim().toLocaleLowerCase("en-US").replaceAll(/\s+/g, " ");
+}
+
+function normalizeDisplayedChoice(content: string) {
+  return content
+    .normalize("NFKC")
+    .trim()
+    .toLocaleLowerCase("en-US")
+    .replaceAll(/\s+/g, " ");
+}
+
+function parseSimpleNumericChoice(content: string) {
+  const match = content
+    .normalize("NFKC")
+    .match(
+      /^\s*([+-]?(?:(?:\d+\s+)?\d+\/\d+|(?:\d[\d,]*\.?\d*|\.\d+)))\s*(%|[a-zA-Z]+(?:\s+[a-zA-Z]+)*)?\s*$/,
+    );
+  if (!match) return undefined;
+  const value = parseNumericInput(match[1]);
+  if (value === undefined) return undefined;
+  const suffix = match[2] ?? "";
+  return suffix === "%"
+    ? { value: value / 100, unit: "" }
+    : { value, unit: normalizeUnit(suffix) };
 }
 
 export type DeterministicMathValidation =

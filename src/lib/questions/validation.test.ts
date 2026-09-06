@@ -70,6 +70,67 @@ describe("validateQuestionContent", () => {
     ).toHaveLength(2);
   });
 
+  it("rejects duplicate displayed choices", () => {
+    const result = validateQuestionContent({
+      ...validSingleChoiceQuestion,
+      choices: [
+        { id: "a", content: "42" },
+        { id: "b", content: "192" },
+        { id: "c", content: "432" },
+        { id: "d", content: " １９２ " },
+      ],
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.issues.map((issue) => issue.code)).toContain(
+      "DUPLICATE_CHOICE_CONTENT",
+    );
+  });
+
+  it("rejects equivalent numeric options in a single-choice item", () => {
+    const result = validateQuestionContent({
+      ...validSingleChoiceQuestion,
+      choices: [
+        { id: "a", content: "0.5" },
+        { id: "b", content: "1/2" },
+        { id: "c", content: "0.75" },
+      ],
+      answerSpec: { type: "single_choice", choiceId: "a" },
+      distractorRationales: {
+        b: "This is equivalent to the keyed value and makes the item ambiguous.",
+        c: "This value is three fourths.",
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.issues.map((issue) => issue.code)).toContain(
+      "DUPLICATE_NUMERIC_CHOICE_VALUE",
+    );
+  });
+
+  it("rejects duplicate accepted-unit aliases", () => {
+    const result = validateQuestionContent({
+      questionType: "NUMERIC",
+      prompt: "Enter the volume in liters.",
+      answerSpec: {
+        type: "numeric",
+        value: 1.5,
+        tolerance: 0,
+        toleranceMode: "absolute",
+        unit: "L",
+        acceptedUnits: [" l "],
+        unitRequired: true,
+      },
+      explanation: "The converted volume is 1.5 liters.",
+      distractorRationales: {},
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.issues.map((issue) => issue.code)).toContain(
+      "DUPLICATE_ACCEPTED_UNIT",
+    );
+  });
+
   it("rejects a malformed table", () => {
     const result = validateQuestionContent({
       ...validSingleChoiceQuestion,
@@ -96,6 +157,14 @@ describe("evaluateAnswer", () => {
         { type: "multiple_select", choiceIds: ["c", "a"] },
       ),
     ).toEqual({ correct: true });
+  });
+
+  it("accepts standard thousands separators and rejects malformed grouping", () => {
+    expect(parseNumericInput("1,234.5")).toBe(1234.5);
+    expect(parseNumericInput("-12,000")).toBe(-12000);
+    expect(parseNumericInput("12,34")).toBeUndefined();
+    expect(parseNumericInput("1,2,3")).toBeUndefined();
+    expect(parseNumericInput("1234,567")).toBeUndefined();
   });
 
   it("requires ordered responses to match position by position", () => {

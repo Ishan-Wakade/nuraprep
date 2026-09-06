@@ -34,7 +34,7 @@ function numericCase(input: {
         tolerance: 0,
         toleranceMode: "absolute",
         unit: input.unit,
-        acceptedUnits: input.unit ? [input.unit] : [],
+        acceptedUnits: [],
         unitRequired: Boolean(input.unit),
       },
       explanation: input.explanation,

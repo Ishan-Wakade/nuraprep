@@ -16,6 +16,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Seed the sourced TEAS Math specification and an initial topic taxonomy.
 - [x] Implement typed answer contracts for single choice, multiple select, numeric, ordered, and table/graph items.
 - [x] Build deterministic answer parsing and content-contract validators for arithmetic, rational numbers, units, constraints, and answer uniqueness.
+- [x] Reject malformed numeric grouping, duplicate display options, equivalent numeric distractors, and duplicate unit aliases.
 - [x] Build a local reviewer browse/filter/preview/version/feedback/decision flow.
 - [x] Add safe deterministic math recipes, reviewer-attested evidence, and an explicit publication ledger.
 - [x] Add safe regeneration controls after the provider-neutral generation boundary exists.

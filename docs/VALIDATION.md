@@ -6,7 +6,7 @@ NuraPrep separates validation, review, and publication. A question can be mathem
 
 Two checks are currently automated:
 
-- `answer-contract` validates the response type, stable identifiers, choice set, distractor mappings, table shape, deterministic misconception rules, and internal near-duplicate rejection signals.
+- `answer-contract` validates the response type, stable identifiers, distinct displayed and numeric-equivalent choices, numeric unit aliases and comma grouping, choice set, distractor mappings, table shape, deterministic misconception rules, and internal near-duplicate rejection signals.
 - `mathematical-correctness` executes a safe structured verification recipe and compares the computed result with the keyed answer.
 
 The math verifier does not evaluate arbitrary JavaScript or model-written code. Its supported recipes are a bounded reverse-Polish arithmetic expression, equivalence checks across candidate expressions, numeric ordering, and mean/median/range operations. Unsupported or malformed recipes fail closed.
