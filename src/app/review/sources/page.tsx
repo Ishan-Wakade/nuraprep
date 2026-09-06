@@ -5,6 +5,11 @@ import {
   SourceRegistrationForm,
 } from "./source-forms";
 
+const sourceDateFormatter = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeZone: "UTC",
+});
+
 export default async function SourceRegistryPage() {
   const registry = await getSourceRegistry();
   return (
@@ -61,6 +66,12 @@ export default async function SourceRegistryPage() {
               <div className="rounded-xl bg-[#edf3ef] px-4 py-3 text-xs leading-5 text-[#385b59]">
                 <strong>{source.observationCount}</strong> abstract observations
                 <br />
+                Metadata: {source.allowMetadata ? "allowed" : "blocked"}
+                <br />
+                Coverage: {source.allowCoverageAnalysis ? "allowed" : "blocked"}
+                <br />
+                Quotation: {source.allowQuotation ? "allowed" : "blocked"}
+                <br />
                 Storage: {source.allowStorage ? "allowed" : "blocked"}
                 <br />
                 Model input: {source.allowModelInput ? "allowed" : "blocked"}
@@ -69,6 +80,38 @@ export default async function SourceRegistryPage() {
             <p className="mt-4 rounded-lg bg-[#faf9f4] px-3 py-2 text-xs leading-5 text-[#52676a]">
               {source.decisionRationale}
             </p>
+            <dl className="mt-3 grid gap-2 text-xs text-[#52676a] sm:grid-cols-2">
+              <div>
+                <dt className="font-bold">Rights evidence</dt>
+                <dd className="mt-0.5">
+                  {source.termsUrl ? (
+                    <a
+                      href={source.termsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[#116b65] underline"
+                    >
+                      Reviewed terms
+                    </a>
+                  ) : (
+                    "No terms URL recorded"
+                  )}
+                  {source.statedLicense
+                    ? ` · ${source.statedLicense}`
+                    : " · No reuse license recorded"}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-bold">Review dates</dt>
+                <dd className="mt-0.5">
+                  Accessed{" "}
+                  {sourceDateFormatter.format(new Date(source.accessedAt))}
+                  {source.recheckAt
+                    ? ` · Recheck by ${sourceDateFormatter.format(new Date(source.recheckAt))}`
+                    : " · No recheck scheduled"}
+                </dd>
+              </div>
+            </dl>
             {source.allowCoverageAnalysis && (
               <CoverageObservationForm
                 sourceArtifactId={source.id}
