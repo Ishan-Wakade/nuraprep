@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { config } from "dotenv";
+import { Pool } from "pg";
+
+config({ path: ".env.local", quiet: true });
 
 const firstVersionId = "14000000-0000-4000-8000-000000000001";
 const numericVersionId = "14000000-0000-4000-8000-000000000002";
@@ -394,4 +398,69 @@ test("has no horizontal overflow on the mobile review queue", async ({
   expect(generationDimensions.scrollWidth).toBe(
     generationDimensions.clientWidth,
   );
+});
+
+test("versions reviewer rubrics and invalidates prior evidence", async ({
+  page,
+}) => {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error("DATABASE_URL is required for E2E tests.");
+  const pool = new Pool({ connectionString: databaseUrl });
+  const publication = await pool.query<{ question_version_id: string }>(
+    `SELECT publication.question_version_id
+     FROM question_publications AS publication
+     INNER JOIN questions AS question ON question.id = publication.question_id
+     WHERE question.internal_slug = 'whole-number-groups-001'
+       AND publication.retired_at IS NULL
+     LIMIT 1`,
+  );
+  await pool.end();
+  const publishedVersionId = publication.rows[0]?.question_version_id;
+  expect(publishedVersionId).toBeTruthy();
+
+  await page.goto(`/review/questions/${publishedVersionId}`);
+  await expect(page.getByText("Eligible for publication")).toBeVisible();
+
+  await page.goto("/review/validators");
+  await expect(
+    page.getByRole("heading", { name: "Validator rule registry" }),
+  ).toBeVisible();
+  const ruleCard = page.locator("article").filter({
+    has: page.getByRole("heading", { name: /^accessibility v\d+$/ }),
+  });
+  const activeHeading = await ruleCard.getByRole("heading").textContent();
+  const currentVersion = Number(activeHeading?.match(/v(\d+)$/)?.[1]);
+  expect(currentVersion).toBeGreaterThan(0);
+
+  await ruleCard.getByText(`Draft version ${currentVersion + 1}`).click();
+  await ruleCard
+    .getByLabel("Revised rubric description")
+    .fill(
+      `A reviewer verifies keyboard navigation, accessible naming, contrast, stimulus alternatives, and interaction semantics for this exact question version. Revision ${Date.now()}.`,
+    );
+  await ruleCard
+    .getByLabel("Change rationale")
+    .fill(
+      "The revised accessibility rubric makes the required interaction checks explicit and intentionally invalidates prior evidence.",
+    );
+  await ruleCard.getByRole("checkbox").check();
+  await ruleCard
+    .getByRole("button", {
+      name: `Activate accessibility v${currentVersion + 1}`,
+    })
+    .click();
+  await expect(
+    page.getByRole("heading", {
+      name: `accessibility v${currentVersion + 1}`,
+    }),
+  ).toBeVisible();
+
+  await page.goto(`/review/questions/${publishedVersionId}`);
+  await expect(
+    page.getByText(/validator not passing · accessibility/i),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/accessibility v\d+ · retired rubric/i).first(),
+  ).toBeVisible();
+  await expect(page.getByText("STALE").first()).toBeVisible();
 });

@@ -77,11 +77,17 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
     "topic-alignment",
     "originality",
   ]) {
-    await page.getByLabel("Review check").selectOption(validatorKey);
+    const validatorSelect = page.getByLabel("Review check");
+    await validatorSelect.selectOption(validatorKey);
+    const selectedLabel = await validatorSelect
+      .locator("option:checked")
+      .textContent();
+    const activeVersion = selectedLabel?.match(/v(\d+)$/)?.[1];
+    expect(activeVersion).toBeTruthy();
     await expect(
       page.getByText(
         new RegExp(
-          `Current rubric:.*${validatorKey.replaceAll("-", " ")} v1`,
+          `Current rubric:.*${validatorKey.replaceAll("-", " ")} v${activeVersion}`,
           "i",
         ),
       ),
@@ -103,7 +109,7 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
       page
         .getByRole("heading", { name: "Validation evidence" })
         .locator("..")
-        .getByText(`${validatorKey} v1`, { exact: true }),
+        .getByText(`${validatorKey} v${activeVersion}`, { exact: true }),
     ).toBeVisible();
   }
 

@@ -324,15 +324,18 @@ export default async function QuestionReviewPage({
                   >
                     <span>
                       {run.key} v{run.version}
+                      {!run.active && " · retired rubric"}
                     </span>
                     <strong
                       className={
-                        run.outcome === "PASS"
-                          ? "text-emerald-700"
-                          : "text-red-700"
+                        !run.active
+                          ? "text-amber-700"
+                          : run.outcome === "PASS"
+                            ? "text-emerald-700"
+                            : "text-red-700"
                       }
                     >
-                      {run.outcome}
+                      {run.active ? run.outcome : "STALE"}
                     </strong>
                   </li>
                 ))

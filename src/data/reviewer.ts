@@ -125,7 +125,12 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
             validatorRules,
             eq(validatorRules.id, validationRuns.validatorRuleId),
           )
-          .where(inArray(validationRuns.questionVersionId, versionIds))
+          .where(
+            and(
+              inArray(validationRuns.questionVersionId, versionIds),
+              eq(validatorRules.active, true),
+            ),
+          )
           .orderBy(desc(validationRuns.executedAt))
       : [],
     versionIds.length
@@ -394,6 +399,7 @@ export async function getQuestionReviewDetail(versionId: string) {
         id: validationRuns.id,
         key: validatorRules.key,
         version: validatorRules.version,
+        active: validatorRules.active,
         blocksPublication: validatorRules.blocksPublication,
         outcome: validationRuns.outcome,
         failureCode: validationRuns.failureCode,
@@ -542,7 +548,7 @@ export async function getQuestionReviewDetail(versionId: string) {
     "PASS" | "FAIL" | "WARNING" | "ERROR"
   > = {};
   for (const validation of validations) {
-    if (!(validation.key in latestValidationByKey)) {
+    if (validation.active && !(validation.key in latestValidationByKey)) {
       latestValidationByKey[validation.key] = validation.outcome;
     }
   }

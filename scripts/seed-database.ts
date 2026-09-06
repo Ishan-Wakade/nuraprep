@@ -719,6 +719,9 @@ async function main() {
         description: validatorDescription(key),
         blocksPublication: true,
         active: true,
+        changeNotes:
+          "Initial reviewed publication rule established by the bootstrap dataset.",
+        createdBy: "bootstrap-seed",
       }));
       await transaction
         .insert(validatorRules)

@@ -13,6 +13,8 @@ import {
   skills,
   sourceArtifacts,
   sourcePolicyReviews,
+  validationRuns,
+  validatorRules,
 } from "@/db/schema";
 import { requireReviewer } from "@/lib/auth/reviewer";
 
@@ -123,6 +125,40 @@ export async function getSourceRegistry() {
     },
     skills: skillRows,
   };
+}
+
+export async function getValidatorRuleRegistry() {
+  await connection();
+  requireReviewer();
+  const rows = await getDatabase()
+    .select({
+      id: validatorRules.id,
+      key: validatorRules.key,
+      version: validatorRules.version,
+      description: validatorRules.description,
+      blocksPublication: validatorRules.blocksPublication,
+      active: validatorRules.active,
+      implementationHash: validatorRules.implementationHash,
+      changeNotes: validatorRules.changeNotes,
+      createdBy: validatorRules.createdBy,
+      activatedAt: validatorRules.activatedAt,
+      retiredAt: validatorRules.retiredAt,
+      retiredBy: validatorRules.retiredBy,
+      evidenceCount: count(validationRuns.id),
+    })
+    .from(validatorRules)
+    .leftJoin(
+      validationRuns,
+      eq(validationRuns.validatorRuleId, validatorRules.id),
+    )
+    .groupBy(validatorRules.id)
+    .orderBy(validatorRules.key, desc(validatorRules.version));
+
+  return rows.map((row) => ({
+    ...row,
+    activatedAt: row.activatedAt.toISOString(),
+    retiredAt: row.retiredAt?.toISOString() ?? null,
+  }));
 }
 
 export async function getGenerationConsole() {

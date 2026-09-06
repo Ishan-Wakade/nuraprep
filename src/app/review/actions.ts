@@ -764,7 +764,12 @@ async function getPublicationReadiness(versionId: string) {
         validatorRules,
         eq(validatorRules.id, validationRuns.validatorRuleId),
       )
-      .where(eq(validationRuns.questionVersionId, versionId))
+      .where(
+        and(
+          eq(validationRuns.questionVersionId, versionId),
+          eq(validatorRules.active, true),
+        ),
+      )
       .orderBy(desc(validationRuns.executedAt)),
   ]);
 

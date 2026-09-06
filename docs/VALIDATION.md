@@ -31,6 +31,8 @@ The difficulty check uses NuraPrep's internal reasoning-step and prerequisite ru
 
 The reviewer records a pass or failure with at least 40 characters of written evidence and must attest that they inspected the exact version, applied the current selected rubric, and made an independent judgment rather than accepting automation or model output alone. The form displays the exact active validator version and database-backed rubric description before evidence can be submitted, and fails closed if no active rubric is configured. A failure requires a stable error code, while a pass rejects contradictory failure metadata. Every run is append-only, and the newest run for each validator determines publication readiness.
 
+Reviewer rubrics are themselves immutable versioned records. Activating a changed rubric atomically retires the previous version, requires change rationale and an explicit evidence-invalidation attestation, and leaves only one active version per key. Publication readiness joins validation evidence to the active rule version, so a pass under a retired rubric cannot satisfy the new rule. Automated-rule changes remain code-managed because their descriptions must stay synchronized with deterministic implementations and tests.
+
 ## Publication sequence
 
 1. Create or revise an immutable question version.

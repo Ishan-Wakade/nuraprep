@@ -665,13 +665,35 @@ export const validatorRules = pgTable(
     blocksPublication: boolean("blocks_publication").notNull().default(true),
     active: boolean("active").notNull().default(true),
     implementationHash: varchar("implementation_hash", { length: 128 }),
+    changeNotes: text("change_notes")
+      .notNull()
+      .default("Initial validator rule imported before lifecycle auditing."),
+    createdBy: varchar("created_by", { length: 160 })
+      .notNull()
+      .default("legacy-import"),
+    activatedAt: timestamp("activated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    retiredAt: timestamp("retired_at", { withTimezone: true }),
+    retiredBy: varchar("retired_by", { length: 160 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
     uniqueIndex("validator_rule_version_idx").on(table.key, table.version),
+    uniqueIndex("validator_rule_active_key_idx")
+      .on(table.key)
+      .where(sql`${table.active} = true`),
     check("validator_rule_version_check", sql`${table.version} > 0`),
+    check(
+      "validator_rule_content_check",
+      sql`length(trim(${table.description})) >= 20 AND length(trim(${table.changeNotes})) >= 20`,
+    ),
+    check(
+      "validator_rule_retirement_check",
+      sql`(${table.active} AND ${table.retiredAt} IS NULL AND ${table.retiredBy} IS NULL) OR (NOT ${table.active} AND ${table.retiredAt} IS NOT NULL AND ${table.retiredBy} IS NOT NULL)`,
+    ),
   ],
 );
 

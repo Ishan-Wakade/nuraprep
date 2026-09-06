@@ -185,6 +185,77 @@ async function main() {
       );
     }
 
+    const validatorRule = await client.query<{
+      id: string;
+      version: number;
+    }>(
+      `SELECT id, version
+       FROM validator_rules
+       WHERE key = 'accessibility' AND active = true
+       FOR UPDATE`,
+    );
+    const activeValidator = validatorRule.rows[0];
+    if (!activeValidator) {
+      throw new Error("The active accessibility validator rule is missing.");
+    }
+    await client.query("SAVEPOINT validator_content_guard_check");
+    let validatorContentMutationWasBlocked = false;
+    try {
+      await client.query(
+        "UPDATE validator_rules SET description = 'mutated' WHERE id = $1",
+        [activeValidator.id],
+      );
+    } catch (error) {
+      validatorContentMutationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query("ROLLBACK TO SAVEPOINT validator_content_guard_check");
+    }
+    if (!validatorContentMutationWasBlocked) {
+      throw new Error("An active validator rule allowed content mutation.");
+    }
+    const replacementValidatorId = randomUUID();
+    await client.query(
+      `UPDATE validator_rules
+       SET active = false, retired_at = now(), retired_by = 'ci-smoke-test'
+       WHERE id = $1`,
+      [activeValidator.id],
+    );
+    await client.query(
+      `INSERT INTO validator_rules
+       (id, key, version, description, blocks_publication, active,
+        change_notes, created_by)
+       VALUES ($1, 'accessibility', $2, $3, true, true, $4, 'ci-smoke-test')`,
+      [
+        replacementValidatorId,
+        activeValidator.version + 1,
+        "CI verifies that versioned reviewer accessibility evidence can be activated safely.",
+        "Temporary smoke-test revision verifies retirement and uniqueness constraints.",
+      ],
+    );
+    await client.query("SAVEPOINT retired_validator_guard_check");
+    let retiredValidatorMutationWasBlocked = false;
+    try {
+      await client.query(
+        "UPDATE validator_rules SET retired_by = 'mutated' WHERE id = $1",
+        [activeValidator.id],
+      );
+    } catch (error) {
+      retiredValidatorMutationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query("ROLLBACK TO SAVEPOINT retired_validator_guard_check");
+    }
+    if (!retiredValidatorMutationWasBlocked) {
+      throw new Error("A retired validator rule allowed mutation.");
+    }
+
     const generationTemplateId = randomUUID();
     const generationRunId = randomUUID();
     const generationClaimToken = randomUUID();
