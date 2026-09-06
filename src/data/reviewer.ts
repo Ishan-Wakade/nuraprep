@@ -29,6 +29,7 @@ import { requireReviewer } from "@/lib/auth/reviewer";
 import {
   evaluatePublicationGate,
   REQUIRED_PUBLICATION_VALIDATORS,
+  REVIEWER_PUBLICATION_VALIDATORS,
 } from "@/lib/questions/validation";
 
 export type ReviewQueueFilters = {
@@ -369,6 +370,7 @@ export async function getQuestionReviewDetail(versionId: string) {
     learnerReports,
     approvedTemplates,
     regenerationRuns,
+    activeReviewerValidatorRows,
   ] = await Promise.all([
     database
       .select({
@@ -478,7 +480,37 @@ export async function getQuestionReviewDetail(versionId: string) {
       .from(generationRuns)
       .where(eq(generationRuns.sourceQuestionVersionId, versionId))
       .orderBy(desc(generationRuns.startedAt)),
+    database
+      .select({
+        key: validatorRules.key,
+        version: validatorRules.version,
+        description: validatorRules.description,
+      })
+      .from(validatorRules)
+      .where(
+        and(
+          eq(validatorRules.active, true),
+          inArray(validatorRules.key, [...REVIEWER_PUBLICATION_VALIDATORS]),
+        ),
+      )
+      .orderBy(validatorRules.key, desc(validatorRules.version)),
   ]);
+
+  const latestActiveRuleByKey = new Map<
+    string,
+    (typeof activeReviewerValidatorRows)[number]
+  >();
+  for (const rule of activeReviewerValidatorRows) {
+    if (!latestActiveRuleByKey.has(rule.key)) {
+      latestActiveRuleByKey.set(rule.key, rule);
+    }
+  }
+  const activeReviewerValidators = REVIEWER_PUBLICATION_VALIDATORS.flatMap(
+    (key) => {
+      const rule = latestActiveRuleByKey.get(key);
+      return rule ? [rule] : [];
+    },
+  );
 
   const learnerReportEvents = learnerReports.length
     ? await database
@@ -571,6 +603,7 @@ export async function getQuestionReviewDetail(versionId: string) {
     currentPublication:
       serializedPublications.find((item) => item.retiredAt === null) ?? null,
     approvedTemplates,
+    activeReviewerValidators,
     regenerationRuns: regenerationRuns.map((run) => ({
       ...run,
       startedAt: run.startedAt.toISOString(),

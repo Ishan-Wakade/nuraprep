@@ -145,7 +145,10 @@ export default async function QuestionReviewPage({
             <AutomatedValidationForm versionId={question.versionId} />
           </Panel>
           <Panel title="Reviewer validation" eyebrow="Human-only checks">
-            <ReviewerValidationForm versionId={question.versionId} />
+            <ReviewerValidationForm
+              versionId={question.versionId}
+              validators={question.activeReviewerValidators}
+            />
           </Panel>
           <Panel title="Publication" eyebrow="Explicit release gate">
             <PublishForm

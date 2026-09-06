@@ -78,6 +78,14 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
     "originality",
   ]) {
     await page.getByLabel("Review check").selectOption(validatorKey);
+    await expect(
+      page.getByText(
+        new RegExp(
+          `Current rubric:.*${validatorKey.replaceAll("-", " ")} v1`,
+          "i",
+        ),
+      ),
+    ).toBeVisible();
     await page
       .getByLabel("Evidence")
       .fill(
@@ -91,7 +99,12 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
       page.getByText(`${validatorKey} evidence appended as pass.`),
     ).toBeVisible();
     await page.goto(`${publicationCandidateUrl}?validation=${validatorKey}`);
-    await expect(page.getByText(`${validatorKey} v1`).first()).toBeVisible();
+    await expect(
+      page
+        .getByRole("heading", { name: "Validation evidence" })
+        .locator("..")
+        .getByText(`${validatorKey} v1`, { exact: true }),
+    ).toBeVisible();
   }
 
   await page.getByLabel("Decision").selectOption("APPROVED");

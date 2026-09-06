@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import type {
   QuestionChoice,
@@ -172,10 +172,22 @@ export function AutomatedValidationForm({ versionId }: { versionId: string }) {
   );
 }
 
-export function ReviewerValidationForm({ versionId }: { versionId: string }) {
+export function ReviewerValidationForm({
+  versionId,
+  validators,
+}: {
+  versionId: string;
+  validators: { key: string; version: number; description: string }[];
+}) {
   const [state, action, pending] = useActionState(
     submitReviewerValidation,
     initialReviewerActionState,
+  );
+  const [selectedValidatorKey, setSelectedValidatorKey] = useState(
+    validators[0]?.key ?? "",
+  );
+  const selectedValidator = validators.find(
+    (validator) => validator.key === selectedValidatorKey,
   );
 
   return (
@@ -186,19 +198,16 @@ export function ReviewerValidationForm({ versionId }: { versionId: string }) {
           Review check
           <select
             name="validatorKey"
+            value={selectedValidatorKey}
+            disabled={!validators.length}
+            onChange={(event) => setSelectedValidatorKey(event.target.value)}
             className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
           >
-            <option value="difficulty-calibration">
-              Difficulty calibration
-            </option>
-            <option value="reading-level">Reading level</option>
-            <option value="calculator-policy">Calculator policy</option>
-            <option value="explanation-consistency">
-              Explanation consistency
-            </option>
-            <option value="accessibility">Accessibility</option>
-            <option value="topic-alignment">Topic alignment</option>
-            <option value="originality">Originality</option>
+            {validators.map((validator) => (
+              <option key={validator.key} value={validator.key}>
+                {formatValidatorLabel(validator.key)} v{validator.version}
+              </option>
+            ))}
           </select>
         </label>
         <label className="text-xs font-bold text-[#52676a]">
@@ -212,6 +221,21 @@ export function ReviewerValidationForm({ versionId }: { versionId: string }) {
           </select>
         </label>
       </div>
+      {selectedValidator ? (
+        <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs leading-5 text-blue-950">
+          <strong>Current rubric:</strong>{" "}
+          {formatValidatorLabel(selectedValidator.key)} v
+          {selectedValidator.version}. {selectedValidator.description}
+        </p>
+      ) : (
+        <p
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs leading-5 text-red-900"
+        >
+          No active reviewer rubric is available. Evidence submission is
+          disabled until the rule configuration is restored.
+        </p>
+      )}
       <label className="block text-xs font-bold text-[#52676a]">
         Evidence
         <textarea
@@ -251,6 +275,7 @@ export function ReviewerValidationForm({ versionId }: { versionId: string }) {
       <ActionFooter
         state={state}
         pending={pending}
+        disabled={!selectedValidator}
         label="Append review evidence"
       />
     </form>
@@ -643,17 +668,19 @@ function ActionFooter({
   state,
   pending,
   label,
+  disabled = false,
 }: {
   state: { status: string; message: string };
   pending: boolean;
   label: string;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-3">
       <button
-        disabled={pending}
+        disabled={pending || disabled}
         type="submit"
-        className="rounded-lg bg-[#116b65] px-5 py-2.5 text-sm font-bold text-white disabled:cursor-wait disabled:opacity-60"
+        className="rounded-lg bg-[#116b65] px-5 py-2.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
       >
         {pending ? "Saving…" : label}
       </button>
@@ -665,4 +692,11 @@ function ActionFooter({
       </p>
     </div>
   );
+}
+
+function formatValidatorLabel(key: string) {
+  return key
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }

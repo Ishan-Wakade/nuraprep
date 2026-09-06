@@ -29,7 +29,7 @@ Seven checks require explicit reviewer evidence:
 
 The difficulty check uses NuraPrep's internal reasoning-step and prerequisite rubric; it is not presented as an official ATI difficulty label. Reading-level review separates necessary mathematical vocabulary from avoidable language complexity. Calculator-policy review checks the stored designation against the arithmetic load and documented exam-mode assumptions.
 
-The reviewer records a pass or failure with at least 40 characters of written evidence and must attest that they inspected the exact version, applied the current selected rubric, and made an independent judgment rather than accepting automation or model output alone. A failure requires a stable error code, while a pass rejects contradictory failure metadata. Every run is append-only, and the newest run for each validator determines publication readiness.
+The reviewer records a pass or failure with at least 40 characters of written evidence and must attest that they inspected the exact version, applied the current selected rubric, and made an independent judgment rather than accepting automation or model output alone. The form displays the exact active validator version and database-backed rubric description before evidence can be submitted, and fails closed if no active rubric is configured. A failure requires a stable error code, while a pass rejects contradictory failure metadata. Every run is append-only, and the newest run for each validator determines publication readiness.
 
 ## Publication sequence
 

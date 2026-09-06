@@ -20,6 +20,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Build a local reviewer browse/filter/preview/version/feedback/decision flow.
 - [x] Add safe deterministic math recipes, reviewer-attested evidence, and an explicit publication ledger.
 - [x] Require structured exact-version, current-rubric, and independent-judgment attestations for reviewer validator evidence.
+- [x] Show the exact active validator version and rubric description before reviewer evidence is submitted.
 - [x] Make difficulty calibration, reading level, and calculator policy explicit publication-blocking reviewer checks.
 - [x] Add safe regeneration controls after the provider-neutral generation boundary exists.
 - [x] Add reviewer search over learner/reviewer feedback with recurring error summaries.
