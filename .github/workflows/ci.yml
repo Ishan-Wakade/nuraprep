@@ -22,6 +22,7 @@ jobs:
       APP_ENV: test
       DATABASE_URL: postgresql://nuraprep:nuraprep@localhost:5432/nuraprep
       DIRECT_URL: postgresql://nuraprep:nuraprep@localhost:5432/nuraprep
+      E2E_DATABASE_URL: postgresql://nuraprep:nuraprep@localhost:5432/nuraprep_e2e
       DEV_REVIEWER_ENABLED: true
       DEV_LEARNER_ENABLED: true
 

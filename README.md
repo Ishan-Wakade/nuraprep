@@ -139,7 +139,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-`pnpm check` runs formatting, linting, type-checking, unit tests, and the production build. `pnpm test:db` requires the local PostgreSQL container. End-to-end tests require a migrated and seeded database. GitHub Actions provisions a fresh PostgreSQL service and runs the complete sequence on every pull request and `main` push.
+`pnpm check` runs formatting, linting, type-checking, unit tests, and the production build. `pnpm test:db` requires the local PostgreSQL container. `pnpm test:e2e` derives or uses `E2E_DATABASE_URL`, refuses any database name that does not end in `_e2e`, resets only that isolated schema, and applies migrations plus seed data automatically. This keeps synthetic browser fixtures out of the development database. GitHub Actions provisions fresh PostgreSQL databases and runs the complete sequence on every pull request and `main` push.
 
 ## Deployment direction
 
