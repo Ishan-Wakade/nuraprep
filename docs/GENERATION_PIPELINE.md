@@ -64,7 +64,9 @@ PostgreSQL prevents request-identity edits, deletion, repeated terminal transiti
 
 The provider envelope carries the stable run ID and idempotency key so adapters can propagate the same key to providers that support idempotent requests. The database uniqueness boundary still protects candidate persistence when delivery is repeated.
 
-Only the current claim token may load, heartbeat, complete, or fail a running job. A stale worker cannot persist after another worker reclaims its expired lease. Provider timeouts must remain shorter than the lease or the host queue must renew it; heartbeat calls are bounded to 30–900 seconds. Claim tokens are operational secrets and are not displayed in the reviewer console.
+Only a current, unexpired claim token may load, heartbeat, complete, or fail a running job. Expiry itself fences worker writes, and terminal persistence locks the run row so it cannot race with reclaim or exhaustion. Provider timeouts must remain shorter than the lease or the host queue must renew it; heartbeat calls are bounded to 30–900 seconds. Claim tokens are operational secrets and are not displayed in the reviewer console.
+
+A run receives at most three execution attempts: the initial claim and up to two reclaims after lease expiry. Before claiming work, the repository sweeps up to 100 expired runs that have exhausted this cap into an immutable `LEASE_ATTEMPTS_EXHAUSTED` failure while preserving the last worker and claim attribution. The production queue host must also invoke the exported sweep on its schedule so exhaustion does not depend only on new claim traffic.
 
 Batch accounting reserves each claimed job's full cost ceiling rather than optimistic estimated spend. `maxJobs` is bounded to 100, the batch budget is bounded to the corresponding 500,000,000-micro ceiling, and the runner stops when no eligible job fits the remaining budget. Actual provider usage is still recorded per run. This is a safety budget, not billing or a claim of provider-price accuracy.
 
@@ -87,6 +89,6 @@ Before an external adapter is enabled, it must prove that it:
 - a configured provider adapter and queue runner;
 - licensed-storage ingestion with malware scanning and object-storage isolation;
 - calibration of the implemented internal exact, number-invariant, and phrase-overlap signals, plus any legally permitted external comparison corpus;
-- retry-attempt caps, wall-clock rate controls, cancellation, and operational metrics;
+- a production exhaustion-sweep schedule, wall-clock rate controls, cancellation, and operational metrics;
 - independent owner/educator approval of the 12-case engineering-draft gold evaluation set; and
 - implementation of approved feedback proposals as separately reviewed template, validator, rubric, policy, or evaluation-case versions. The proposal and approval ledger exists, but deliberately performs no automatic mutation.

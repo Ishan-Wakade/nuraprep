@@ -28,12 +28,15 @@ import type {
   GenerationClaim,
   GenerationQueueRepository,
 } from "@/lib/generation/queue";
+import { MAX_GENERATION_ATTEMPTS } from "@/lib/generation/retry-policy";
 import { questionContentSchema } from "@/lib/questions/contracts";
 
 const storedRequestPayloadSchema = z.object({
   reviewerInstruction: z.string(),
   reviewerAttestedNoSourceText: z.literal(true),
 });
+
+const EXHAUSTION_SWEEP_LIMIT = 100;
 
 const claimRequestSchema = z.object({
   workerId: z
@@ -54,6 +57,7 @@ export async function claimNextGenerationRun(input: {
   const claim = claimRequestSchema.parse(input);
   const claimToken = randomUUID();
   const database = getDatabase();
+  await exhaustExpiredGenerationRuns();
   const result = await database.execute<{
     id: string;
     attempt_count: number;
@@ -67,7 +71,11 @@ export async function claimNextGenerationRun(input: {
         ON template.id = run.template_id
       WHERE (
         run.status = 'PENDING'
-        OR (run.status = 'RUNNING' AND run.lease_expires_at <= now())
+        OR (
+          run.status = 'RUNNING'
+          AND run.lease_expires_at <= now()
+          AND run.attempt_count < ${MAX_GENERATION_ATTEMPTS}
+        )
       )
         AND template.status = 'APPROVED'
         AND run.source_question_version_id IS NOT NULL
@@ -99,6 +107,29 @@ export async function claimNextGenerationRun(input: {
         reservedCostMicros: row.max_cost_micros,
       }
     : undefined;
+}
+
+export async function exhaustExpiredGenerationRuns(): Promise<number> {
+  const result = await getDatabase().execute<{ id: string }>(sql`
+    WITH exhausted AS (
+      SELECT id
+      FROM generation_runs
+      WHERE status = 'RUNNING'
+        AND lease_expires_at <= now()
+        AND attempt_count >= ${MAX_GENERATION_ATTEMPTS}
+      ORDER BY lease_expires_at, id
+      FOR UPDATE SKIP LOCKED
+      LIMIT ${EXHAUSTION_SWEEP_LIMIT}
+    )
+    UPDATE generation_runs AS run
+    SET status = 'FAILED',
+        failure_code = 'LEASE_ATTEMPTS_EXHAUSTED',
+        completed_at = now()
+    FROM exhausted
+    WHERE run.id = exhausted.id
+    RETURNING run.id
+  `);
+  return result.rows.length;
 }
 
 export async function loadClaimedGenerationJob(
@@ -267,13 +298,16 @@ export const postgresGenerationWorkerRepository: GenerationWorkerRepository = {
           generationTemplates,
           eq(generationTemplates.id, generationRuns.templateId),
         )
-        .where(eq(generationRuns.id, input.runId))
+        .where(
+          and(
+            eq(generationRuns.id, input.runId),
+            eq(generationRuns.status, "RUNNING"),
+            eq(generationRuns.claimToken, input.claimToken),
+            gt(generationRuns.leaseExpiresAt, sql`now()`),
+          ),
+        )
         .limit(1);
-      if (
-        !run ||
-        run.status !== "RUNNING" ||
-        run.claimToken !== input.claimToken
-      ) {
+      if (!run) {
         throw new Error("GENERATION_RUN_CLAIM_LOST");
       }
       if (!run.sourceQuestionVersionId) {
@@ -399,14 +433,16 @@ export const postgresGenerationWorkerRepository: GenerationWorkerRepository = {
           claimToken: generationRuns.claimToken,
         })
         .from(generationRuns)
-        .where(eq(generationRuns.id, input.runId))
+        .where(
+          and(
+            eq(generationRuns.id, input.runId),
+            eq(generationRuns.status, "RUNNING"),
+            eq(generationRuns.claimToken, input.claimToken),
+            gt(generationRuns.leaseExpiresAt, sql`now()`),
+          ),
+        )
         .limit(1);
-      if (
-        !run ||
-        run.status !== "RUNNING" ||
-        run.claimToken !== input.claimToken
-      )
-        return;
+      if (!run) return;
       await transaction
         .update(generationRuns)
         .set({
@@ -454,6 +490,7 @@ export async function heartbeatGenerationClaim(input: {
         eq(generationRuns.id, parsed.data.runId),
         eq(generationRuns.status, "RUNNING"),
         eq(generationRuns.claimToken, parsed.data.claimToken),
+        gt(generationRuns.leaseExpiresAt, sql`now()`),
       ),
     )
     .returning({ id: generationRuns.id });
@@ -511,5 +548,8 @@ async function lockRun(
 ) {
   await transaction.execute(
     sql`select pg_advisory_xact_lock(hashtextextended(${runId}::text, 0))`,
+  );
+  await transaction.execute(
+    sql`select id from generation_runs where id = ${runId} for update`,
   );
 }

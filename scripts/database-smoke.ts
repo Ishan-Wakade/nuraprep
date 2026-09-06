@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import { config } from "dotenv";
 import { Pool } from "pg";
 
+import { MAX_GENERATION_ATTEMPTS } from "../src/lib/generation/retry-policy";
+
 config({ path: ".env.local", quiet: true });
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -125,6 +127,8 @@ async function main() {
     const generationTemplateId = randomUUID();
     const generationRunId = randomUUID();
     const generationClaimToken = randomUUID();
+    const exhaustedGenerationRunId = randomUUID();
+    const exhaustedGenerationClaimToken = randomUUID();
     const generatedVersionId = randomUUID();
     await client.query(
       `INSERT INTO generation_templates
@@ -332,6 +336,77 @@ async function main() {
     if (!generationMutationWasBlocked) {
       throw new Error(
         "The terminal generation-run history allowed a mutation.",
+      );
+    }
+
+    await client.query(
+      `INSERT INTO generation_runs
+       (id, idempotency_key, template_id, source_question_version_id,
+        request_kind, requested_by, provider, model, prompt_hash, parameters,
+        request_payload, status, claim_token, claimed_by, lease_expires_at,
+        last_heartbeat_at, attempt_count, max_cost_micros)
+       VALUES ($1, $2, $3, $4, 'FULL_REVISION', 'ci-smoke-test',
+               'CI_PROVIDER', 'ci-model', $5, $6::jsonb, $7::jsonb,
+               'RUNNING', $8, 'ci-expired-worker', now() - interval '1 minute',
+               now() - interval '2 minutes', $9, 1000)`,
+      [
+        exhaustedGenerationRunId,
+        `ci-generation-exhausted-${exhaustedGenerationRunId}`,
+        generationTemplateId,
+        versionId,
+        "ci-exhausted-prompt-hash",
+        JSON.stringify({ sourceQuestionTextProvided: false }),
+        JSON.stringify({ sourceQuestionTextProvided: false }),
+        exhaustedGenerationClaimToken,
+        MAX_GENERATION_ATTEMPTS,
+      ],
+    );
+    const expiredHeartbeat = await client.query(
+      `UPDATE generation_runs
+       SET lease_expires_at = now() + interval '5 minutes',
+           last_heartbeat_at = now()
+       WHERE id = $1 AND status = 'RUNNING' AND claim_token = $2
+         AND lease_expires_at > now()
+       RETURNING id`,
+      [exhaustedGenerationRunId, exhaustedGenerationClaimToken],
+    );
+    if (expiredHeartbeat.rowCount !== 0) {
+      throw new Error("An expired generation claim renewed its lease.");
+    }
+    const exhaustedRuns = await client.query<{
+      id: string;
+      status: string;
+      failure_code: string;
+      claim_token: string;
+    }>(
+      `WITH exhausted AS (
+         SELECT id
+         FROM generation_runs
+         WHERE status = 'RUNNING'
+           AND lease_expires_at <= now()
+           AND attempt_count >= $1
+         ORDER BY lease_expires_at, id
+         FOR UPDATE SKIP LOCKED
+         LIMIT 100
+       )
+       UPDATE generation_runs AS run
+       SET status = 'FAILED', failure_code = 'LEASE_ATTEMPTS_EXHAUSTED',
+           completed_at = now()
+       FROM exhausted
+       WHERE run.id = exhausted.id
+       RETURNING run.id, run.status, run.failure_code, run.claim_token`,
+      [MAX_GENERATION_ATTEMPTS],
+    );
+    const exhaustedRun = exhaustedRuns.rows.find(
+      (run) => run.id === exhaustedGenerationRunId,
+    );
+    if (
+      exhaustedRun?.status !== "FAILED" ||
+      exhaustedRun.failure_code !== "LEASE_ATTEMPTS_EXHAUSTED" ||
+      exhaustedRun.claim_token !== exhaustedGenerationClaimToken
+    ) {
+      throw new Error(
+        "An expired generation run did not preserve attribution when exhausting retries.",
       );
     }
 
