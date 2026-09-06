@@ -185,18 +185,25 @@ async function main() {
       );
     }
 
+    const validatorKey = `ci-validator-${randomUUID()}`;
     const validatorRule = await client.query<{
       id: string;
       version: number;
     }>(
-      `SELECT id, version
-       FROM validator_rules
-       WHERE key = 'accessibility' AND active = true
-       FOR UPDATE`,
+      `INSERT INTO validator_rules
+       (key, version, description, blocks_publication, active,
+        change_notes, created_by)
+       VALUES ($1, 1, $2, true, true, $3, 'ci-smoke-test')
+       RETURNING id, version`,
+      [
+        validatorKey,
+        "CI verifies that active validator content cannot be mutated in place.",
+        "Temporary smoke-test rule created to verify lifecycle constraints independently.",
+      ],
     );
     const activeValidator = validatorRule.rows[0];
     if (!activeValidator) {
-      throw new Error("The active accessibility validator rule is missing.");
+      throw new Error("The smoke-test validator rule was not created.");
     }
     await client.query("SAVEPOINT validator_content_guard_check");
     let validatorContentMutationWasBlocked = false;
@@ -228,9 +235,10 @@ async function main() {
       `INSERT INTO validator_rules
        (id, key, version, description, blocks_publication, active,
         change_notes, created_by)
-       VALUES ($1, 'accessibility', $2, $3, true, true, $4, 'ci-smoke-test')`,
+       VALUES ($1, $2, $3, $4, true, true, $5, 'ci-smoke-test')`,
       [
         replacementValidatorId,
+        validatorKey,
         activeValidator.version + 1,
         "CI verifies that versioned reviewer accessibility evidence can be activated safely.",
         "Temporary smoke-test revision verifies retirement and uniqueness constraints.",
