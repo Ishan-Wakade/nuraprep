@@ -1,6 +1,6 @@
 # Authentication and account-security design
 
-Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, sign-in and sign-out surfaces, account-scoped learner profiles, fresh-session-gated portable export, signed-in-device visibility, transactional revocation of other sessions, environment fail-closed checks, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation without exposing tokens, reviewer denial/approval, export credential exclusion, and stale-session denial without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's direct deletion endpoint is intentionally disabled until the application-owned transactional deletion workflow and its foreign-key tests are implemented.
+Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, sign-in and sign-out surfaces, account-scoped learner profiles, fresh-session-gated portable export, signed-in-device visibility, transactional session revocation, transactional learner erasure, environment fail-closed checks, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation without exposing tokens, reviewer denial/approval, export credential exclusion, stale-session denial, complete learner erasure, and privileged-account refusal without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's broad direct deletion endpoint remains disabled because NuraPrep owns its narrower data-erasure transaction.
 
 NuraPrep will use Google OpenID Connect through Better Auth with its Drizzle/PostgreSQL adapter. The application will keep database-backed, revocable sessions and will not request access to Google APIs beyond the identity scopes needed for sign-in. Development identities remain available only behind explicit local switches that already fail closed when `APP_ENV=production`.
 
@@ -60,7 +60,11 @@ Account linking fails closed. An existing verified email does not silently merge
 
 Export produces a versioned, user-scoped JSON archive of profile, non-token session metadata, practice sessions, attempts, reports, report-status history, tutor interactions, estimates, and study plans. It excludes provider credentials, session tokens, answer keys, and internal reviewer identities or notes. The response is rebuilt at request time, requires a fresh authenticated session outside local development, and is marked `no-store` and `nosniff`.
 
-Deletion requires a fresh session plus a typed confirmation. The transaction revokes every session first, detaches the Google account, deletes directly identifying auth/profile data, and deletes learner-owned practice data according to explicit foreign-key rules. Aggregate calibration records may be retained only after irreversible de-identification and only when the learner previously consented to outcome use. Failed or partial deletion is surfaced for retry and audit; the UI never reports success before the transaction completes.
+Deletion requires a session created within the last 15 minutes plus an exact typed `DELETE` confirmation. The application calls one PostgreSQL erasure procedure that locks the account; removes learner-derived improvement evidence; deletes report history, practice and tutor history, score estimates, and study plans in dependency order; removes the learner profile, account audit events, role grants, provider credentials, sessions, and email-linked verification records; then deletes the auth user. No calibration record is retained in version 1. The procedure writes a receipt containing only per-table deletion counts, a schema version, and completion time; it stores no user ID, email, provider subject, token, answer, or report text.
+
+Deletion-aware trigger behavior is narrow and transaction-local. Append-only records still reject ordinary updates and deletes. Only the erasure procedure sets the local deletion context that permits removal from the specific learner-owned audit tables, and that context ends with the transaction. Database smoke tests inject a failure at the final receipt insert after preceding deletes have executed and verify that the user, profile, role grant, and audit event all return. The UI reports completion only after the receipt exists.
+
+Accounts with any reviewer or administrator grant history are refused by self-service deletion, including after a grant is revoked. Their IDs can be embedded in immutable content-review records that are not learner-owned. An administrator-assisted pseudonymization and retention procedure must be reviewed before production; silently deleting or orphaning those records would undermine content-safety auditability.
 
 ## Threats and controls
 
@@ -87,7 +91,7 @@ The implementation is not complete until automated tests cover:
 - reviewer grant/revocation with fresh-session enforcement and audit evidence;
 - logout on one device and revoke-other-devices behavior;
 - export scope and credential exclusion;
-- full account deletion, rollback on injected failure, and post-deletion access denial; and
+- administrator-assisted erasure and pseudonymization for privileged accounts; and
 - secure cookie attributes in a production-mode integration test.
 
 ## Primary references

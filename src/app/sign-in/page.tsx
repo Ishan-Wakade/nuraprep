@@ -16,7 +16,10 @@ export const metadata: Metadata = {
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ returnTo?: string | string[] }>;
+  searchParams: Promise<{
+    returnTo?: string | string[];
+    deleted?: string | string[];
+  }>;
 }) {
   const params = await searchParams;
   const requestedReturnTo =
@@ -52,6 +55,14 @@ export default async function SignInPage({
         </Link>
 
         <section className="mt-8 rounded-3xl border border-[#d5ddd7] bg-[#fffdf8] p-6 shadow-[0_18px_55px_rgba(24,56,56,0.09)] sm:p-8">
+          {params.deleted === "1" ? (
+            <p
+              role="status"
+              className="mb-5 rounded-xl border border-[#b9d9cd] bg-[#e8f2ee] p-3 text-sm font-semibold text-[#116b65]"
+            >
+              Your account and learner history were permanently deleted.
+            </p>
+          ) : null}
           <p className="text-xs font-bold tracking-[0.14em] text-[#116b65] uppercase">
             Your Math workspace
           </p>

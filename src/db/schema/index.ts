@@ -321,6 +321,19 @@ export const accountAuditEvents = pgTable(
   ],
 );
 
+export const accountDeletionReceipts = pgTable("account_deletion_receipts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  receiptVersion: varchar("receipt_version", { length: 80 })
+    .notNull()
+    .default("account-erasure-v1"),
+  deletedRecordCounts: jsonb("deleted_record_counts")
+    .$type<Record<string, number>>()
+    .notNull(),
+  completedAt: timestamp("completed_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const examSpecifications = pgTable(
   "exam_specifications",
   {

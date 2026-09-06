@@ -1173,6 +1173,94 @@ async function main() {
       throw new Error("A revoked auth role grant allowed another update.");
     }
 
+    await client.query(
+      `INSERT INTO learner_profiles
+       (auth_user_id, auth_subject, display_name, email)
+       VALUES ($1, $2, 'Smoke learner', $3)`,
+      [authUserId, `auth-user:${authUserId}`, `${authUserId}@example.invalid`],
+    );
+
+    await client.query("SAVEPOINT account_erasure_rollback_check");
+    let accountErasureRolledBack = false;
+    try {
+      await client.query(`
+        CREATE FUNCTION smoke_reject_deletion_receipt()
+        RETURNS trigger
+        LANGUAGE plpgsql
+        AS $$
+        BEGIN
+          RAISE EXCEPTION 'injected receipt failure' USING ERRCODE = 'P0001';
+        END;
+        $$
+      `);
+      await client.query(`
+        CREATE TRIGGER smoke_reject_deletion_receipt
+        BEFORE INSERT ON account_deletion_receipts
+        FOR EACH ROW EXECUTE FUNCTION smoke_reject_deletion_receipt()
+      `);
+      await client.query("SELECT erase_nuraprep_account($1)", [authUserId]);
+    } catch (error) {
+      accountErasureRolledBack =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "P0001";
+    } finally {
+      await client.query(
+        "ROLLBACK TO SAVEPOINT account_erasure_rollback_check",
+      );
+    }
+    if (!accountErasureRolledBack) {
+      throw new Error("The account-erasure failure injection did not abort.");
+    }
+
+    const rollbackState = await client.query<{
+      users: number;
+      profiles: number;
+      audit_events: number;
+      role_grants: number;
+    }>(
+      `SELECT
+        (SELECT count(*)::int FROM auth_users WHERE id = $1) AS users,
+        (SELECT count(*)::int FROM learner_profiles WHERE auth_user_id = $1) AS profiles,
+        (SELECT count(*)::int FROM account_audit_events WHERE user_id = $1) AS audit_events,
+        (SELECT count(*)::int FROM auth_role_grants WHERE user_id = $1) AS role_grants`,
+      [authUserId],
+    );
+    if (
+      !rollbackState.rows[0] ||
+      rollbackState.rows[0].users !== 1 ||
+      rollbackState.rows[0].profiles !== 1 ||
+      rollbackState.rows[0].audit_events !== 1 ||
+      rollbackState.rows[0].role_grants !== 1
+    ) {
+      throw new Error("Account erasure left partial changes after a failure.");
+    }
+
+    const erasure = await client.query<{ receipt_id: string }>(
+      "SELECT erase_nuraprep_account($1) AS receipt_id",
+      [authUserId],
+    );
+    const successfulErasure = await client.query<{
+      users: number;
+      profiles: number;
+      receipts: number;
+    }>(
+      `SELECT
+        (SELECT count(*)::int FROM auth_users WHERE id = $1) AS users,
+        (SELECT count(*)::int FROM learner_profiles WHERE auth_user_id = $1) AS profiles,
+        (SELECT count(*)::int FROM account_deletion_receipts WHERE id = $2) AS receipts`,
+      [authUserId, erasure.rows[0]?.receipt_id],
+    );
+    if (
+      !successfulErasure.rows[0] ||
+      successfulErasure.rows[0].users !== 0 ||
+      successfulErasure.rows[0].profiles !== 0 ||
+      successfulErasure.rows[0].receipts !== 1
+    ) {
+      throw new Error("Account erasure did not complete with a receipt.");
+    }
+
     const result = await client.query<{ version_count: number }>(
       `SELECT count(*)::int AS version_count
      FROM question_versions qv

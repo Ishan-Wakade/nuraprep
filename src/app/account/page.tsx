@@ -6,6 +6,7 @@ import { buildLearnerDataExport } from "@/data/account";
 import { requireLearner } from "@/lib/auth/learner";
 import { getCurrentSession } from "@/lib/auth/session";
 
+import { AccountDeletionForm } from "./account-deletion-form";
 import { SessionControls } from "./session-controls";
 
 export const metadata: Metadata = {
@@ -174,11 +175,19 @@ export default async function AccountPage() {
         <section className="mt-6 rounded-2xl border border-[#e0c9a6] bg-[#fff8e9] p-6">
           <h2 className="font-serif text-2xl">Account deletion</h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-[#665b49]">
-            Deletion is not exposed yet. NuraPrep will not offer a button until
-            session revocation, learner-owned records, audit retention, and
-            rollback behavior are covered by one verified transaction. This is
-            intentionally an honest disabled state, not a nonfunctional control.
+            This permanently removes your profile, credentials, active sessions,
+            practice history, answers, reports, tutor activity, score estimates,
+            and study plans. Learner-authored evidence is also removed from
+            reviewer improvement records. A non-identifying receipt retains only
+            record counts and the completion time.
           </p>
+          {identity.mode === "authenticated" ? (
+            <AccountDeletionForm />
+          ) : (
+            <p className="mt-4 text-xs font-bold text-[#7d6849]">
+              Local development identities do not create an account to delete.
+            </p>
+          )}
         </section>
       </main>
     </div>

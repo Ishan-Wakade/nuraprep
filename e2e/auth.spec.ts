@@ -251,6 +251,254 @@ test("revokes other sessions without ending the current session", async ({
   }
 });
 
+test("deletes a learner account and its connected private history atomically", async ({
+  page,
+}) => {
+  const authenticated = await createAuthenticatedSession();
+  try {
+    const published = await authenticated.pool.query<{
+      question_version_id: string;
+      skill_id: string;
+    }>(
+      `SELECT qp.question_version_id, qv.primary_skill_id AS skill_id
+       FROM question_publications qp
+       JOIN question_versions qv ON qv.id = qp.question_version_id
+       WHERE qp.retired_at IS NULL
+       LIMIT 1`,
+    );
+    const source = published.rows[0];
+    if (!source) throw new Error("Deletion test requires a published fixture.");
+
+    const profile = await authenticated.pool.query<{ id: string }>(
+      `INSERT INTO learner_profiles
+       (auth_user_id, auth_subject, display_name, email)
+       VALUES ($1, $2, 'Ada Learner', $3)
+       RETURNING id`,
+      [
+        authenticated.userId,
+        `auth-user:${authenticated.userId}`,
+        `${authenticated.userId}@example.test`,
+      ],
+    );
+    const learnerId = profile.rows[0]!.id;
+    const practice = await authenticated.pool.query<{ id: string }>(
+      `INSERT INTO practice_sessions
+       (learner_id, requested_question_count, filters)
+       VALUES ($1, 1, '{}'::jsonb)
+       RETURNING id`,
+      [learnerId],
+    );
+    const item = await authenticated.pool.query<{ id: string }>(
+      `INSERT INTO practice_session_items
+       (session_id, question_version_id, position, selection_reason)
+       VALUES ($1, $2, 1, 'Account-erasure browser-test fixture.')
+       RETURNING id`,
+      [practice.rows[0]!.id, source.question_version_id],
+    );
+    const attempt = await authenticated.pool.query<{ id: string }>(
+      `INSERT INTO attempts
+       (session_item_id, answer_payload, correct, elapsed_milliseconds)
+       VALUES ($1, '{"type":"NUMERIC","value":"1"}'::jsonb, false, 1000)
+       RETURNING id`,
+      [item.rows[0]!.id],
+    );
+    await authenticated.pool.query(
+      `INSERT INTO tutor_interactions (session_item_id, step_index, step_id)
+       VALUES ($1, 1, 'deletion-test-hint')`,
+      [item.rows[0]!.id],
+    );
+    await authenticated.pool.query(
+      `INSERT INTO practice_item_review_events
+       (session_item_id, flagged, recorded_by)
+       VALUES ($1, true, $2)`,
+      [item.rows[0]!.id, `auth-user:${authenticated.userId}`],
+    );
+    const report = await authenticated.pool.query<{ id: string }>(
+      `INSERT INTO learner_question_reports
+       (question_version_id, learner_id, attempt_id, category, details)
+       VALUES ($1, $2, $3, 'OTHER', 'Deletion test report details.')
+       RETURNING id`,
+      [source.question_version_id, learnerId, attempt.rows[0]!.id],
+    );
+    await authenticated.pool.query(
+      `INSERT INTO learner_question_report_events
+       (report_id, status, reviewer_id, notes)
+       VALUES ($1, 'OPEN', 'e2e-reviewer', 'Opened for deletion test.')`,
+      [report.rows[0]!.id],
+    );
+    const proposal = await authenticated.pool.query<{ id: string }>(
+      `INSERT INTO improvement_proposals
+       (proposal_key, pattern_key, category, target, title,
+        problem_summary, proposed_change, regression_plan, created_by)
+       VALUES ($1, $2, 'OTHER', 'EVALUATION_CASE',
+        'Account erasure evidence fixture',
+        'Verify linked learner evidence is erased completely.',
+        'Remove only evidence derived from the deleting learner.',
+        'Assert unrelated proposals remain after account erasure.',
+        'e2e-reviewer')
+       RETURNING id`,
+      [`e2e-delete-${randomUUID()}`, `e2e-delete-${randomUUID()}`],
+    );
+    await authenticated.pool.query(
+      `INSERT INTO improvement_proposal_evidence
+       (proposal_id, evidence_key, source_kind, question_version_id,
+        details_snapshot, learner_report_id)
+       VALUES ($1, $2, 'LEARNER', $3, 'Deletion test report details.', $4)`,
+      [
+        proposal.rows[0]!.id,
+        `learner:${report.rows[0]!.id}`,
+        source.question_version_id,
+        report.rows[0]!.id,
+      ],
+    );
+    const estimate = await authenticated.pool.query<{ id: string }>(
+      `INSERT INTO score_estimates
+       (learner_id, model_version, estimate_basis_points, lower_basis_points,
+        upper_basis_points, evidence_level, evidence_count,
+        effective_evidence_milli, feature_snapshot, caveats)
+       VALUES ($1, 'e2e-delete-v1', 5000, 4000, 6000, 'LOW', 1, 1000,
+        '{}'::jsonb, '[]'::jsonb)
+       RETURNING id`,
+      [learnerId],
+    );
+    const plan = await authenticated.pool.query<{ id: string }>(
+      `INSERT INTO study_plans
+       (learner_id, score_estimate_id, model_version, weekly_minutes)
+       VALUES ($1, $2, 'e2e-delete-v1', 60)
+       RETURNING id`,
+      [learnerId, estimate.rows[0]!.id],
+    );
+    await authenticated.pool.query(
+      `INSERT INTO study_plan_items
+       (study_plan_id, skill_id, priority, target_minutes, rationale)
+       VALUES ($1, $2, 1, 30, 'Deletion test study priority.')`,
+      [plan.rows[0]!.id, source.skill_id],
+    );
+    await authenticated.pool.query(
+      `INSERT INTO auth_accounts
+       (id, issuer, account_id, provider_id, user_id, access_token)
+       VALUES ($1, 'https://accounts.google.com', $2, 'google', $3,
+        'sensitive-test-token')`,
+      [
+        `e2e-account-${randomUUID()}`,
+        `e2e-subject-${randomUUID()}`,
+        authenticated.userId,
+      ],
+    );
+    await authenticated.pool.query(
+      `INSERT INTO auth_role_grants (user_id, role, granted_by, reason)
+       VALUES ($1, 'LEARNER', 'e2e-security-test',
+        'Verify learner role history is included in erasure.')`,
+      [authenticated.userId],
+    );
+    await authenticated.pool.query(
+      `INSERT INTO account_audit_events (user_id, event_type, actor_id)
+       VALUES ($1, 'E2E_DELETE_FIXTURE', $2)`,
+      [authenticated.userId, authenticated.userId],
+    );
+    await authenticated.pool.query(
+      `INSERT INTO auth_verifications
+       (id, identifier, value, expires_at)
+       VALUES ($1, $2, 'sensitive-verification-value', now() + interval '1 hour')`,
+      [
+        `e2e-verification-${randomUUID()}`,
+        `${authenticated.userId}@example.test`,
+      ],
+    );
+    const receiptsBefore = await authenticated.pool.query<{ count: number }>(
+      "SELECT count(*)::int AS count FROM account_deletion_receipts",
+    );
+
+    await page.context().addCookies([authenticated.cookie]);
+    await page.goto("/account");
+    await page.getByLabel("Type DELETE to confirm").fill("DELETE");
+    await page
+      .getByRole("button", { name: "Permanently delete account" })
+      .click();
+
+    await expect(page).toHaveURL(/\/sign-in\?deleted=1$/);
+    await expect(
+      page.getByText(
+        "Your account and learner history were permanently deleted.",
+      ),
+    ).toBeVisible();
+
+    const remaining = await authenticated.pool.query<{
+      users: number;
+      profiles: number;
+      sessions: number;
+      accounts: number;
+      reports: number;
+      practice_sessions: number;
+      estimates: number;
+      evidence: number;
+    }>(
+      `SELECT
+        (SELECT count(*)::int FROM auth_users WHERE id = $1) AS users,
+        (SELECT count(*)::int FROM learner_profiles WHERE id = $2) AS profiles,
+        (SELECT count(*)::int FROM auth_sessions WHERE user_id = $1) AS sessions,
+        (SELECT count(*)::int FROM auth_accounts WHERE user_id = $1) AS accounts,
+        (SELECT count(*)::int FROM learner_question_reports WHERE learner_id = $2) AS reports,
+        (SELECT count(*)::int FROM practice_sessions WHERE learner_id = $2) AS practice_sessions,
+        (SELECT count(*)::int FROM score_estimates WHERE learner_id = $2) AS estimates,
+        (SELECT count(*)::int FROM improvement_proposal_evidence WHERE learner_report_id = $3) AS evidence`,
+      [authenticated.userId, learnerId, report.rows[0]!.id],
+    );
+    expect(remaining.rows[0]).toEqual({
+      users: 0,
+      profiles: 0,
+      sessions: 0,
+      accounts: 0,
+      reports: 0,
+      practice_sessions: 0,
+      estimates: 0,
+      evidence: 0,
+    });
+
+    const receiptsAfter = await authenticated.pool.query<{ count: number }>(
+      "SELECT count(*)::int AS count FROM account_deletion_receipts",
+    );
+    expect(receiptsAfter.rows[0]!.count).toBe(
+      receiptsBefore.rows[0]!.count + 1,
+    );
+  } finally {
+    await authenticated.pool.end();
+  }
+});
+
+test("refuses self-service erasure for a privileged reviewer account", async ({
+  page,
+}) => {
+  const authenticated = await createAuthenticatedSession();
+  try {
+    await authenticated.pool.query(
+      `INSERT INTO auth_role_grants (user_id, role, granted_by, reason)
+       VALUES ($1, 'REVIEWER', 'e2e-security-test',
+        'Verify privileged review history blocks self-service erasure.')`,
+      [authenticated.userId],
+    );
+    await page.context().addCookies([authenticated.cookie]);
+    await page.goto("/account");
+    await page.getByLabel("Type DELETE to confirm").fill("DELETE");
+    await page
+      .getByRole("button", { name: "Permanently delete account" })
+      .click();
+
+    await expect(
+      page.getByText(
+        "Reviewer and administrator accounts require an administrator-assisted erasure so content audit history remains trustworthy.",
+      ),
+    ).toBeVisible();
+    const remaining = await authenticated.pool.query<{ count: number }>(
+      "SELECT count(*)::int AS count FROM auth_users WHERE id = $1",
+      [authenticated.userId],
+    );
+    expect(remaining.rows[0]!.count).toBe(1);
+  } finally {
+    await authenticated.pool.end();
+  }
+});
+
 test("keeps the sign-in surface within a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/sign-in");
