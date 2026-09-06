@@ -124,6 +124,7 @@ async function main() {
 
     const generationTemplateId = randomUUID();
     const generationRunId = randomUUID();
+    const generationClaimToken = randomUUID();
     const generatedVersionId = randomUUID();
     await client.query(
       `INSERT INTO generation_templates
@@ -181,6 +182,70 @@ async function main() {
         JSON.stringify({ sourceQuestionTextProvided: false }),
         JSON.stringify({ sourceQuestionTextProvided: false }),
       ],
+    );
+    await client.query("SAVEPOINT generation_claim_required_check");
+    let unclaimedCompletionWasBlocked = false;
+    try {
+      await client.query(
+        `UPDATE generation_runs
+         SET status = 'FAILED', failure_code = 'UNCLAIMED_EXECUTION',
+             completed_at = now()
+         WHERE id = $1`,
+        [generationRunId],
+      );
+    } catch (error) {
+      unclaimedCompletionWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query(
+        "ROLLBACK TO SAVEPOINT generation_claim_required_check",
+      );
+    }
+    if (!unclaimedCompletionWasBlocked) {
+      throw new Error("An unclaimed generation run reached execution.");
+    }
+    await client.query(
+      `UPDATE generation_runs
+       SET status = 'RUNNING', claim_token = $2, claimed_by = 'ci-smoke-worker',
+           lease_expires_at = now() + interval '5 minutes',
+           last_heartbeat_at = now(), attempt_count = 1
+       WHERE id = $1`,
+      [generationRunId, generationClaimToken],
+    );
+    await client.query("SAVEPOINT active_generation_lease_check");
+    let activeLeaseStealWasBlocked = false;
+    try {
+      await client.query(
+        `UPDATE generation_runs
+         SET claim_token = $2, claimed_by = 'ci-competing-worker',
+             lease_expires_at = now() + interval '5 minutes',
+             last_heartbeat_at = now(), attempt_count = 2
+         WHERE id = $1`,
+        [generationRunId, randomUUID()],
+      );
+    } catch (error) {
+      activeLeaseStealWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query("ROLLBACK TO SAVEPOINT active_generation_lease_check");
+    }
+    if (!activeLeaseStealWasBlocked) {
+      throw new Error(
+        "An active generation lease was stolen by another worker.",
+      );
+    }
+    await client.query(
+      `UPDATE generation_runs
+       SET lease_expires_at = now() + interval '6 minutes',
+           last_heartbeat_at = now()
+       WHERE id = $1 AND claim_token = $2`,
+      [generationRunId, generationClaimToken],
     );
     await client.query(
       `INSERT INTO question_versions

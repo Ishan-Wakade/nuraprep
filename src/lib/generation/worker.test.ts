@@ -121,6 +121,7 @@ function harness(options?: {
 function job(runId: string, requestEnvelope: GenerationEnvelope = envelope) {
   return {
     runId,
+    claimToken: `claim-${runId}`,
     maxCostMicros: 1_000,
     envelope: {
       ...requestEnvelope,
@@ -193,6 +194,7 @@ describe("generation worker", () => {
     expect(test.complete).toHaveBeenCalledWith(
       expect.objectContaining({
         runId: "run-4",
+        claimToken: "claim-run-4",
         candidate,
         usage: expect.objectContaining({ estimatedCostMicros: 500 }),
       }),

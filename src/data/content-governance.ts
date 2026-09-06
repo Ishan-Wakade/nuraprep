@@ -99,6 +99,9 @@ export async function getGenerationConsole() {
         status: generationRuns.status,
         provider: generationRuns.provider,
         model: generationRuns.model,
+        claimedBy: generationRuns.claimedBy,
+        leaseExpiresAt: generationRuns.leaseExpiresAt,
+        attemptCount: generationRuns.attemptCount,
         maxCostMicros: generationRuns.maxCostMicros,
         estimatedCostMicros: generationRuns.estimatedCostMicros,
         sourceQuestionVersionId: generationRuns.sourceQuestionVersionId,
@@ -132,6 +135,7 @@ export async function getGenerationConsole() {
     runs: runs.map((run) => ({
       ...run,
       startedAt: run.startedAt.toISOString(),
+      leaseExpiresAt: run.leaseExpiresAt?.toISOString() ?? null,
       completedAt: run.completedAt?.toISOString() ?? null,
     })),
   };

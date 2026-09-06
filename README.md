@@ -23,7 +23,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 | Adaptive mode                               | Working local, inspectable rules baseline                                                               |
 | Timed Math practice test                    | Mechanics verified; production bank lacks 38 approved families                                          |
 | Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                          |
-| Source and generation controls              | Registry and request queue working; provider intentionally off                                          |
+| Source and generation controls              | Registry, leased request queue, and worker gates working; provider intentionally off                    |
 | Google sign-in, billing, AWS deployment     | Deferred until the core learner experience works                                                        |
 
 ## Product preview

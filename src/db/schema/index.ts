@@ -71,6 +71,7 @@ export const templateStatusEnum = pgEnum("template_status", [
 ]);
 export const generationStatusEnum = pgEnum("generation_status", [
   "PENDING",
+  "RUNNING",
   "SUCCEEDED",
   "FAILED",
   "CANCELLED",
@@ -420,6 +421,11 @@ export const generationRuns = pgTable(
       .default(sql`'{}'::jsonb`),
     randomSeed: varchar("random_seed", { length: 160 }),
     status: generationStatusEnum("status").notNull().default("PENDING"),
+    claimToken: varchar("claim_token", { length: 128 }),
+    claimedBy: varchar("claimed_by", { length: 160 }),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+    lastHeartbeatAt: timestamp("last_heartbeat_at", { withTimezone: true }),
+    attemptCount: integer("attempt_count").notNull().default(0),
     maxCostMicros: integer("max_cost_micros").notNull().default(0),
     inputTokens: integer("input_tokens"),
     outputTokens: integer("output_tokens"),
@@ -441,17 +447,30 @@ export const generationRuns = pgTable(
       table.sourceQuestionVersionId,
       table.startedAt,
     ),
+    index("generation_run_queue_idx").on(
+      table.status,
+      table.leaseExpiresAt,
+      table.startedAt,
+    ),
     check(
       "generation_run_cost_limit_check",
       sql`${table.maxCostMicros} >= 0 AND (${table.estimatedCostMicros} IS NULL OR (${table.estimatedCostMicros} >= 0 AND ${table.estimatedCostMicros} <= ${table.maxCostMicros}))`,
     ),
     check(
       "generation_run_completion_check",
-      sql`(${table.status} = 'PENDING' AND ${table.completedAt} IS NULL) OR (${table.status} <> 'PENDING' AND ${table.completedAt} IS NOT NULL)`,
+      sql`(${table.status} IN ('PENDING', 'RUNNING') AND ${table.completedAt} IS NULL) OR (${table.status} NOT IN ('PENDING', 'RUNNING') AND ${table.completedAt} IS NOT NULL)`,
     ),
     check(
       "generation_run_usage_check",
       sql`(${table.inputTokens} IS NULL OR ${table.inputTokens} >= 0) AND (${table.outputTokens} IS NULL OR ${table.outputTokens} >= 0)`,
+    ),
+    check(
+      "generation_run_lease_check",
+      sql`${table.attemptCount} >= 0 AND (
+        (${table.status} = 'PENDING' AND ${table.attemptCount} = 0 AND ${table.claimToken} IS NULL AND ${table.claimedBy} IS NULL AND ${table.leaseExpiresAt} IS NULL AND ${table.lastHeartbeatAt} IS NULL)
+        OR (${table.status} = 'RUNNING' AND ${table.attemptCount} > 0 AND ${table.claimToken} IS NOT NULL AND ${table.claimedBy} IS NOT NULL AND ${table.leaseExpiresAt} IS NOT NULL AND ${table.lastHeartbeatAt} IS NOT NULL AND ${table.leaseExpiresAt} > ${table.lastHeartbeatAt})
+        OR (${table.status} NOT IN ('PENDING', 'RUNNING') AND ((${table.attemptCount} = 0 AND ${table.claimToken} IS NULL AND ${table.claimedBy} IS NULL AND ${table.leaseExpiresAt} IS NULL AND ${table.lastHeartbeatAt} IS NULL) OR (${table.attemptCount} > 0 AND ${table.claimToken} IS NOT NULL AND ${table.claimedBy} IS NOT NULL AND ${table.leaseExpiresAt} IS NOT NULL AND ${table.lastHeartbeatAt} IS NOT NULL)))
+      )`,
     ),
   ],
 );

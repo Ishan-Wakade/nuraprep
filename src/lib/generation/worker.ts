@@ -13,6 +13,7 @@ import {
 
 export type PendingGenerationJob = {
   runId: string;
+  claimToken: string;
   maxCostMicros: number;
   envelope: GenerationEnvelope;
 };
@@ -20,6 +21,7 @@ export type PendingGenerationJob = {
 export interface GenerationWorkerRepository {
   complete(input: {
     runId: string;
+    claimToken: string;
     provider: string;
     model: string;
     candidate: GeneratedCandidate;
@@ -28,6 +30,7 @@ export interface GenerationWorkerRepository {
   }): Promise<void>;
   fail(input: {
     runId: string;
+    claimToken: string;
     provider: string;
     model: string;
     failureCode: GenerationFailureCode;
@@ -35,6 +38,7 @@ export interface GenerationWorkerRepository {
 }
 
 export type GenerationFailureCode =
+  | "JOB_LOAD_INVALID"
   | "REQUEST_IDENTITY_MISMATCH"
   | "COST_CEILING_PRECHECK"
   | "PROVIDER_ERROR"
@@ -122,6 +126,7 @@ export async function executeGenerationJob(
 
   await repository.complete({
     runId: job.runId,
+    claimToken: job.claimToken,
     provider: provider.provider,
     model: provider.model,
     candidate: parsedCandidate.data,
@@ -225,6 +230,7 @@ async function fail(
 ): Promise<GenerationExecutionResult> {
   await repository.fail({
     runId: job.runId,
+    claimToken: job.claimToken,
     provider: provider.provider,
     model: provider.model,
     failureCode,

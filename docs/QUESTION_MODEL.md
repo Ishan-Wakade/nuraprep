@@ -51,7 +51,7 @@ Templates are immutable, versioned instructions containing:
 - validator contract; and
 - author/reviewer status.
 
-A generation run records an idempotency key, request scope, requester, optional source question version, provider, model, template version, prompt hash, sanitized payload and parameters, seed where supported, a hard cost ceiling, timestamps, token/cost data, outcome, and parent run for regeneration. Request identity is immutable. A run may make one terminal transition, and success requires a linked complete candidate version. Secrets and hidden provider reasoning are never stored.
+A generation run records an idempotency key, request scope, requester, optional source question version, provider, model, template version, prompt hash, sanitized payload and parameters, seed where supported, a hard cost ceiling, timestamps, token/cost data, outcome, and parent run for regeneration. Queue execution adds a worker ID, opaque claim token, lease expiry, heartbeat, and attempt count. Request identity is immutable; only the current claim token may complete a running job. A run makes one terminal transition, and success requires a linked complete candidate version. Secrets and hidden provider reasoning are never stored or shown in the console.
 
 ### Question and QuestionVersion
 

@@ -12,6 +12,7 @@ The current slice supports:
 - full-question, explanation-only, and distractor-only regeneration requests;
 - stable idempotency keys, immutable request identity, and per-request cost ceilings;
 - a provider-neutral TypeScript interface and worker orchestrator;
+- atomic queue claims with worker attribution, expiring leases, heartbeats, and stale-claim fencing;
 - strict structured-output, answer-contract, symbolic-math, misconception, and regeneration-scope checks; and
 - atomic candidate persistence with database-enforced one-way completion linked to exactly one generated candidate version.
 
@@ -51,15 +52,18 @@ Templates are versioned. A draft becomes dispatchable only after the owner recor
 2. They select full revision, explanation only, or distractors only and enter a concrete instruction.
 3. The server creates a SHA-256 idempotency key over the source version, template, scope, normalized instruction, and cost ceiling.
 4. A duplicate submission resolves to the existing request.
-5. The worker asks the provider for a worst-case estimate and rejects the request before dispatch when it exceeds the stored ceiling.
-6. Provider output is treated as untrusted. Its usage accounting, complete candidate schema, answer contract, symbolic math, misconception rules, and requested regeneration scope must pass.
-7. Success atomically writes exactly one complete linked candidate version and then closes the run. Partial fields never overwrite the source version.
-8. The candidate remains `DRAFT`, with no copied validations or review decisions.
-9. Deterministic checks and human review must pass before a separate publication action can expose it to learners.
+5. A worker atomically claims one eligible request with `FOR UPDATE SKIP LOCKED`, records its identity and attempt number, and receives a unique expiring claim token.
+6. The worker asks the provider for a worst-case estimate and rejects the request before dispatch when it exceeds the stored ceiling.
+7. Provider output is treated as untrusted. Its usage accounting, complete candidate schema, answer contract, symbolic math, misconception rules, and requested regeneration scope must pass.
+8. Success atomically writes exactly one complete linked candidate version and then closes the run. Partial fields never overwrite the source version.
+9. The candidate remains `DRAFT`, with no copied validations or review decisions.
+10. Deterministic checks and human review must pass before a separate publication action can expose it to learners.
 
 PostgreSQL prevents request-identity edits, deletion, repeated terminal transitions, cost-overrun records, multiple candidates for one run, and successful runs without a linked candidate version.
 
 The provider envelope carries the stable run ID and idempotency key so adapters can propagate the same key to providers that support idempotent requests. The database uniqueness boundary still protects candidate persistence when delivery is repeated.
+
+Only the current claim token may load, heartbeat, complete, or fail a running job. A stale worker cannot persist after another worker reclaims its expired lease. Provider timeouts must remain shorter than the lease or the host queue must renew it; heartbeat calls are bounded to 30–900 seconds. Claim tokens are operational secrets and are not displayed in the reviewer console.
 
 Explanation-only regeneration may change only the explanation. Distractor-only regeneration is limited to choice items, preserves the correct answer and its content, and may change only distractor choices and their rationales. Any hidden change fails the worker before persistence.
 

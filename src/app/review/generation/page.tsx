@@ -57,7 +57,7 @@ export default async function GenerationConsolePage() {
       <section className="mt-9">
         <h2 className="font-serif text-2xl">Recent requests</h2>
         <div className="mt-4 overflow-x-auto rounded-2xl border border-[#d8ded9] bg-white">
-          <table className="w-full min-w-[850px] border-collapse text-left text-xs">
+          <table className="w-full min-w-[1050px] border-collapse text-left text-xs">
             <thead className="bg-[#edf3ef] text-[#385b59]">
               <tr>
                 {[
@@ -66,6 +66,7 @@ export default async function GenerationConsolePage() {
                   "Question",
                   "Template",
                   "Provider",
+                  "Worker lease",
                   "Cost ceiling",
                   "Requested",
                 ].map((heading) => (
@@ -99,6 +100,17 @@ export default async function GenerationConsolePage() {
                   </td>
                   <td className="px-4 py-3">
                     {run.provider} / {run.model}
+                  </td>
+                  <td className="px-4 py-3">
+                    {run.claimedBy ? (
+                      <>
+                        {run.claimedBy} · attempt {run.attemptCount}
+                        <br />
+                        until {run.leaseExpiresAt}
+                      </>
+                    ) : (
+                      "Unclaimed"
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     ${(run.maxCostMicros / 1_000_000).toFixed(4)}

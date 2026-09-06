@@ -1,0 +1,1 @@
+ALTER TYPE "public"."generation_status" ADD VALUE 'RUNNING' BEFORE 'SUCCEEDED';

@@ -1,6 +1,8 @@
+import { randomUUID } from "node:crypto";
+
 import "server-only";
 
-import { and, eq, max, sql } from "drizzle-orm";
+import { and, eq, gt, max, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { getDatabase } from "@/db/client";
@@ -22,6 +24,10 @@ import type {
   GenerationWorkerRepository,
   PendingGenerationJob,
 } from "@/lib/generation/worker";
+import type {
+  GenerationClaim,
+  GenerationQueueRepository,
+} from "@/lib/generation/queue";
 import { questionContentSchema } from "@/lib/questions/contracts";
 
 const storedRequestPayloadSchema = z.object({
@@ -29,11 +35,74 @@ const storedRequestPayloadSchema = z.object({
   reviewerAttestedNoSourceText: z.literal(true),
 });
 
-export async function loadPendingGenerationJob(
-  runId: string,
+const claimRequestSchema = z.object({
+  workerId: z
+    .string()
+    .trim()
+    .min(3)
+    .max(160)
+    .regex(/^[A-Za-z0-9._:-]+$/),
+  leaseSeconds: z.number().int().min(30).max(900),
+});
+
+export async function claimNextGenerationRun(input: {
+  workerId: string;
+  leaseSeconds: number;
+}): Promise<GenerationClaim | undefined> {
+  const claim = claimRequestSchema.parse(input);
+  const claimToken = randomUUID();
+  const database = getDatabase();
+  const result = await database.execute<{
+    id: string;
+    attempt_count: number;
+    lease_expires_at: Date;
+  }>(sql`
+    WITH candidate AS (
+      SELECT run.id
+      FROM generation_runs AS run
+      INNER JOIN generation_templates AS template
+        ON template.id = run.template_id
+      WHERE (
+        run.status = 'PENDING'
+        OR (run.status = 'RUNNING' AND run.lease_expires_at <= now())
+      )
+        AND template.status = 'APPROVED'
+        AND run.source_question_version_id IS NOT NULL
+        AND run.request_kind <> 'NEW_QUESTION'
+      ORDER BY run.started_at, run.id
+      FOR UPDATE OF run SKIP LOCKED
+      LIMIT 1
+    )
+    UPDATE generation_runs AS run
+    SET status = 'RUNNING',
+        claim_token = ${claimToken},
+        claimed_by = ${claim.workerId},
+        lease_expires_at = now() + make_interval(secs => ${claim.leaseSeconds}),
+        last_heartbeat_at = now(),
+        attempt_count = run.attempt_count + 1
+    FROM candidate
+    WHERE run.id = candidate.id
+    RETURNING run.id, run.attempt_count, run.lease_expires_at
+  `);
+  const row = result.rows[0];
+  return row
+    ? {
+        runId: row.id,
+        claimToken,
+        workerId: claim.workerId,
+        attemptCount: row.attempt_count,
+        leaseExpiresAt: row.lease_expires_at,
+      }
+    : undefined;
+}
+
+export async function loadClaimedGenerationJob(
+  claim: GenerationClaim,
 ): Promise<PendingGenerationJob | undefined> {
-  const parsedRunId = z.uuid().safeParse(runId);
-  if (!parsedRunId.success) return undefined;
+  const parsedClaim = z
+    .object({ runId: z.uuid(), claimToken: z.uuid() })
+    .safeParse(claim);
+  if (!parsedClaim.success) return undefined;
   const database = getDatabase();
 
   const [row] = await database
@@ -79,10 +148,17 @@ export async function loadPendingGenerationJob(
       questionVersions,
       eq(questionVersions.id, generationRuns.sourceQuestionVersionId),
     )
-    .where(eq(generationRuns.id, parsedRunId.data))
+    .where(
+      and(
+        eq(generationRuns.id, parsedClaim.data.runId),
+        eq(generationRuns.status, "RUNNING"),
+        eq(generationRuns.claimToken, parsedClaim.data.claimToken),
+        gt(generationRuns.leaseExpiresAt, new Date()),
+      ),
+    )
     .limit(1);
 
-  if (!row || row.status !== "PENDING" || row.templateStatus !== "APPROVED") {
+  if (!row || row.status !== "RUNNING" || row.templateStatus !== "APPROVED") {
     return undefined;
   }
   if (row.requestKind === "NEW_QUESTION") return undefined;
@@ -126,6 +202,7 @@ export async function loadPendingGenerationJob(
 
   return {
     runId: row.runId,
+    claimToken: parsedClaim.data.claimToken,
     maxCostMicros: row.maxCostMicros,
     envelope: {
       execution: {
@@ -170,6 +247,7 @@ export const postgresGenerationWorkerRepository: GenerationWorkerRepository = {
       const [run] = await transaction
         .select({
           status: generationRuns.status,
+          claimToken: generationRuns.claimToken,
           sourceQuestionVersionId: generationRuns.sourceQuestionVersionId,
           maxCostMicros: generationRuns.maxCostMicros,
           templateKey: generationTemplates.templateKey,
@@ -186,8 +264,12 @@ export const postgresGenerationWorkerRepository: GenerationWorkerRepository = {
         )
         .where(eq(generationRuns.id, input.runId))
         .limit(1);
-      if (!run || run.status !== "PENDING") {
-        throw new Error("GENERATION_RUN_NOT_PENDING");
+      if (
+        !run ||
+        run.status !== "RUNNING" ||
+        run.claimToken !== input.claimToken
+      ) {
+        throw new Error("GENERATION_RUN_CLAIM_LOST");
       }
       if (!run.sourceQuestionVersionId) {
         throw new Error("GENERATION_SOURCE_VERSION_REQUIRED");
@@ -288,7 +370,13 @@ export const postgresGenerationWorkerRepository: GenerationWorkerRepository = {
           failureCode: null,
           completedAt: new Date(),
         })
-        .where(eq(generationRuns.id, input.runId));
+        .where(
+          and(
+            eq(generationRuns.id, input.runId),
+            eq(generationRuns.status, "RUNNING"),
+            eq(generationRuns.claimToken, input.claimToken),
+          ),
+        );
       await transaction
         .update(questions)
         .set({ updatedAt: new Date() })
@@ -301,11 +389,19 @@ export const postgresGenerationWorkerRepository: GenerationWorkerRepository = {
     await database.transaction(async (transaction) => {
       await lockRun(transaction, input.runId);
       const [run] = await transaction
-        .select({ status: generationRuns.status })
+        .select({
+          status: generationRuns.status,
+          claimToken: generationRuns.claimToken,
+        })
         .from(generationRuns)
         .where(eq(generationRuns.id, input.runId))
         .limit(1);
-      if (!run || run.status !== "PENDING") return;
+      if (
+        !run ||
+        run.status !== "RUNNING" ||
+        run.claimToken !== input.claimToken
+      )
+        return;
       await transaction
         .update(generationRuns)
         .set({
@@ -315,9 +411,55 @@ export const postgresGenerationWorkerRepository: GenerationWorkerRepository = {
           failureCode: input.failureCode,
           completedAt: new Date(),
         })
-        .where(eq(generationRuns.id, input.runId));
+        .where(
+          and(
+            eq(generationRuns.id, input.runId),
+            eq(generationRuns.status, "RUNNING"),
+            eq(generationRuns.claimToken, input.claimToken),
+          ),
+        );
     });
   },
+};
+
+export async function heartbeatGenerationClaim(input: {
+  runId: string;
+  claimToken: string;
+  leaseSeconds: number;
+}) {
+  const parsed = z
+    .object({
+      runId: z.uuid(),
+      claimToken: z.string().uuid(),
+      leaseSeconds: z.number().int().min(30).max(900),
+    })
+    .safeParse(input);
+  if (!parsed.success) return false;
+  const now = new Date();
+  const [updated] = await getDatabase()
+    .update(generationRuns)
+    .set({
+      lastHeartbeatAt: now,
+      leaseExpiresAt: new Date(
+        now.getTime() + parsed.data.leaseSeconds * 1_000,
+      ),
+    })
+    .where(
+      and(
+        eq(generationRuns.id, parsed.data.runId),
+        eq(generationRuns.status, "RUNNING"),
+        eq(generationRuns.claimToken, parsed.data.claimToken),
+      ),
+    )
+    .returning({ id: generationRuns.id });
+  return Boolean(updated);
+}
+
+export const postgresGenerationQueueRepository: GenerationQueueRepository = {
+  ...postgresGenerationWorkerRepository,
+  claimNext: claimNextGenerationRun,
+  loadClaimed: loadClaimedGenerationJob,
+  heartbeat: heartbeatGenerationClaim,
 };
 
 function candidateVersionValues(input: {
