@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { expectNoA11yViolations } from "./accessibility";
+
 test.describe.configure({ mode: "serial" });
 
 test("completes a published topic-practice question with feedback", async ({
@@ -33,6 +35,7 @@ test("completes a published topic-practice question with feedback", async ({
     page.getByText(/volunteer team fills 24 cartons/i),
   ).toBeVisible();
   await expect(page.getByText(/The total is the number of boxes/)).toBeHidden();
+  await expectNoA11yViolations(page);
 
   await page.getByRole("button", { name: "Ask for a hint" }).click();
   await expect(
@@ -42,6 +45,7 @@ test("completes a published topic-practice question with feedback", async ({
     page.getByText(/what operation represents several equal groups/i),
   ).toBeVisible();
   await expect(page.getByText(/The total is the number of boxes/)).toBeHidden();
+  await expectNoA11yViolations(page);
 
   await page.locator('input[name="choiceId"][value="a"]').check();
   await page.getByLabel("Confidence (optional)").selectOption("4");
@@ -62,6 +66,7 @@ test("completes a published topic-practice question with feedback", async ({
   await expect(
     page.getByText(/The total is the number of boxes/),
   ).toBeVisible();
+  await expectNoA11yViolations(page);
 
   await page
     .getByText("Report a problem with this question", { exact: true })
@@ -105,6 +110,7 @@ test("completes a published topic-practice question with feedback", async ({
     page.getByRole("heading", { name: "0 of 1 correct" }),
   ).toBeVisible();
   await expect(page.getByText(/not an official ATI score/i)).toBeVisible();
+  await expectNoA11yViolations(page);
 });
 
 test("uses a responsive practice setup without horizontal overflow", async ({

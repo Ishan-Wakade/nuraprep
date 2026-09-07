@@ -50,7 +50,7 @@ export default async function SourceRegistryPage() {
 
       <section className="mt-7 rounded-2xl border border-[#d8ded9] bg-[#fffdf8] p-5 shadow-sm">
         <h2 className="font-serif text-2xl">Register a source</h2>
-        <p className="mt-2 text-xs leading-5 text-[#687a7c]">
+        <p className="mt-2 text-xs leading-5 text-[#52676a]">
           Gated, paid, and user-submitted material fails closed unless a
           compatible license or written permission is recorded.
         </p>

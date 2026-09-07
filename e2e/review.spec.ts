@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 import { config } from "dotenv";
 import { Pool } from "pg";
 
+import { expectNoA11yViolations } from "./accessibility";
+
 config({ path: ".env.local", quiet: true });
 
 const firstVersionId = "14000000-0000-4000-8000-000000000001";
@@ -39,6 +41,7 @@ test("filters the review queue and opens full provenance", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("Model input: not permitted")).toBeVisible();
   await expect(page.getByText(/publication blockers/i)).toBeVisible();
+  await expectNoA11yViolations(page);
 });
 
 test("records a decision and creates an immutable revision", async ({

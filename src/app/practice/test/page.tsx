@@ -124,7 +124,7 @@ export default async function PracticeTestStartPage() {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-[#e2e6e2] pb-3 last:border-0">
-      <dt className="text-[#607477]">{label}</dt>
+      <dt className="text-[#52676a]">{label}</dt>
       <dd className="font-bold">{value}</dd>
     </div>
   );

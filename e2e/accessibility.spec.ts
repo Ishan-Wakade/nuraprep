@@ -1,5 +1,6 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+
+import { expectNoA11yViolations } from "./accessibility";
 
 const entrySurfaces = [
   ["landing page", "/"],
@@ -21,19 +22,7 @@ test.describe("automated accessibility gate", () => {
       await page.goto(path);
       await expect(page.locator("main")).toBeVisible();
 
-      const results = await new AxeBuilder({ page })
-        .exclude("nextjs-portal")
-        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-        .analyze();
-
-      const summaries = results.violations.flatMap((violation) =>
-        violation.nodes.map(
-          (node) =>
-            `${violation.id}: ${node.target.join(" ")} — ${node.failureSummary}`,
-        ),
-      );
-
-      expect(summaries).toEqual([]);
+      await expectNoA11yViolations(page);
     });
   }
 

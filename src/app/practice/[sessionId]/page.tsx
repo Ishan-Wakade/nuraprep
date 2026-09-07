@@ -43,7 +43,7 @@ export default async function PracticeSessionPage({
           <Link href="/practice" className="text-sm font-bold text-[#116b65]">
             ← Practice home
           </Link>
-          <p className="mt-5 text-xs font-bold tracking-[0.12em] text-[#607477] uppercase">
+          <p className="mt-5 text-xs font-bold tracking-[0.12em] text-[#52676a] uppercase">
             {sessionLabel} · {question.skillTitle} ·{" "}
             {label(question.difficulty)}
           </p>
@@ -102,7 +102,7 @@ export default async function PracticeSessionPage({
             <Badge>{label(question.questionType)}</Badge>
             <Badge>{label(question.calculatorPolicy)}</Badge>
           </div>
-          <span className="text-xs text-[#687a7c]">
+          <span className="text-xs text-[#52676a]">
             Internal target: {question.estimatedSeconds} sec
           </span>
         </div>
@@ -306,7 +306,7 @@ function Stimulus({
   return (
     <div className="mt-5 overflow-x-auto">
       <table className="w-full border-collapse text-left text-sm">
-        <caption className="mb-2 text-left text-xs font-semibold text-[#687a7c]">
+        <caption className="mb-2 text-left text-xs font-semibold text-[#52676a]">
           {stimulus.caption}
         </caption>
         <thead>

@@ -125,7 +125,7 @@ function EstimateView({
             </p>
             <h2 className="mt-2 font-serif text-3xl">By Math domain</h2>
           </div>
-          <span className="text-xs text-[#687a7c]">
+          <span className="text-xs text-[#52676a]">
             {estimate.modelVersion}
           </span>
         </div>
@@ -139,7 +139,7 @@ function EstimateView({
                 <h3 className="font-serif text-2xl">{domain.domainTitle}</h3>
                 <strong>{formatPercent(domain.estimate)}</strong>
               </div>
-              <p className="mt-2 text-xs leading-5 text-[#607477]">
+              <p className="mt-2 text-xs leading-5 text-[#52676a]">
                 Interval {formatPercent(domain.lowerBound)}–
                 {formatPercent(domain.upperBound)} ·{" "}
                 {domain.uniqueQuestionCount} unique questions ·{" "}
@@ -238,9 +238,9 @@ function Metric({
 }) {
   return (
     <div className="rounded-2xl border border-[#d6ddd7] bg-[#fffdf8] p-5 shadow-sm">
-      <span className="text-xs text-[#607477]">{metricLabel}</span>
+      <span className="text-xs text-[#52676a]">{metricLabel}</span>
       <strong className="mt-1 block text-xl">{value}</strong>
-      <span className="mt-2 block text-xs text-[#687a7c]">{detail}</span>
+      <span className="mt-2 block text-xs text-[#52676a]">{detail}</span>
     </div>
   );
 }

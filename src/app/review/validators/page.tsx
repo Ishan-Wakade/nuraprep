@@ -45,7 +45,7 @@ export default async function ValidatorRuleRegistryPage() {
                   <h2 className="text-lg font-bold">
                     {rule.key} v{rule.version}
                   </h2>
-                  <p className="mt-1 text-xs text-[#687a7c]">
+                  <p className="mt-1 text-xs text-[#52676a]">
                     Active since{" "}
                     {dateFormatter.format(new Date(rule.activatedAt))}·{" "}
                     {rule.evidenceCount} evidence runs

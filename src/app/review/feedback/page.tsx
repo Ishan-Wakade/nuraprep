@@ -133,7 +133,7 @@ export default async function FeedbackPatternsPage({
                     <h3 className="font-mono text-xs font-bold break-all text-[#116b65]">
                       {pattern.key}
                     </h3>
-                    <p className="mt-1 text-xs text-[#687a7c]">
+                    <p className="mt-1 text-xs text-[#52676a]">
                       {formatLabel(pattern.category)}
                     </p>
                   </div>
@@ -151,7 +151,7 @@ export default async function FeedbackPatternsPage({
                     category={pattern.category}
                   />
                 ) : (
-                  <p className="mt-3 border-t border-[#d8ded9] pt-3 text-xs text-[#687a7c]">
+                  <p className="mt-3 border-t border-[#d8ded9] pt-3 text-xs text-[#52676a]">
                     Two matching open signals are required before drafting a
                     recurring-issue proposal.
                   </p>
@@ -159,7 +159,7 @@ export default async function FeedbackPatternsPage({
               </article>
             ))
           ) : (
-            <p className="text-sm text-[#687a7c]">
+            <p className="text-sm text-[#52676a]">
               No recurring signals match these filters.
             </p>
           )}
@@ -190,12 +190,12 @@ export default async function FeedbackPatternsPage({
                     <h3 className="mt-1 text-lg font-semibold">
                       {proposal.title}
                     </h3>
-                    <p className="mt-1 text-xs text-[#687a7c]">
+                    <p className="mt-1 text-xs text-[#52676a]">
                       {proposal.patternKey} · {formatLabel(proposal.category)} ·{" "}
                       {proposal.evidence.length} evidence links
                     </p>
                   </div>
-                  <span className="text-xs text-[#687a7c]">
+                  <span className="text-xs text-[#52676a]">
                     {proposal.createdAt}
                   </span>
                 </div>
@@ -246,7 +246,7 @@ export default async function FeedbackPatternsPage({
               </article>
             ))
           ) : (
-            <div className="rounded-2xl border border-dashed border-[#bccac4] bg-white/60 px-6 py-10 text-center text-sm text-[#687a7c]">
+            <div className="rounded-2xl border border-dashed border-[#bccac4] bg-white/60 px-6 py-10 text-center text-sm text-[#52676a]">
               No evidence-backed improvement proposals yet.
             </div>
           )}
@@ -275,7 +275,7 @@ export default async function FeedbackPatternsPage({
                   )}
                 </div>
                 <p className="mt-3 text-sm leading-6">{item.details}</p>
-                <p className="mt-3 text-xs text-[#687a7c]">
+                <p className="mt-3 text-xs text-[#52676a]">
                   {item.skillTitle} · <code>{item.slug}</code> ·{" "}
                   {item.createdAt}
                 </p>
@@ -288,7 +288,7 @@ export default async function FeedbackPatternsPage({
               </article>
             ))
           ) : (
-            <div className="rounded-2xl border border-dashed border-[#bccac4] bg-white/60 px-6 py-12 text-center text-sm text-[#687a7c]">
+            <div className="rounded-2xl border border-dashed border-[#bccac4] bg-white/60 px-6 py-12 text-center text-sm text-[#52676a]">
               No submitted evidence matches these filters.
             </div>
           )}
@@ -343,7 +343,7 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl border border-[#d8ded9] bg-[#fffdf8] p-4">
       <strong className="block font-serif text-3xl">{value}</strong>
-      <span className="mt-1 block text-xs font-semibold text-[#687a7c]">
+      <span className="mt-1 block text-xs font-semibold text-[#52676a]">
         {label}
       </span>
     </div>

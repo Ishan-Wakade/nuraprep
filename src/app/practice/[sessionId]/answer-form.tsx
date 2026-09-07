@@ -78,7 +78,7 @@ export function AnswerForm({
 
       {questionType === "MULTIPLE_SELECT" && (
         <fieldset>
-          <legend className="mb-3 text-xs font-semibold text-[#607477]">
+          <legend className="mb-3 text-xs font-semibold text-[#52676a]">
             Select every answer that applies.
           </legend>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -116,7 +116,7 @@ export function AnswerForm({
 
       {questionType === "ORDERED_RESPONSE" && (
         <fieldset>
-          <legend className="mb-3 text-xs font-semibold text-[#607477]">
+          <legend className="mb-3 text-xs font-semibold text-[#52676a]">
             Move the items into the requested order.
           </legend>
           <ol className="max-w-2xl space-y-3">

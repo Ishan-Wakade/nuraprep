@@ -40,7 +40,7 @@ export default async function QuestionReviewPage({
           <h1 className="mt-4 font-serif text-3xl tracking-[-0.03em] sm:text-4xl">
             Review question version
           </h1>
-          <p className="mt-2 text-sm text-[#637679]">
+          <p className="mt-2 text-sm text-[#52676a]">
             <code>{question.slug}</code> · {question.versionId}
           </p>
         </div>
@@ -60,7 +60,7 @@ export default async function QuestionReviewPage({
             {question.stimulus?.type === "table" && (
               <div className="mt-5 overflow-x-auto">
                 <table className="w-full border-collapse text-left text-sm">
-                  <caption className="mb-2 text-left text-xs font-semibold text-[#687a7c]">
+                  <caption className="mb-2 text-left text-xs font-semibold text-[#52676a]">
                     {question.stimulus.caption}
                   </caption>
                   <thead>
@@ -180,7 +180,7 @@ export default async function QuestionReviewPage({
                       </span>
                     </div>
                     <p className="mt-2 text-sm leading-6">{report.details}</p>
-                    <p className="mt-2 text-xs text-[#687a7c]">
+                    <p className="mt-2 text-xs text-[#52676a]">
                       {report.learnerName} · exact attempt {report.attemptId} ·{" "}
                       {report.createdAt}
                     </p>
@@ -203,7 +203,7 @@ export default async function QuestionReviewPage({
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-[#687a7c]">
+              <p className="text-sm text-[#52676a]">
                 No learner has reported this exact question version.
               </p>
             )}
@@ -340,7 +340,7 @@ export default async function QuestionReviewPage({
                   </li>
                 ))
               ) : (
-                <li className="text-[#687a7c]">No validator runs.</li>
+                <li className="text-[#52676a]">No validator runs.</li>
               )}
             </ul>
           </SidePanel>
@@ -358,7 +358,7 @@ export default async function QuestionReviewPage({
                 >
                   {source.title} ↗
                 </a>
-                <p className="mt-1 text-[#687a7c]">
+                <p className="mt-1 text-[#52676a]">
                   {source.relationship} · {source.decision}
                 </p>
                 <p className="mt-2 leading-5">{source.transformationNotes}</p>
@@ -393,7 +393,7 @@ export default async function QuestionReviewPage({
                     <strong>
                       {publication.retiredAt ? "Retired" : "Current"}
                     </strong>
-                    <p className="mt-1 text-[#687a7c]">
+                    <p className="mt-1 text-[#52676a]">
                       {publication.questionVersionId === question.versionId
                         ? `This version · ${publication.publishedAt}`
                         : publication.publishedAt}
@@ -402,13 +402,13 @@ export default async function QuestionReviewPage({
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-[#687a7c]">
+              <p className="text-xs text-[#52676a]">
                 No version in this family has been published.
               </p>
             )}
           </SidePanel>
           <SidePanel title="Audit history">
-            <p className="text-xs text-[#687a7c]">
+            <p className="text-xs text-[#52676a]">
               {question.decisions.length} decisions · {question.feedback.length}{" "}
               feedback items
             </p>
@@ -486,7 +486,10 @@ function KeyValue({
 }
 function CodeBlock({ value }: { value: unknown }) {
   return (
-    <pre className="overflow-x-auto rounded-xl bg-[#15383a] p-4 font-mono text-xs leading-5 text-[#e8f3ef]">
+    <pre
+      tabIndex={0}
+      className="overflow-x-auto rounded-xl bg-[#15383a] p-4 font-mono text-xs leading-5 text-[#e8f3ef]"
+    >
       {JSON.stringify(value, null, 2)}
     </pre>
   );

@@ -109,7 +109,7 @@ export default async function PracticeSummaryPage({
               value={formatDuration(data.pacing.wallClockMilliseconds)}
             />
           </dl>
-          <p className="mt-4 text-xs leading-5 text-[#607477]">
+          <p className="mt-4 text-xs leading-5 text-[#52676a]">
             Item targets are internal reviewer estimates, not official ATI
             pacing requirements.
           </p>
@@ -130,7 +130,7 @@ export default async function PracticeSummaryPage({
                 <li key={skill.skillCode}>
                   <div className="flex items-center justify-between gap-3 text-sm">
                     <strong>{skill.skillTitle}</strong>
-                    <span className="text-[#607477]">
+                    <span className="text-[#52676a]">
                       {skill.correct}/{skill.answered}
                     </span>
                   </div>
@@ -198,7 +198,7 @@ export default async function PracticeSummaryPage({
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-[#e2e6e2] pb-3 last:border-0">
-      <dt className="text-[#607477]">{label}</dt>
+      <dt className="text-[#52676a]">{label}</dt>
       <dd className="font-bold">{value}</dd>
     </div>
   );

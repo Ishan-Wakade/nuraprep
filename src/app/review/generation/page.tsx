@@ -33,7 +33,7 @@ export default async function GenerationConsolePage() {
               Queue health
             </h2>
           </div>
-          <p className="text-xs text-[#687a7c]">
+          <p className="text-xs text-[#52676a]">
             {consoleData.metrics.total} immutable run records
           </p>
         </div>
@@ -79,7 +79,7 @@ export default async function GenerationConsolePage() {
                   {template.status} · v{template.version}
                 </p>
                 <h2 className="mt-1 font-semibold">{template.templateKey}</h2>
-                <p className="mt-1 text-xs text-[#687a7c]">
+                <p className="mt-1 text-xs text-[#52676a]">
                   {template.skillTitle} ·{" "}
                   {template.questionType.replaceAll("_", " ")} ·{" "}
                   {template.difficulty}
@@ -213,7 +213,7 @@ function MetricCard({
       <p className={`mt-2 text-2xl font-bold ${alert ? "text-amber-800" : ""}`}>
         {value}
       </p>
-      <p className="mt-1 text-[11px] leading-4 text-[#687a7c]">{note}</p>
+      <p className="mt-1 text-[11px] leading-4 text-[#52676a]">{note}</p>
     </article>
   );
 }

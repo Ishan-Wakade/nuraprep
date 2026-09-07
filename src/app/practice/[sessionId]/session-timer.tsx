@@ -58,7 +58,7 @@ export function SessionTimer({
   return (
     <>
       <div className="rounded-xl border border-[#d5ddd7] bg-[#fffdf8] px-4 py-3 text-right">
-        <span className="block text-[10px] font-bold tracking-[0.12em] text-[#687a7c] uppercase">
+        <span className="block text-[10px] font-bold tracking-[0.12em] text-[#52676a] uppercase">
           {timeLimitSeconds === null ? "Elapsed" : "Time left"}
         </span>
         <strong className="mt-1 block font-mono text-lg tabular-nums">
