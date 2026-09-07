@@ -22,6 +22,7 @@ import {
   studyPlans,
 } from "@/db/schema";
 import { requireLearner } from "@/lib/auth/learner";
+import { learnerSafePublicationCondition } from "@/lib/questions/publication";
 import {
   estimateMathReadiness,
   type ScoreAttemptEvidence,
@@ -193,6 +194,7 @@ export async function calculateLearnerScoreEstimate(learnerId: string) {
           isNull(questionPublications.retiredAt),
           eq(questions.lifecycle, "ACTIVE"),
           eq(questions.section, "MATH"),
+          learnerSafePublicationCondition(),
         ),
       ),
   ]);

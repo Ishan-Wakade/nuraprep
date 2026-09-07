@@ -17,6 +17,7 @@ import {
   tutorInteractions,
 } from "@/db/schema";
 import { requireLearner, type LearnerIdentity } from "@/lib/auth/learner";
+import { learnerSafePublicationCondition } from "@/lib/questions/publication";
 import { summarizeDiagnostic } from "@/lib/practice/diagnostic";
 
 export async function ensureLearnerProfile(identity: LearnerIdentity) {
@@ -66,6 +67,7 @@ export async function getPracticeSetupData() {
         and(
           isNull(questionPublications.retiredAt),
           eq(questions.lifecycle, "ACTIVE"),
+          learnerSafePublicationCondition(),
         ),
       )
       .groupBy(skills.code, skills.title)

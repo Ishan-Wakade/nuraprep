@@ -48,7 +48,7 @@ export default defineConfig({
   webServer: {
     command: process.env.CI
       ? "pnpm exec next start --port 3100"
-      : "NEXT_DIST_DIR=.next-e2e NEXT_PUBLIC_APP_URL=http://localhost:3100 pnpm exec next dev --port 3100",
+      : "APP_ENV=test NEXT_DIST_DIR=.next-e2e NEXT_PUBLIC_APP_URL=http://localhost:3100 pnpm exec next dev --port 3100",
     url: e2eOrigin,
     reuseExistingServer: false,
     timeout: 120_000,

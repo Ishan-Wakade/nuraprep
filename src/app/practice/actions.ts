@@ -30,6 +30,7 @@ import {
   attributeMisconceptions,
   evaluateAnswer,
 } from "@/lib/questions/validation";
+import { learnerSafePublicationCondition } from "@/lib/questions/publication";
 import {
   learnerQuestionReportSchema,
   practiceSessionFiltersSchema,
@@ -84,6 +85,7 @@ export async function startPracticeSession(
   const conditions = [
     isNull(questionPublications.retiredAt),
     eq(questions.lifecycle, "ACTIVE"),
+    learnerSafePublicationCondition(),
     filters.skillCode ? eq(skills.code, filters.skillCode) : undefined,
     filters.difficulty
       ? eq(questionVersions.difficulty, filters.difficulty)
@@ -228,6 +230,7 @@ export async function startDiagnosticSession(
       and(
         isNull(questionPublications.retiredAt),
         eq(questions.lifecycle, "ACTIVE"),
+        learnerSafePublicationCondition(),
       ),
     )
     .orderBy(sql`random()`);

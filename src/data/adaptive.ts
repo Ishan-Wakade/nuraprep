@@ -17,6 +17,7 @@ import {
   skills,
 } from "@/db/schema";
 import { requireLearner } from "@/lib/auth/learner";
+import { learnerSafePublicationCondition } from "@/lib/questions/publication";
 import {
   ADAPTIVE_MODEL_VERSION,
   selectAdaptiveQuestions,
@@ -99,6 +100,7 @@ async function loadAdaptivePlanningData(learnerId: string) {
         and(
           isNull(questionPublications.retiredAt),
           eq(questions.lifecycle, "ACTIVE"),
+          learnerSafePublicationCondition(),
         ),
       ),
     database

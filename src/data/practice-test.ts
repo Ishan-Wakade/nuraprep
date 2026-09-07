@@ -13,6 +13,7 @@ import {
   skills,
 } from "@/db/schema";
 import { requireLearner } from "@/lib/auth/learner";
+import { learnerSafePublicationCondition } from "@/lib/questions/publication";
 import {
   assemblePracticeTest,
   PRACTICE_TEST_ASSEMBLER_VERSION,
@@ -105,6 +106,7 @@ async function loadPracticeTestData() {
       and(
         isNull(questionPublications.retiredAt),
         eq(questions.lifecycle, "ACTIVE"),
+        learnerSafePublicationCondition(),
       ),
     );
 
