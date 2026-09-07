@@ -144,6 +144,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 ## 11. Final engineering handoff
 
+- [x] Publish a living, implementation-grounded engineering walkthrough with rebuild steps, tradeoffs, setbacks, glossary, and truthful interview-story frameworks.
 - Produce an exhaustive, plain-language engineering walkthrough of the completed system.
 - Explain every major product, architecture, data-model, security, educational-quality, testing, infrastructure, and operational decision, including alternatives and tradeoffs.
 - Document the implementation sequence and exact local reproduction path so another engineer can rebuild the system from first principles.

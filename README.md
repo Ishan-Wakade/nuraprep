@@ -53,6 +53,8 @@ These screens are backed by the local PostgreSQL practice flow. The diagnostic s
 - **Privacy-aware accounts:** database sessions, revocable roles, fresh-session export and erasure controls, token-safe audit events, and shared authentication rate limits.
 - **Production-shaped delivery:** isolated browser-test databases, transactional failure tests, a non-root standalone container, one-shot migrations, health checks, and CI that builds the real image.
 
+For a system-level tour, exact rebuild sequence, tradeoff analysis, and truthful interview-story framework, read the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md).
+
 ## Product direction
 
 The first shippable Math release will let a learner:
@@ -98,7 +100,7 @@ Important boundaries:
 - Adaptive recommendations and score estimates retain their inputs, model version, explanation, and uncertainty.
 - Authentication foundations now protect learner and reviewer flows; billing remains deferred until the authenticated core and reviewed content are ready.
 
-See [Architecture](docs/ARCHITECTURE.md), [authentication and account security](docs/AUTHENTICATION.md), [container and deployment operations](docs/DEPLOYMENT.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Practice-test blueprint](docs/PRACTICE_TEST.md), [Score estimation](docs/SCORE_ESTIMATION.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), [source research log](docs/SOURCE_RESEARCH_LOG.md), [generation pipeline](docs/GENERATION_PIPELINE.md), and [Roadmap](docs/ROADMAP.md).
+See the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md), [Architecture](docs/ARCHITECTURE.md), [authentication and account security](docs/AUTHENTICATION.md), [container and deployment operations](docs/DEPLOYMENT.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Practice-test blueprint](docs/PRACTICE_TEST.md), [Score estimation](docs/SCORE_ESTIMATION.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), [source research log](docs/SOURCE_RESEARCH_LOG.md), [generation pipeline](docs/GENERATION_PIPELINE.md), and [Roadmap](docs/ROADMAP.md).
 
 ## Technology
 
