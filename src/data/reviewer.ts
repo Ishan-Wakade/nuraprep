@@ -377,6 +377,7 @@ export async function getQuestionReviewDetail(versionId: string) {
     approvedTemplates,
     regenerationRuns,
     activeReviewerValidatorRows,
+    reviewNavigationRows,
   ] = await Promise.all([
     database
       .select({
@@ -501,6 +502,49 @@ export async function getQuestionReviewDetail(versionId: string) {
         ),
       )
       .orderBy(validatorRules.key, desc(validatorRules.version)),
+    database.execute<{
+      version_id: string;
+      version: number;
+      slug: string;
+      skill_title: string;
+      latest_decision:
+        "UNREVIEWED" | "APPROVED" | "NEEDS_REVISION" | "REJECTED";
+    }>(sql`
+      WITH latest_versions AS (
+        SELECT DISTINCT ON (version.question_id)
+               version.id AS version_id,
+               version.question_id,
+               version.version,
+               version.primary_skill_id
+          FROM question_versions AS version
+         ORDER BY version.question_id, version.version DESC, version.created_at DESC
+      ), latest_decisions AS (
+        SELECT DISTINCT ON (decision.question_version_id)
+               decision.question_version_id,
+               decision.decision
+          FROM review_decisions AS decision
+         ORDER BY decision.question_version_id, decision.decided_at DESC, decision.id DESC
+      )
+      SELECT latest.version_id,
+             latest.version,
+             question.internal_slug AS slug,
+             skill.title AS skill_title,
+             coalesce(decision.decision::text, 'UNREVIEWED') AS latest_decision
+        FROM latest_versions AS latest
+        INNER JOIN questions AS question ON question.id = latest.question_id
+        INNER JOIN skills AS skill ON skill.id = latest.primary_skill_id
+        LEFT JOIN latest_decisions AS decision
+          ON decision.question_version_id = latest.version_id
+       WHERE question.section = 'MATH'
+       ORDER BY CASE coalesce(decision.decision::text, 'UNREVIEWED')
+                  WHEN 'UNREVIEWED' THEN 0
+                  WHEN 'NEEDS_REVISION' THEN 1
+                  WHEN 'REJECTED' THEN 2
+                  ELSE 3
+                END,
+                skill.title,
+                question.internal_slug
+    `),
   ]);
 
   const latestActiveRuleByKey = new Map<
@@ -571,6 +615,21 @@ export async function getQuestionReviewDetail(versionId: string) {
     publishedAt: item.publishedAt.toISOString(),
     retiredAt: item.retiredAt?.toISOString() ?? null,
   }));
+  const navigationItems = reviewNavigationRows.rows.map((item) => ({
+    versionId: item.version_id,
+    version: item.version,
+    slug: item.slug,
+    skillTitle: item.skill_title,
+    latestDecision: item.latest_decision,
+  }));
+  const nextUnreviewed = navigationItems.find(
+    (item) =>
+      item.versionId !== versionId && item.latestDecision === "UNREVIEWED",
+  );
+  const nextNeedsRevision = navigationItems.find(
+    (item) =>
+      item.versionId !== versionId && item.latestDecision === "NEEDS_REVISION",
+  );
 
   return {
     ...question,
@@ -618,6 +677,22 @@ export async function getQuestionReviewDetail(versionId: string) {
     })),
     publicationGate,
     publicationReadiness,
+    reviewNavigation: {
+      total: navigationItems.length,
+      reviewed: navigationItems.filter(
+        (item) => item.latestDecision !== "UNREVIEWED",
+      ).length,
+      unreviewed: navigationItems.filter(
+        (item) => item.latestDecision === "UNREVIEWED",
+      ).length,
+      needsRevision: navigationItems.filter(
+        (item) => item.latestDecision === "NEEDS_REVISION",
+      ).length,
+      currentIsLatest: versions[0]?.id === versionId,
+      latestFamilyVersion: versions[0] ?? null,
+      nextUnreviewed: nextUnreviewed ?? null,
+      nextNeedsRevision: nextNeedsRevision ?? null,
+    },
   };
 }
 

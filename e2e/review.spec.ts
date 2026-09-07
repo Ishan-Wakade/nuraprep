@@ -35,6 +35,15 @@ test("filters the review queue and opens full provenance", async ({ page }) => {
     page.getByRole("heading", { name: "Review question version" }),
   ).toBeVisible();
   await expect(
+    page.getByRole("progressbar", { name: "Latest candidates reviewed" }),
+  ).toBeVisible();
+  const nextUnreviewed = page.getByRole("link", { name: "Next unreviewed" });
+  await expect(nextUnreviewed).toBeVisible();
+  await expect(nextUnreviewed).not.toHaveAttribute(
+    "href",
+    `/review/questions/${firstVersionId}`,
+  );
+  await expect(
     page
       .getByRole("paragraph")
       .filter({ hasText: /24 supply boxes with 18 notebooks/i }),
@@ -122,6 +131,15 @@ test("creates a numeric revision without answer choices", async ({ page }) => {
   await expect(
     page.getByRole("paragraph").filter({ hasText: "Write the fraction 7/8" }),
   ).toBeVisible();
+
+  const latestVersionUrl = page.url();
+  await page.goto(`/review/questions/${numericVersionId}`);
+  await expect(
+    page.getByText(/inspecting historical version 1/i),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Open version 2" }),
+  ).toHaveAttribute("href", new URL(latestVersionUrl).pathname);
 });
 
 test("registers governed source metadata and an abstract coverage note", async ({

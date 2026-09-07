@@ -29,6 +29,85 @@ export default async function QuestionReviewPage({
       <Link href="/review" className="text-sm font-semibold text-[#116b65]">
         ← Back to review queue
       </Link>
+      <section
+        aria-label="Review workflow navigation"
+        className="mt-5 rounded-2xl border border-[#c9d9d3] bg-[#f4faf7] p-4 shadow-sm"
+      >
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="text-xs font-bold tracking-wide text-[#116b65] uppercase">
+                Latest-version review progress
+              </p>
+              <p className="text-xs text-[#52676a]">
+                {question.reviewNavigation.reviewed}/
+                {question.reviewNavigation.total} latest candidates have a
+                decision
+              </p>
+            </div>
+            <div
+              className="mt-2 h-2 overflow-hidden rounded-full bg-[#dbe7e1]"
+              role="progressbar"
+              aria-label="Latest candidates reviewed"
+              aria-valuemin={0}
+              aria-valuemax={question.reviewNavigation.total}
+              aria-valuenow={question.reviewNavigation.reviewed}
+            >
+              <div
+                className="h-full rounded-full bg-[#116b65]"
+                style={{
+                  width: `${question.reviewNavigation.total ? (question.reviewNavigation.reviewed / question.reviewNavigation.total) * 100 : 0}%`,
+                }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-[#52676a]">
+              {question.reviewNavigation.unreviewed} unreviewed ·{" "}
+              {question.reviewNavigation.needsRevision} need revision
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/review?status=UNREVIEWED"
+              className="rounded-lg border border-[#9fc9bd] bg-white px-3 py-2 text-xs font-bold text-[#116b65]"
+            >
+              View unreviewed
+            </Link>
+            {question.reviewNavigation.nextNeedsRevision && (
+              <Link
+                href={`/review/questions/${question.reviewNavigation.nextNeedsRevision.versionId}`}
+                className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900"
+                title={`${question.reviewNavigation.nextNeedsRevision.skillTitle}: ${question.reviewNavigation.nextNeedsRevision.slug}`}
+              >
+                Next needing revision
+              </Link>
+            )}
+            {question.reviewNavigation.nextUnreviewed && (
+              <Link
+                href={`/review/questions/${question.reviewNavigation.nextUnreviewed.versionId}`}
+                className="rounded-lg bg-[#116b65] px-3 py-2 text-xs font-bold text-white"
+                title={`${question.reviewNavigation.nextUnreviewed.skillTitle}: ${question.reviewNavigation.nextUnreviewed.slug}`}
+              >
+                Next unreviewed →
+              </Link>
+            )}
+          </div>
+        </div>
+      </section>
+      {!question.reviewNavigation.currentIsLatest &&
+        question.reviewNavigation.latestFamilyVersion && (
+          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+            You are inspecting historical version {question.version}. New review
+            work should normally target the latest version.{" "}
+            <Link
+              href={`/review/questions/${question.reviewNavigation.latestFamilyVersion.id}`}
+              className="font-bold underline"
+            >
+              Open version{" "}
+              {question.reviewNavigation.latestFamilyVersion.version}
+            </Link>
+            .
+          </div>
+        )}
       <div className="mt-5 flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
         <div>
           <div className="flex flex-wrap gap-2 text-[11px] font-bold tracking-wide uppercase">

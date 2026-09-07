@@ -18,6 +18,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Build deterministic answer parsing and content-contract validators for arithmetic, rational numbers, units, constraints, and answer uniqueness.
 - [x] Reject malformed numeric grouping, duplicate display options, equivalent numeric distractors, and duplicate unit aliases.
 - [x] Build a local reviewer browse/filter/preview/version/feedback/decision flow.
+- [x] Add latest-version progress, next-action navigation, and a guardrail against reviewing stale historical versions.
 - [x] Add safe deterministic math recipes, reviewer-attested evidence, and an explicit publication ledger.
 - [x] Require structured exact-version, current-rubric, and independent-judgment attestations for reviewer validator evidence.
 - [x] Show the exact active validator version and rubric description before reviewer evidence is submitted.
