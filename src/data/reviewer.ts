@@ -11,6 +11,7 @@ import {
   improvementProposalDecisions,
   improvementProposalEvidence,
   improvementProposals,
+  improvementTemplateImplementations,
   learnerProfiles,
   learnerQuestionReportEvents,
   learnerQuestionReports,
@@ -625,69 +626,94 @@ export async function getFeedbackOverview(filters: FeedbackOverviewFilters) {
   await requireReviewer();
   const database = getDatabase();
 
-  const [reviewerRows, learnerRows, proposalRows] = await Promise.all([
-    database
-      .select({
-        id: reviewerFeedback.id,
-        questionVersionId: reviewerFeedback.questionVersionId,
-        category: reviewerFeedback.category,
-        details: reviewerFeedback.feedback,
-        recurringIssueCode: reviewerFeedback.recurringIssueCode,
-        status: reviewerFeedback.status,
-        createdAt: reviewerFeedback.createdAt,
-        slug: questions.internalSlug,
-        prompt: questionVersions.prompt,
-        skillTitle: skills.title,
-      })
-      .from(reviewerFeedback)
-      .innerJoin(
-        questionVersions,
-        eq(questionVersions.id, reviewerFeedback.questionVersionId),
-      )
-      .innerJoin(questions, eq(questions.id, questionVersions.questionId))
-      .innerJoin(skills, eq(skills.id, questionVersions.primarySkillId))
-      .orderBy(desc(reviewerFeedback.createdAt))
-      .limit(200),
-    database
-      .select({
-        id: learnerQuestionReports.id,
-        questionVersionId: learnerQuestionReports.questionVersionId,
-        category: learnerQuestionReports.category,
-        details: learnerQuestionReports.details,
-        createdAt: learnerQuestionReports.createdAt,
-        slug: questions.internalSlug,
-        prompt: questionVersions.prompt,
-        skillTitle: skills.title,
-      })
-      .from(learnerQuestionReports)
-      .innerJoin(
-        questionVersions,
-        eq(questionVersions.id, learnerQuestionReports.questionVersionId),
-      )
-      .innerJoin(questions, eq(questions.id, questionVersions.questionId))
-      .innerJoin(skills, eq(skills.id, questionVersions.primarySkillId))
-      .orderBy(desc(learnerQuestionReports.createdAt))
-      .limit(200),
-    database
-      .select({
-        id: improvementProposals.id,
-        patternKey: improvementProposals.patternKey,
-        category: improvementProposals.category,
-        target: improvementProposals.target,
-        title: improvementProposals.title,
-        problemSummary: improvementProposals.problemSummary,
-        proposedChange: improvementProposals.proposedChange,
-        regressionPlan: improvementProposals.regressionPlan,
-        createdBy: improvementProposals.createdBy,
-        createdAt: improvementProposals.createdAt,
-      })
-      .from(improvementProposals)
-      .orderBy(desc(improvementProposals.createdAt))
-      .limit(100),
-  ]);
+  const [reviewerRows, learnerRows, proposalRows, templateRows] =
+    await Promise.all([
+      database
+        .select({
+          id: reviewerFeedback.id,
+          questionVersionId: reviewerFeedback.questionVersionId,
+          category: reviewerFeedback.category,
+          details: reviewerFeedback.feedback,
+          recurringIssueCode: reviewerFeedback.recurringIssueCode,
+          status: reviewerFeedback.status,
+          createdAt: reviewerFeedback.createdAt,
+          slug: questions.internalSlug,
+          prompt: questionVersions.prompt,
+          skillTitle: skills.title,
+        })
+        .from(reviewerFeedback)
+        .innerJoin(
+          questionVersions,
+          eq(questionVersions.id, reviewerFeedback.questionVersionId),
+        )
+        .innerJoin(questions, eq(questions.id, questionVersions.questionId))
+        .innerJoin(skills, eq(skills.id, questionVersions.primarySkillId))
+        .orderBy(desc(reviewerFeedback.createdAt))
+        .limit(200),
+      database
+        .select({
+          id: learnerQuestionReports.id,
+          questionVersionId: learnerQuestionReports.questionVersionId,
+          category: learnerQuestionReports.category,
+          details: learnerQuestionReports.details,
+          createdAt: learnerQuestionReports.createdAt,
+          slug: questions.internalSlug,
+          prompt: questionVersions.prompt,
+          skillTitle: skills.title,
+        })
+        .from(learnerQuestionReports)
+        .innerJoin(
+          questionVersions,
+          eq(questionVersions.id, learnerQuestionReports.questionVersionId),
+        )
+        .innerJoin(questions, eq(questions.id, questionVersions.questionId))
+        .innerJoin(skills, eq(skills.id, questionVersions.primarySkillId))
+        .orderBy(desc(learnerQuestionReports.createdAt))
+        .limit(200),
+      database
+        .select({
+          id: improvementProposals.id,
+          patternKey: improvementProposals.patternKey,
+          category: improvementProposals.category,
+          target: improvementProposals.target,
+          title: improvementProposals.title,
+          problemSummary: improvementProposals.problemSummary,
+          proposedChange: improvementProposals.proposedChange,
+          regressionPlan: improvementProposals.regressionPlan,
+          createdBy: improvementProposals.createdBy,
+          createdAt: improvementProposals.createdAt,
+        })
+        .from(improvementProposals)
+        .orderBy(desc(improvementProposals.createdAt))
+        .limit(100),
+      database
+        .select({
+          id: generationTemplates.id,
+          templateKey: generationTemplates.templateKey,
+          version: generationTemplates.version,
+          status: generationTemplates.status,
+          skillTitle: skills.title,
+          questionType: generationTemplates.questionType,
+          difficulty: generationTemplates.difficulty,
+          instructions: generationTemplates.instructions,
+          parameterConstraints: generationTemplates.parameterConstraints,
+          prohibitedPatterns: generationTemplates.prohibitedPatterns,
+          validatorContract: generationTemplates.validatorContract,
+        })
+        .from(generationTemplates)
+        .innerJoin(skills, eq(skills.id, generationTemplates.targetSkillId))
+        .orderBy(
+          generationTemplates.templateKey,
+          desc(generationTemplates.version),
+        ),
+    ]);
 
   const proposalIds = proposalRows.map((proposal) => proposal.id);
-  const [proposalEvidenceRows, proposalDecisionRows] = proposalIds.length
+  const [
+    proposalEvidenceRows,
+    proposalDecisionRows,
+    proposalImplementationRows,
+  ] = proposalIds.length
     ? await Promise.all([
         database
           .select({
@@ -712,8 +738,26 @@ export async function getFeedbackOverview(filters: FeedbackOverviewFilters) {
           })
           .from(improvementProposalDecisions)
           .where(inArray(improvementProposalDecisions.proposalId, proposalIds)),
+        database
+          .select({
+            id: improvementTemplateImplementations.id,
+            proposalId: improvementTemplateImplementations.proposalId,
+            baseTemplateId: improvementTemplateImplementations.baseTemplateId,
+            resultTemplateId:
+              improvementTemplateImplementations.resultTemplateId,
+            implementationSummary:
+              improvementTemplateImplementations.implementationSummary,
+            regressionEvidence:
+              improvementTemplateImplementations.regressionEvidence,
+            implementedBy: improvementTemplateImplementations.implementedBy,
+            createdAt: improvementTemplateImplementations.createdAt,
+          })
+          .from(improvementTemplateImplementations)
+          .where(
+            inArray(improvementTemplateImplementations.proposalId, proposalIds),
+          ),
       ])
-    : [[], []];
+    : [[], [], []];
 
   const learnerEvents = learnerRows.length
     ? await database
@@ -832,6 +876,36 @@ export async function getFeedbackOverview(filters: FeedbackOverviewFilters) {
       },
     ]),
   );
+  const templateById = new Map(
+    templateRows.map((template) => [template.id, template]),
+  );
+  const implementationByProposal = new Map(
+    proposalImplementationRows.map((implementation) => {
+      const base = templateById.get(implementation.baseTemplateId);
+      const result = templateById.get(implementation.resultTemplateId);
+      return [
+        implementation.proposalId,
+        {
+          ...implementation,
+          createdAt: implementation.createdAt.toISOString(),
+          baseTemplateKey: base?.templateKey ?? "Unknown template",
+          baseVersion: base?.version ?? null,
+          resultTemplateKey: result?.templateKey ?? "Unknown template",
+          resultVersion: result?.version ?? null,
+          resultStatus: result?.status ?? null,
+        },
+      ];
+    }),
+  );
+  const latestTemplates = [...templateRows]
+    .filter(
+      (template, index, rows) =>
+        template.status !== "RETIRED" &&
+        rows.findIndex(
+          (candidate) => candidate.templateKey === template.templateKey,
+        ) === index,
+    )
+    .sort((left, right) => left.templateKey.localeCompare(right.templateKey));
 
   return {
     items: items.map((item) => ({
@@ -847,7 +921,9 @@ export async function getFeedbackOverview(filters: FeedbackOverviewFilters) {
       createdAt: proposal.createdAt.toISOString(),
       evidence: evidenceByProposal.get(proposal.id) ?? [],
       decision: decisionByProposal.get(proposal.id) ?? null,
+      implementation: implementationByProposal.get(proposal.id) ?? null,
     })),
+    templates: latestTemplates,
     summary: {
       total: items.length,
       open: items.filter((item) => item.status === "OPEN").length,

@@ -216,7 +216,9 @@ test("turns recurring feedback into a separately approved improvement plan", asy
   await expect(patternCard.getByText("2 open")).toBeVisible();
   await patternCard.getByText("Draft an improvement proposal").click();
   await patternCard.getByLabel("Proposal title").fill(proposalTitle);
-  await patternCard.getByLabel("Change target").selectOption("EVALUATION_CASE");
+  await patternCard
+    .getByLabel("Change target")
+    .selectOption("GENERATION_TEMPLATE");
   await patternCard
     .getByLabel("Evidence-backed problem summary")
     .fill(
@@ -259,6 +261,48 @@ test("turns recurring feedback into a separately approved improvement plan", asy
   await expect(proposalCard.getByText(/APPROVED/)).toBeVisible();
   await expect(
     proposalCard.getByText(/approve this regression-case plan only/i),
+  ).toBeVisible();
+
+  await proposalCard
+    .getByText("Implement as a draft template revision")
+    .click();
+  await expectNoA11yViolations(page);
+  const revisedInstructions = proposalCard.locator(
+    'textarea[name="instructions"]',
+  );
+  await revisedInstructions.fill(
+    `${await revisedInstructions.inputValue()} Explicitly vary the scenario structure represented by the approved regression evidence.`,
+  );
+  await proposalCard
+    .getByLabel("Implementation summary")
+    .fill(
+      "Added an explicit scenario-variation requirement without changing the template skill or difficulty scope.",
+    );
+  await proposalCard
+    .getByLabel("Regression evidence")
+    .fill(
+      "The named near-copy fixture is rejected while two independently structured control candidates continue to pass.",
+    );
+  await proposalCard
+    .getByLabel(/I performed the recorded regression checks/)
+    .check();
+  await proposalCard
+    .getByRole("button", { name: "Create linked draft revision" })
+    .click();
+  await expect(
+    proposalCard.getByText(/Implemented as .* v2 · DRAFT/),
+  ).toBeVisible();
+  await expectNoA11yViolations(page);
+
+  await proposalCard
+    .getByRole("link", { name: "Review draft template approval" })
+    .click();
+  await expect(page).toHaveURL(/\/review\/generation#template-/);
+  const linkedTemplateId = new URL(page.url()).hash.replace("#template-", "");
+  const linkedTemplate = page.locator(`#template-${linkedTemplateId}`);
+  await expect(linkedTemplate.getByText(/DRAFT · v2/)).toBeVisible();
+  await expect(
+    linkedTemplate.getByRole("button", { name: "Approve template" }),
   ).toBeVisible();
 });
 

@@ -9,6 +9,7 @@ The current slice supports:
 - a source and rights register with policy-derived permissions;
 - human-authored abstract coverage observations;
 - versioned generation templates with explicit owner approval evidence;
+- approved-proposal-to-draft template revisions with immutable implementation and regression evidence;
 - full-question, explanation-only, and distractor-only regeneration requests;
 - stable idempotency keys, immutable request identity, and per-request cost ceilings;
 - a provider-neutral TypeScript interface and worker orchestrator;
@@ -46,6 +47,8 @@ This is not a license workaround. A reviewer should use high-level observations 
 ## Template approval
 
 Templates are versioned. A draft becomes dispatchable only after the owner records evidence that they checked its target skill, instructions, parameter constraints, prohibited patterns, and validator contract. Changes to instructions require a new template version; approval does not make generated output learner-safe.
+
+An approved feedback proposal targeting a generation template may create the next draft revision through a separate transaction. An advisory lock serializes revisions of the same template key, and the database requires the selected base to remain current, the result to be a scope-preserving consecutive draft, at least one versioned content field to change, and the authenticated implementer to match the new author. The proposal approval, implementation evidence, and later template approval are deliberately separate audit events.
 
 ## Request lifecycle
 
@@ -95,4 +98,4 @@ Before an external adapter is enabled, it must prove that it:
 - calibration of the implemented internal exact, number-invariant, and phrase-overlap signals, plus any legally permitted external comparison corpus;
 - a production exhaustion-sweep schedule, wall-clock rate controls, durable time-series metrics, and alerts;
 - independent owner/educator approval of the 12-case engineering-draft gold evaluation set; and
-- implementation of approved feedback proposals as separately reviewed template, validator, rubric, policy, or evaluation-case versions. The proposal and approval ledger exists, but deliberately performs no automatic mutation.
+- equivalent implementation paths for approved validator, rubric, policy, and evaluation-case proposals; generation-template proposals now create separately reviewed draft revisions, never automatic approvals.

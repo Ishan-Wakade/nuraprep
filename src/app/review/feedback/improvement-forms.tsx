@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import {
   createImprovementProposal,
   decideImprovementProposal,
+  implementApprovedTemplateProposal,
   type ImprovementActionState,
 } from "./actions";
 
@@ -130,6 +131,132 @@ export function ImprovementDecisionForm({
   );
 }
 
+type TemplateOption = {
+  id: string;
+  templateKey: string;
+  version: number;
+  status: "DRAFT" | "APPROVED" | "RETIRED";
+  skillTitle: string;
+  questionType: string;
+  difficulty: string;
+  instructions: string;
+  parameterConstraints: Record<string, unknown>;
+  prohibitedPatterns: string[];
+  validatorContract: Record<string, unknown>;
+};
+
+export function TemplateProposalImplementationForm({
+  proposalId,
+  templates,
+}: {
+  proposalId: string;
+  templates: TemplateOption[];
+}) {
+  const [state, action, pending] = useActionState(
+    implementApprovedTemplateProposal,
+    initialState,
+  );
+  const [selectedId, setSelectedId] = useState(templates[0]?.id ?? "");
+  const selected = templates.find((template) => template.id === selectedId);
+
+  if (!selected) {
+    return (
+      <p className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+        No active generation template is available as a revision base.
+      </p>
+    );
+  }
+
+  return (
+    <details className="mt-4 rounded-xl border border-[#c9d9d3] bg-[#f4faf7] p-4">
+      <summary className="cursor-pointer text-sm font-bold text-[#116b65]">
+        Implement as a draft template revision
+      </summary>
+      <p className="mt-2 text-xs leading-5 text-[#52676a]">
+        This creates a new immutable draft. It cannot generate questions until a
+        reviewer separately approves that template revision.
+      </p>
+      <form action={action} className="mt-4 space-y-3">
+        <input type="hidden" name="proposalId" value={proposalId} />
+        <label className="block text-xs font-bold text-[#52676a]">
+          Latest base template
+          <select
+            name="baseTemplateId"
+            value={selectedId}
+            onChange={(event) => setSelectedId(event.target.value)}
+            className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
+          >
+            {templates.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.templateKey} v{template.version} · {template.status} ·{" "}
+                {template.skillTitle}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div
+          key={selected.id}
+          className="grid gap-3 rounded-xl border border-[#d8ded9] bg-white p-3 lg:grid-cols-2"
+        >
+          <p className="text-xs leading-5 text-[#52676a] lg:col-span-2">
+            Scope is locked to {formatLabel(selected.questionType)},{" "}
+            {formatLabel(selected.difficulty)}, and {selected.skillTitle}.
+          </p>
+          <TextArea
+            label="Revised instructions"
+            name="instructions"
+            defaultValue={selected.instructions}
+            rows={6}
+            minLength={40}
+            maxLength={20_000}
+          />
+          <JsonArea
+            label="Parameter constraints JSON"
+            name="parameterConstraints"
+            value={selected.parameterConstraints}
+          />
+          <JsonArea
+            label="Prohibited patterns JSON"
+            name="prohibitedPatterns"
+            value={selected.prohibitedPatterns}
+          />
+          <JsonArea
+            label="Validator contract JSON"
+            name="validatorContract"
+            value={selected.validatorContract}
+          />
+        </div>
+        <TextArea
+          label="Implementation summary"
+          name="implementationSummary"
+          placeholder="Describe exactly how this revision implements the approved proposal."
+        />
+        <TextArea
+          label="Regression evidence"
+          name="regressionEvidence"
+          placeholder="Record the named positive and adversarial checks run and their outcomes."
+        />
+        <label className="flex items-start gap-2 text-xs leading-5 text-[#52676a]">
+          <input
+            type="checkbox"
+            name="regressionChecksAttested"
+            required
+            className="mt-1"
+          />
+          I performed the recorded regression checks and confirm this revision
+          remains a draft pending separate approval.
+        </label>
+        <ActionResult
+          state={state}
+          pending={pending}
+          pendingLabel="Creating draft…"
+          label="Create linked draft revision"
+        />
+      </form>
+    </details>
+  );
+}
+
 function Field({
   label,
   ...props
@@ -162,6 +289,30 @@ function TextArea({
         maxLength={5_000}
         rows={3}
         className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm font-normal"
+      />
+    </label>
+  );
+}
+
+function JsonArea({
+  label,
+  name,
+  value,
+}: {
+  label: string;
+  name: string;
+  value: Record<string, unknown> | string[];
+}) {
+  return (
+    <label className="block text-xs font-bold text-[#52676a]">
+      {label}
+      <textarea
+        name={name}
+        required
+        defaultValue={JSON.stringify(value, null, 2)}
+        rows={6}
+        spellCheck={false}
+        className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 font-mono text-xs font-normal"
       />
     </label>
   );

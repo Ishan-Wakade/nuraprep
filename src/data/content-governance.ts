@@ -8,6 +8,8 @@ import {
   coverageObservations,
   generationRuns,
   generationTemplates,
+  improvementProposals,
+  improvementTemplateImplementations,
   questionVersions,
   questions,
   skills,
@@ -166,7 +168,7 @@ export async function getGenerationConsole() {
   await requireReviewer();
   const database = getDatabase();
 
-  const [templates, runs, [metrics]] = await Promise.all([
+  const [templates, runs, [metrics], implementationRows] = await Promise.all([
     database
       .select({
         id: generationTemplates.id,
@@ -241,12 +243,43 @@ export async function getGenerationConsole() {
           ),
       })
       .from(generationRuns),
+    database
+      .select({
+        resultTemplateId: improvementTemplateImplementations.resultTemplateId,
+        proposalId: improvementProposals.id,
+        proposalTitle: improvementProposals.title,
+        implementationSummary:
+          improvementTemplateImplementations.implementationSummary,
+        regressionEvidence:
+          improvementTemplateImplementations.regressionEvidence,
+        implementedBy: improvementTemplateImplementations.implementedBy,
+        implementedAt: improvementTemplateImplementations.createdAt,
+      })
+      .from(improvementTemplateImplementations)
+      .innerJoin(
+        improvementProposals,
+        eq(
+          improvementProposals.id,
+          improvementTemplateImplementations.proposalId,
+        ),
+      ),
   ]);
+
+  const implementationByTemplate = new Map(
+    implementationRows.map((implementation) => [
+      implementation.resultTemplateId,
+      {
+        ...implementation,
+        implementedAt: implementation.implementedAt.toISOString(),
+      },
+    ]),
+  );
 
   return {
     templates: templates.map((template) => ({
       ...template,
       approvedAt: template.approvedAt?.toISOString() ?? null,
+      implementation: implementationByTemplate.get(template.id) ?? null,
     })),
     runs: runs.map((run) => ({
       ...run,

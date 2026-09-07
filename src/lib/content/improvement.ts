@@ -44,6 +44,74 @@ export const improvementDecisionSchema = z.object({
   notes: z.string().trim().min(20).max(5_000),
 });
 
+const jsonObjectText = z
+  .string()
+  .trim()
+  .min(2)
+  .max(20_000)
+  .transform((value, context): Record<string, unknown> => {
+    try {
+      const parsed: unknown = JSON.parse(value);
+      if (
+        typeof parsed === "object" &&
+        parsed !== null &&
+        !Array.isArray(parsed)
+      ) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      // The single field-level issue below intentionally covers invalid JSON.
+    }
+    context.addIssue({
+      code: "custom",
+      message: "Enter a valid JSON object.",
+    });
+    return z.NEVER;
+  });
+
+const jsonStringArrayText = z
+  .string()
+  .trim()
+  .min(2)
+  .max(20_000)
+  .transform((value, context): string[] => {
+    try {
+      const parsed: unknown = JSON.parse(value);
+      if (
+        Array.isArray(parsed) &&
+        parsed.every(
+          (item) =>
+            typeof item === "string" &&
+            item.trim().length > 0 &&
+            item.length <= 500,
+        )
+      ) {
+        return parsed;
+      }
+    } catch {
+      // The single field-level issue below intentionally covers invalid JSON.
+    }
+    context.addIssue({
+      code: "custom",
+      message: "Enter a JSON array containing only non-empty strings.",
+    });
+    return z.NEVER;
+  });
+
+export const improvementTemplateImplementationSchema = z.object({
+  proposalId: z.uuid(),
+  baseTemplateId: z.uuid(),
+  instructions: z.string().trim().min(40).max(20_000),
+  parameterConstraints: jsonObjectText,
+  prohibitedPatterns: jsonStringArrayText,
+  validatorContract: jsonObjectText,
+  implementationSummary: z.string().trim().min(20).max(5_000),
+  regressionEvidence: z.string().trim().min(20).max(5_000),
+  regressionChecksAttested: z.literal("on", {
+    error: "Confirm that the recorded regression checks were performed.",
+  }),
+});
+
 export type ImprovementProposalInput = z.infer<
   typeof improvementProposalSchema
 >;

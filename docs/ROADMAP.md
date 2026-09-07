@@ -90,6 +90,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [ ] Add a reviewed network transport and licensed-storage adapter; do not enable collection from gated or unclear-rights sources.
 - [ ] Add a configured provider and production queue host, wall-clock rate controls, and calibration cases for originality thresholds.
 - [x] Add recurring-error summaries and evidence-backed, separately approved improvement proposals that never auto-mutate prompts or rubrics.
+- [x] Implement approved generation-template proposals as linked, scope-preserving draft revisions with recorded regression evidence and a separate approval gate.
 - [ ] Implement approved proposals only through reviewed version changes and regression suites.
 - Expand only at the rate human review and quality sampling can support.
 

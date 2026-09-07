@@ -68,7 +68,9 @@ Thresholds must be calibrated on known original/near-copy pairs. When source tex
 6. Automated checks and blind human review compare the candidate behavior.
 7. Only approved question versions and approved generation-system changes reach production.
 
-The reviewer console implements steps 1 through 4 as an evidence-backed proposal ledger. A proposal requires two matching open signals, links to their exact feedback/report records, freezes the question-version and displayed-text evidence, and receives a separate append-only approval or rejection. Approval is intentionally non-executable: no template, validator, rubric, policy, evaluation case, or question is changed until a contributor implements the reviewed proposal and runs the relevant regression suite.
+The reviewer console implements the evidence, proposal, and decision boundaries in steps 1 through 4. A proposal requires two matching open signals, links to their exact feedback/report records, freezes the question-version and displayed-text evidence, and receives a separate append-only approval or rejection. Approval alone remains non-executable.
+
+For an approved `GENERATION_TEMPLATE` proposal, a reviewer may record completed regression evidence and fork only the latest non-retired template into its next version. The server preserves skill, response format, and difficulty; PostgreSQL independently verifies the approval, consecutive version, unchanged scope, attributed author, actual content difference, and `DRAFT` status. The resulting proposal-to-template implementation record is append-only. A different reviewer action must still approve that draft before any generation request can use it. Implementations for validator rules, rubrics, policies, and evaluation cases remain open work.
 
 Regeneration creates a new run and new question version. Regenerating only an explanation or distractors still creates a new complete version so published records remain reproducible.
 

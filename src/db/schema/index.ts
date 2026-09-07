@@ -1409,3 +1409,44 @@ export const improvementProposalDecisions = pgTable(
     ),
   ],
 );
+
+export const improvementTemplateImplementations = pgTable(
+  "improvement_template_implementations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    proposalId: uuid("proposal_id")
+      .notNull()
+      .references(() => improvementProposals.id, { onDelete: "restrict" }),
+    baseTemplateId: uuid("base_template_id")
+      .notNull()
+      .references(() => generationTemplates.id, { onDelete: "restrict" }),
+    resultTemplateId: uuid("result_template_id")
+      .notNull()
+      .references(() => generationTemplates.id, { onDelete: "restrict" }),
+    implementationSummary: text("implementation_summary").notNull(),
+    regressionEvidence: text("regression_evidence").notNull(),
+    implementedBy: varchar("implemented_by", { length: 160 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("improvement_template_implementation_proposal_idx").on(
+      table.proposalId,
+    ),
+    uniqueIndex("improvement_template_implementation_result_idx").on(
+      table.resultTemplateId,
+    ),
+    index("improvement_template_implementation_base_idx").on(
+      table.baseTemplateId,
+    ),
+    check(
+      "improvement_template_implementation_content_check",
+      sql`length(${table.implementationSummary}) >= 20 AND length(${table.regressionEvidence}) >= 20`,
+    ),
+    check(
+      "improvement_template_implementation_distinct_check",
+      sql`${table.baseTemplateId} <> ${table.resultTemplateId}`,
+    ),
+  ],
+);

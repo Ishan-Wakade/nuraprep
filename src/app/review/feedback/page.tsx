@@ -8,6 +8,7 @@ import {
 import {
   ImprovementDecisionForm,
   ImprovementProposalForm,
+  TemplateProposalImplementationForm,
 } from "./improvement-forms";
 
 const categories = [
@@ -179,6 +180,7 @@ export default async function FeedbackPatternsPage({
             overview.proposals.map((proposal) => (
               <article
                 key={proposal.id}
+                id={`proposal-${proposal.id}`}
                 className="rounded-2xl border border-[#d8ded9] bg-[#fffdf8] p-5 shadow-sm"
               >
                 <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
@@ -235,11 +237,49 @@ export default async function FeedbackPatternsPage({
                   </ul>
                 </details>
                 {proposal.decision ? (
-                  <p className="mt-4 rounded-lg bg-[#edf3ef] px-3 py-2 text-xs leading-5 text-[#385b59]">
-                    {formatLabel(proposal.decision.decision)} by{" "}
-                    {proposal.decision.decidedBy} at{" "}
-                    {proposal.decision.decidedAt}: {proposal.decision.notes}
-                  </p>
+                  <>
+                    <p className="mt-4 rounded-lg bg-[#edf3ef] px-3 py-2 text-xs leading-5 text-[#385b59]">
+                      {formatLabel(proposal.decision.decision)} by{" "}
+                      {proposal.decision.decidedBy} at{" "}
+                      {proposal.decision.decidedAt}: {proposal.decision.notes}
+                    </p>
+                    {proposal.implementation ? (
+                      <div className="mt-4 rounded-xl border border-[#c9d9d3] bg-[#f4faf7] p-4 text-xs leading-5">
+                        <p className="font-bold text-[#116b65]">
+                          Implemented as{" "}
+                          {proposal.implementation.resultTemplateKey} v
+                          {proposal.implementation.resultVersion} ·{" "}
+                          {proposal.implementation.resultStatus}
+                        </p>
+                        <p className="mt-2">
+                          <strong>Change:</strong>{" "}
+                          {proposal.implementation.implementationSummary}
+                        </p>
+                        <p className="mt-1">
+                          <strong>Regression evidence:</strong>{" "}
+                          {proposal.implementation.regressionEvidence}
+                        </p>
+                        <p className="mt-1 text-[#52676a]">
+                          Based on {proposal.implementation.baseTemplateKey} v
+                          {proposal.implementation.baseVersion}; implemented by{" "}
+                          {proposal.implementation.implementedBy} at{" "}
+                          {proposal.implementation.createdAt}.
+                        </p>
+                        <Link
+                          href={`/review/generation#template-${proposal.implementation.resultTemplateId}`}
+                          className="mt-2 inline-flex font-bold text-[#116b65] underline"
+                        >
+                          Review draft template approval →
+                        </Link>
+                      </div>
+                    ) : proposal.decision.decision === "APPROVED" &&
+                      proposal.target === "GENERATION_TEMPLATE" ? (
+                      <TemplateProposalImplementationForm
+                        proposalId={proposal.id}
+                        templates={overview.templates}
+                      />
+                    ) : null}
+                  </>
                 ) : (
                   <ImprovementDecisionForm proposalId={proposal.id} />
                 )}

@@ -1,6 +1,6 @@
 "use server";
 
-import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { getDatabase } from "@/db/client";
@@ -8,6 +8,8 @@ import {
   improvementProposalDecisions,
   improvementProposalEvidence,
   improvementProposals,
+  improvementTemplateImplementations,
+  generationTemplates,
   learnerQuestionReportEvents,
   learnerQuestionReports,
   reviewerFeedback,
@@ -17,6 +19,7 @@ import {
   createImprovementProposalKey,
   improvementDecisionSchema,
   improvementProposalSchema,
+  improvementTemplateImplementationSchema,
 } from "@/lib/content/improvement";
 
 export type ImprovementActionState = {
@@ -239,4 +242,176 @@ export async function decideImprovementProposal(
         ? "Proposal approved as a plan only. Implementation remains a separate reviewed change."
         : "Proposal rejected with immutable decision notes.",
   };
+}
+
+export async function implementApprovedTemplateProposal(
+  _previous: ImprovementActionState,
+  formData: FormData,
+): Promise<ImprovementActionState> {
+  const reviewer = await requireReviewer();
+  const parsed = improvementTemplateImplementationSchema.safeParse(
+    Object.fromEntries(formData),
+  );
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: parsed.error.issues[0]?.message ?? "Invalid implementation.",
+    };
+  }
+
+  const input = parsed.data;
+  const database = getDatabase();
+
+  try {
+    const result = await database.transaction(async (transaction) => {
+      const [initialBase] = await transaction
+        .select({ templateKey: generationTemplates.templateKey })
+        .from(generationTemplates)
+        .where(eq(generationTemplates.id, input.baseTemplateId))
+        .limit(1);
+      if (!initialBase) return { outcome: "BASE_NOT_FOUND" as const };
+
+      await transaction.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${initialBase.templateKey}, 0))`,
+      );
+
+      const [proposal] = await transaction
+        .select({
+          id: improvementProposals.id,
+          target: improvementProposals.target,
+          decision: improvementProposalDecisions.decision,
+        })
+        .from(improvementProposals)
+        .leftJoin(
+          improvementProposalDecisions,
+          eq(improvementProposalDecisions.proposalId, improvementProposals.id),
+        )
+        .where(eq(improvementProposals.id, input.proposalId))
+        .limit(1);
+      const [base] = await transaction
+        .select()
+        .from(generationTemplates)
+        .where(eq(generationTemplates.id, input.baseTemplateId))
+        .limit(1);
+      const [existingImplementation] = await transaction
+        .select({ id: improvementTemplateImplementations.id })
+        .from(improvementTemplateImplementations)
+        .where(
+          eq(improvementTemplateImplementations.proposalId, input.proposalId),
+        )
+        .limit(1);
+
+      if (!proposal) return { outcome: "PROPOSAL_NOT_FOUND" as const };
+      if (
+        proposal.target !== "GENERATION_TEMPLATE" ||
+        proposal.decision !== "APPROVED"
+      ) {
+        return { outcome: "NOT_APPROVED_TEMPLATE_PROPOSAL" as const };
+      }
+      if (!base) return { outcome: "BASE_NOT_FOUND" as const };
+      if (base.status === "RETIRED") {
+        return { outcome: "RETIRED_BASE" as const };
+      }
+      if (existingImplementation) {
+        return { outcome: "ALREADY_IMPLEMENTED" as const };
+      }
+
+      const [latest] = await transaction
+        .select({
+          id: generationTemplates.id,
+          version: generationTemplates.version,
+        })
+        .from(generationTemplates)
+        .where(eq(generationTemplates.templateKey, base.templateKey))
+        .orderBy(desc(generationTemplates.version))
+        .limit(1);
+      if (!latest || latest.id !== base.id) {
+        return { outcome: "STALE_BASE" as const };
+      }
+
+      const contentIsUnchanged =
+        input.instructions === base.instructions &&
+        JSON.stringify(input.parameterConstraints) ===
+          JSON.stringify(base.parameterConstraints) &&
+        JSON.stringify(input.prohibitedPatterns) ===
+          JSON.stringify(base.prohibitedPatterns) &&
+        JSON.stringify(input.validatorContract) ===
+          JSON.stringify(base.validatorContract);
+      if (contentIsUnchanged) return { outcome: "UNCHANGED" as const };
+
+      const [draft] = await transaction
+        .insert(generationTemplates)
+        .values({
+          templateKey: base.templateKey,
+          version: base.version + 1,
+          status: "DRAFT",
+          targetSkillId: base.targetSkillId,
+          questionType: base.questionType,
+          difficulty: base.difficulty,
+          instructions: input.instructions,
+          parameterConstraints: input.parameterConstraints,
+          prohibitedPatterns: input.prohibitedPatterns,
+          validatorContract: input.validatorContract,
+          authoredBy: reviewer.id,
+        })
+        .returning({
+          id: generationTemplates.id,
+          version: generationTemplates.version,
+        });
+      if (!draft) throw new Error("Template revision insert returned no row.");
+
+      await transaction.insert(improvementTemplateImplementations).values({
+        proposalId: proposal.id,
+        baseTemplateId: base.id,
+        resultTemplateId: draft.id,
+        implementationSummary: input.implementationSummary,
+        regressionEvidence: input.regressionEvidence,
+        implementedBy: reviewer.id,
+      });
+
+      return {
+        outcome: "CREATED" as const,
+        templateKey: base.templateKey,
+        version: draft.version,
+      };
+    });
+
+    if (result.outcome === "CREATED") {
+      revalidatePath("/review/feedback");
+      revalidatePath("/review/generation");
+      return {
+        status: "success",
+        message: `${result.templateKey} v${result.version} was created as a draft. A separate template approval is still required before generation.`,
+      };
+    }
+
+    const messages = {
+      BASE_NOT_FOUND: "The selected base template was not found.",
+      RETIRED_BASE: "A retired template cannot be used as a revision base.",
+      PROPOSAL_NOT_FOUND: "The improvement proposal was not found.",
+      NOT_APPROVED_TEMPLATE_PROPOSAL:
+        "Only an approved generation-template proposal can create a draft revision.",
+      ALREADY_IMPLEMENTED:
+        "This proposal already has an immutable template implementation.",
+      STALE_BASE:
+        "A newer template version exists. Review it and implement from the latest version.",
+      UNCHANGED:
+        "Change at least one versioned template field before implementation.",
+    } satisfies Record<typeof result.outcome, string>;
+    return { status: "error", message: messages[result.outcome] };
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      ["23505", "23514"].includes(String(error.code))
+    ) {
+      return {
+        status: "error",
+        message:
+          "The implementation conflicted with a newer revision or failed the database governance contract. Refresh and review the latest state.",
+      };
+    }
+    throw error;
+  }
 }

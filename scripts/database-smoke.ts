@@ -978,7 +978,7 @@ async function main() {
        (id, proposal_key, pattern_key, category, target, title,
         problem_summary, proposed_change, regression_plan, created_by)
        VALUES ($1, $2, 'CI_RECURRING_PATTERN', 'ORIGINALITY',
-               'EVALUATION_CASE', 'CI recurring-pattern proposal', $3, $4, $5,
+               'GENERATION_TEMPLATE', 'CI recurring-pattern proposal', $3, $4, $5,
                'ci-smoke-test')`,
       [
         proposalId,
@@ -1050,6 +1050,89 @@ async function main() {
       ],
     );
 
+    const implementedTemplateId = randomUUID();
+    const proposalImplementationId = randomUUID();
+    await client.query(
+      `INSERT INTO generation_templates
+       (id, template_key, version, status, target_skill_id, question_type,
+        difficulty, instructions, parameter_constraints, prohibited_patterns,
+        validator_contract, authored_by)
+       SELECT $1, template_key, version + 1, 'DRAFT', target_skill_id,
+              question_type, difficulty, $2, parameter_constraints,
+              prohibited_patterns || '["repeated scenario structure"]'::jsonb,
+              validator_contract, 'ci-smoke-test'
+         FROM generation_templates
+        WHERE id = $3`,
+      [
+        implementedTemplateId,
+        "Generate an original development candidate with explicitly varied scenario and distractor structures.",
+        generationTemplateId,
+      ],
+    );
+    await client.query(
+      `INSERT INTO improvement_template_implementations
+       (id, proposal_id, base_template_id, result_template_id,
+        implementation_summary, regression_evidence, implemented_by)
+       VALUES ($1, $2, $3, $4, $5, $6, 'ci-smoke-test')`,
+      [
+        proposalImplementationId,
+        proposalId,
+        generationTemplateId,
+        implementedTemplateId,
+        "Added an explicit prohibited structure while preserving the approved template scope.",
+        "The temporary adversarial structure is rejected and the independent control remains valid.",
+      ],
+    );
+
+    const unapprovedProposalId = randomUUID();
+    await client.query(
+      `INSERT INTO improvement_proposals
+       (id, proposal_key, pattern_key, category, target, title,
+        problem_summary, proposed_change, regression_plan, created_by)
+       VALUES ($1, $2, 'CI_UNAPPROVED_PATTERN', 'ORIGINALITY',
+               'GENERATION_TEMPLATE', 'CI unapproved proposal', $3, $4, $5,
+               'ci-smoke-test')`,
+      [
+        unapprovedProposalId,
+        `ci-proposal-${unapprovedProposalId}`,
+        "This proposal intentionally has no final approval decision for the smoke test.",
+        "Attempt a template change that the database contract must refuse to attribute.",
+        "Verify that missing proposal approval blocks the implementation audit record.",
+      ],
+    );
+    await client.query("SAVEPOINT unapproved_implementation_check");
+    let unapprovedImplementationWasBlocked = false;
+    try {
+      await client.query(
+        `INSERT INTO improvement_template_implementations
+         (proposal_id, base_template_id, result_template_id,
+          implementation_summary, regression_evidence, implemented_by)
+         VALUES ($1, $2, $3, $4, $5, 'ci-smoke-test')`,
+        [
+          unapprovedProposalId,
+          generationTemplateId,
+          implementedTemplateId,
+          "This implementation record must not be accepted without proposal approval.",
+          "The test expects a database rejection before any audit record is retained.",
+        ],
+      );
+    } catch (error) {
+      unapprovedImplementationWasBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23514";
+    } finally {
+      await client.query(
+        "ROLLBACK TO SAVEPOINT unapproved_implementation_check",
+      );
+    }
+    if (!unapprovedImplementationWasBlocked) {
+      throw new Error(
+        "An unapproved proposal was linked to a template implementation.",
+      );
+    }
+
     for (const [savepoint, query, id, label] of [
       [
         "proposal_immutability_check",
@@ -1068,6 +1151,12 @@ async function main() {
         "UPDATE improvement_proposal_decisions SET notes = 'mutated decision' WHERE id = $1",
         proposalDecisionId,
         "improvement proposal decision",
+      ],
+      [
+        "proposal_implementation_immutability_check",
+        "DELETE FROM improvement_template_implementations WHERE id = $1",
+        proposalImplementationId,
+        "improvement template implementation",
       ],
     ] as const) {
       await client.query(`SAVEPOINT ${savepoint}`);

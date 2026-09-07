@@ -71,6 +71,7 @@ export default async function GenerationConsolePage() {
         {consoleData.templates.map((template) => (
           <article
             key={template.id}
+            id={`template-${template.id}`}
             className="rounded-2xl border border-[#d8ded9] bg-white p-5 shadow-sm"
           >
             <div className="flex items-start justify-between gap-3">
@@ -89,6 +90,27 @@ export default async function GenerationConsolePage() {
             <p className="mt-4 rounded-lg bg-[#faf9f4] p-3 text-xs leading-5 text-[#52676a]">
               {template.instructions}
             </p>
+            {template.implementation && (
+              <div className="mt-4 rounded-lg border border-[#c9d9d3] bg-[#f4faf7] p-3 text-xs leading-5">
+                <p className="font-bold text-[#116b65]">
+                  Linked controlled improvement
+                </p>
+                <p className="mt-1">{template.implementation.proposalTitle}</p>
+                <p className="mt-1 text-[#52676a]">
+                  {template.implementation.implementationSummary}
+                </p>
+                <p className="mt-1 text-[#52676a]">
+                  <strong>Regression evidence:</strong>{" "}
+                  {template.implementation.regressionEvidence}
+                </p>
+                <Link
+                  href={`/review/feedback#proposal-${template.implementation.proposalId}`}
+                  className="mt-2 inline-flex font-bold text-[#116b65] underline"
+                >
+                  Inspect approved proposal →
+                </Link>
+              </div>
+            )}
             {template.status === "DRAFT" ? (
               <TemplateApprovalForm templateId={template.id} />
             ) : (

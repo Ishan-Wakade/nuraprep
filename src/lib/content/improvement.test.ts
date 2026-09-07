@@ -4,6 +4,7 @@ import {
   createImprovementProposalKey,
   improvementDecisionSchema,
   improvementProposalSchema,
+  improvementTemplateImplementationSchema,
   type ImprovementProposalInput,
 } from "./improvement";
 
@@ -57,5 +58,58 @@ describe("controlled improvement contracts", () => {
         notes: "short",
       }).success,
     ).toBe(false);
+  });
+
+  it("parses a reviewed template implementation contract", () => {
+    const parsed = improvementTemplateImplementationSchema.parse({
+      proposalId: "14000000-0000-4000-8000-000000000001",
+      baseTemplateId: "17000000-0000-4000-8000-000000000001",
+      instructions:
+        "Generate an original candidate while varying contexts and structural forms deliberately.",
+      parameterConstraints: '{"sourceQuestionTextProvided":false}',
+      prohibitedPatterns: '["copied wording","numbers-only variation"]',
+      validatorContract: '{"required":["ORIGINALITY"]}',
+      implementationSummary:
+        "Expanded the originality rules while preserving the template scope.",
+      regressionEvidence:
+        "The adversarial near-copy fixture fails and independent controls pass.",
+      regressionChecksAttested: "on",
+    });
+
+    expect(parsed.parameterConstraints).toEqual({
+      sourceQuestionTextProvided: false,
+    });
+    expect(parsed.prohibitedPatterns).toEqual([
+      "copied wording",
+      "numbers-only variation",
+    ]);
+  });
+
+  it("rejects malformed template JSON and an absent regression attestation", () => {
+    const parsed = improvementTemplateImplementationSchema.safeParse({
+      proposalId: "14000000-0000-4000-8000-000000000001",
+      baseTemplateId: "17000000-0000-4000-8000-000000000001",
+      instructions:
+        "Generate an original candidate while varying contexts and structural forms deliberately.",
+      parameterConstraints: "[]",
+      prohibitedPatterns: '["valid", 3]',
+      validatorContract: "not-json",
+      implementationSummary:
+        "Expanded the originality rules while preserving the template scope.",
+      regressionEvidence:
+        "The adversarial near-copy fixture fails and independent controls pass.",
+    });
+
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      expect(parsed.error.issues.map((issue) => issue.path[0])).toEqual(
+        expect.arrayContaining([
+          "parameterConstraints",
+          "prohibitedPatterns",
+          "validatorContract",
+          "regressionChecksAttested",
+        ]),
+      );
+    }
   });
 });
