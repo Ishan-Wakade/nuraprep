@@ -168,7 +168,7 @@ export default async function PracticeSetupPage({
                       className="block rounded-lg border border-[#e1e5e1] p-3 text-xs hover:border-[#85afa6]"
                     >
                       <strong>{label(session.status)}</strong>
-                      <span className="mt-1 block text-[#637679]">
+                      <span className="mt-1 block text-[#52676a]">
                         {label(session.mode)} · {session.requestedQuestionCount}{" "}
                         requested · {label(session.timingMode)}
                       </span>
@@ -177,7 +177,7 @@ export default async function PracticeSetupPage({
                 ))}
               </ul>
             ) : (
-              <p className="mt-3 text-xs leading-5 text-[#637679]">
+              <p className="mt-3 text-xs leading-5 text-[#52676a]">
                 Your completed and in-progress sessions will appear here.
               </p>
             )}

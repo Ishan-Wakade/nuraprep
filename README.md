@@ -106,7 +106,7 @@ See [Architecture](docs/ARCHITECTURE.md), [authentication and account security](
 - Tailwind CSS 4
 - PostgreSQL 17 with Drizzle ORM and append-only audit records
 - Database-backed sessions, account lifecycle controls, and shared authentication rate limits
-- Vitest, Testing Library, and Playwright
+- Vitest, Testing Library, Playwright, and automated axe WCAG checks
 - Docker Compose for local PostgreSQL
 - Provider-neutral generation interface and auditable request queue; external provider adapter intentionally not configured
 - AWS deployment plan after the core experience is proven
@@ -154,6 +154,8 @@ pnpm test:e2e
 ```
 
 `pnpm check` runs formatting, linting, type-checking, unit tests, and the production build. `pnpm test:db` requires the local PostgreSQL container. `pnpm test:e2e` derives or uses `E2E_DATABASE_URL`, refuses any database name that does not end in `_e2e`, resets only that isolated schema, and applies migrations plus seed data automatically. This keeps synthetic browser fixtures out of the development database. GitHub Actions provisions fresh PostgreSQL databases and runs the complete sequence on every pull request and `main` push.
+
+The browser suite also runs automated WCAG A/AA checks across the public, learner, account, and reviewer entry surfaces. Automated analysis is a regression gate, not a substitute for keyboard, screen-reader, zoom, reduced-motion, and human usability review.
 
 ## Deployment direction
 

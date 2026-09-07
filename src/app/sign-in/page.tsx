@@ -42,7 +42,11 @@ export default async function SignInPage({
       : environment.DEV_LEARNER_ENABLED);
 
   return (
-    <main className="grid min-h-screen bg-[#f4f1e9] px-5 py-10 text-[#15383a] sm:place-items-center sm:px-8">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="grid min-h-screen bg-[#f4f1e9] px-5 py-10 text-[#15383a] sm:place-items-center sm:px-8"
+    >
       <div className="w-full max-w-md">
         <Link
           href="/"
@@ -82,7 +86,7 @@ export default async function SignInPage({
                 <p className="text-sm font-bold text-[#314f52]">
                   Google sign-in is not configured yet
                 </p>
-                <p className="mt-1 text-xs leading-5 text-[#66797b]">
+                <p className="mt-1 text-xs leading-5 text-[#52676a]">
                   The secure account foundation is installed, but this
                   environment has no Google OAuth credentials. No simulated
                   Google login is shown.
@@ -99,14 +103,14 @@ export default async function SignInPage({
               >
                 Continue with local development access
               </Link>
-              <p className="mt-2 text-center text-[11px] leading-4 text-[#6c7d7f]">
+              <p className="mt-2 text-center text-[11px] leading-4 text-[#52676a]">
                 This bypass is unavailable when the application runs in
                 production.
               </p>
             </div>
           ) : null}
 
-          <p className="mt-6 text-xs leading-5 text-[#6c7d7f]">
+          <p className="mt-6 text-xs leading-5 text-[#52676a]">
             NuraPrep is an independent study tool and is not affiliated with or
             endorsed by ATI. Readiness estimates are not official ATI scores.
           </p>

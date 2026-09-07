@@ -69,7 +69,7 @@ function CheckIcon() {
 
 export default function Home() {
   return (
-    <main>
+    <main id="main-content" tabIndex={-1}>
       <header className="site-header">
         <div className="shell nav-row">
           <Link className="brand" href="/" aria-label="NuraPrep home">

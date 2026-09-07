@@ -99,7 +99,7 @@ export default async function ReviewQueuePage({
             skills without one
           </p>
         </div>
-        <p className="mt-2 max-w-4xl text-xs leading-5 text-[#687a7c]">
+        <p className="mt-2 max-w-4xl text-xs leading-5 text-[#52676a]">
           The section question count is a minimum family-count readiness check,
           not an official per-skill allocation. Candidate counts include drafts;
           only current publications are learner-safe.
@@ -229,18 +229,18 @@ export default async function ReviewQueuePage({
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold tracking-wide uppercase">
                   <StatusBadge status={item.latestDecision} />
-                  <span className="text-[#6b7b7d]">
+                  <span className="text-[#52676a]">
                     {formatLabel(item.questionType)}
                   </span>
-                  <span className="text-[#6b7b7d]">
+                  <span className="text-[#52676a]">
                     {formatLabel(item.difficulty)}
                   </span>
-                  <span className="text-[#6b7b7d]">v{item.version}</span>
+                  <span className="text-[#52676a]">v{item.version}</span>
                 </div>
                 <h2 className="mt-3 line-clamp-2 text-base font-semibold leading-6 group-hover:text-[#116b65]">
                   {item.prompt}
                 </h2>
-                <p className="mt-2 text-xs text-[#687a7c]">
+                <p className="mt-2 text-xs text-[#52676a]">
                   {item.skillTitle} · <code>{item.slug}</code>
                 </p>
               </div>
@@ -272,7 +272,7 @@ export default async function ReviewQueuePage({
         ) : (
           <div className="rounded-2xl border border-dashed border-[#bccac4] bg-white/60 px-6 py-14 text-center">
             <h2 className="font-serif text-2xl">No question versions match</h2>
-            <p className="mt-2 text-sm text-[#687a7c]">
+            <p className="mt-2 text-sm text-[#52676a]">
               Clear a filter or broaden the search query.
             </p>
           </div>
@@ -286,7 +286,7 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl border border-[#d8ded9] bg-[#fffdf8] p-4">
       <strong className="block font-serif text-3xl">{value}</strong>
-      <span className="mt-1 block text-xs font-semibold text-[#687a7c]">
+      <span className="mt-1 block text-xs font-semibold text-[#52676a]">
         {label}
       </span>
     </div>

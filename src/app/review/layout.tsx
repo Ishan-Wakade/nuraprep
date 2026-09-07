@@ -86,7 +86,11 @@ export default async function ReviewLayout({
             <code>APP_ENV=production</code>.
           </div>
         </aside>
-        <main className="min-w-0 px-5 py-7 sm:px-8 lg:px-10 lg:py-10">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="min-w-0 px-5 py-7 sm:px-8 lg:px-10 lg:py-10"
+        >
           {children}
         </main>
       </div>

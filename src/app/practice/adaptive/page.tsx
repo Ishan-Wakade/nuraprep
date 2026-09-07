@@ -59,7 +59,7 @@ export default async function AdaptivePracticePage() {
             </p>
             <h2 className="mt-2 font-serif text-3xl">Why skills rank here</h2>
           </div>
-          <span className="text-xs text-[#687a7c]">{data.modelVersion}</span>
+          <span className="text-xs text-[#52676a]">{data.modelVersion}</span>
         </div>
 
         <ol className="mt-5 grid gap-4 md:grid-cols-2">
@@ -99,7 +99,7 @@ export default async function AdaptivePracticePage() {
                   value={label(priority.targetDifficulty)}
                 />
               </div>
-              <p className="mt-4 text-xs leading-5 text-[#607477]">
+              <p className="mt-4 text-xs leading-5 text-[#52676a]">
                 Priority score {priority.priority.toFixed(3)} · prerequisite gap{" "}
                 {priority.prerequisiteGap.toFixed(3)} ·{" "}
                 {priority.nextReviewAt
@@ -123,7 +123,7 @@ function Metric({
 }) {
   return (
     <div className="rounded-xl bg-[#edf3ef] p-3">
-      <span className="block text-xs text-[#607477]">{metricLabel}</span>
+      <span className="block text-xs text-[#52676a]">{metricLabel}</span>
       <strong className="mt-1 block">{value}</strong>
     </div>
   );

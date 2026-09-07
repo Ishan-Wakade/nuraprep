@@ -124,6 +124,8 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - Add infrastructure as code for app hosting, RDS, S3, secrets, logs, alarms, backups, IAM, and budgets.
 - Separate staging/production, run restore and teardown drills, and document expected cost before approval.
 - Complete privacy policy, terms, accessibility audit, load test, incident runbook, and launch checklist.
+- [x] Add an automated WCAG A/AA regression gate for public, learner, account, and reviewer entry surfaces.
+- Complete manual keyboard, screen-reader, zoom, reduced-motion, and assistive-technology review before launch.
 
 **Exit:** staging passes security, backup/restore, observability, accessibility, and cost reviews before any production approval.
 

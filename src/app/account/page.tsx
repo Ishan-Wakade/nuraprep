@@ -50,7 +50,11 @@ export default async function AccountPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 py-10 sm:px-8 sm:py-14">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="mx-auto max-w-5xl px-5 py-10 sm:px-8 sm:py-14"
+      >
         <p className="text-xs font-bold tracking-[0.14em] text-[#116b65] uppercase">
           Account and privacy
         </p>
@@ -158,7 +162,7 @@ export default async function AccountPage() {
                         </span>
                       ) : null}
                     </div>
-                    <p className="mt-1 text-xs leading-5 text-[#66797b]">
+                    <p className="mt-1 text-xs leading-5 text-[#52676a]">
                       Started {formatSessionDate(session.createdAt)} · Last
                       active {formatSessionDate(session.updatedAt)}
                       {session.ipAddress ? ` · IP ${session.ipAddress}` : ""}
@@ -217,7 +221,7 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-2xl border border-[#d5ddd7] bg-[#fffdf8] p-5 shadow-sm">
       <p className="text-3xl font-bold text-[#116b65]">{value}</p>
-      <p className="mt-1 text-xs font-semibold text-[#66797b]">{label}</p>
+      <p className="mt-1 text-xs font-semibold text-[#52676a]">{label}</p>
     </div>
   );
 }
@@ -225,7 +229,7 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
 function DataPoint({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs font-bold tracking-wide text-[#6c7d7f] uppercase">
+      <dt className="text-xs font-bold tracking-wide text-[#52676a] uppercase">
         {label}
       </dt>
       <dd className="mt-1 break-words font-semibold text-[#29494c]">{value}</dd>

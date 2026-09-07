@@ -27,6 +27,25 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 12px;
+  left: 12px;
+  padding: 10px 14px;
+  transform: translateY(-160%);
+  border-radius: 8px;
+  background: var(--ink);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  transition: transform 120ms ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
 @layer base {
   a {
     color: inherit;
@@ -40,7 +59,7 @@ a {
 }
 
 :focus-visible {
-  outline: 3px solid #f2a98f;
+  outline: 3px solid #a64b34;
   outline-offset: 3px;
 }
 
@@ -253,7 +272,7 @@ nav a:hover,
   align-items: center;
   gap: 9px;
   margin: 24px 0 0;
-  color: #607477;
+  color: #52676a;
   font-size: 11px;
 }
 
@@ -299,7 +318,7 @@ nav a:hover,
 }
 
 .preview-kicker {
-  color: #839092;
+  color: #52676a;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -401,7 +420,7 @@ nav a:hover,
 }
 
 .focus-heading span {
-  color: #899596;
+  color: #52676a;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.07em;
@@ -464,12 +483,12 @@ nav a:hover,
 }
 
 .skill-row div span {
-  color: #899394;
+  color: #52676a;
   font-size: 9px;
 }
 
 .row-arrow {
-  color: #92a09e;
+  color: #52676a;
 }
 
 .preview-footer {
@@ -479,7 +498,7 @@ nav a:hover,
   margin-top: 2px;
   padding: 14px 23px;
   background: #faf9f5;
-  color: #677879;
+  color: #52676a;
   font-size: 9px;
 }
 
@@ -551,7 +570,7 @@ nav a:hover,
 }
 
 .mini-card div span {
-  color: #899394;
+  color: #52676a;
   font-size: 8px;
 }
 
@@ -589,7 +608,7 @@ nav a:hover,
 
 .trust-grid p {
   margin: 0;
-  color: #728082;
+  color: #52676a;
   font-size: 10px;
   line-height: 1.5;
 }
@@ -627,7 +646,7 @@ nav a:hover,
 .quality-copy > p,
 .roadmap-card p {
   margin: 0;
-  color: #617477;
+  color: #52676a;
   font-size: 14px;
   line-height: 1.75;
 }
@@ -655,7 +674,7 @@ nav a:hover,
 }
 
 .card-number {
-  color: var(--coral);
+  color: #a64b34;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 22px;
   font-style: italic;
@@ -678,7 +697,7 @@ nav a:hover,
 
 .principle-card p {
   margin: 0;
-  color: #68797b;
+  color: #52676a;
   font-size: 12px;
   line-height: 1.75;
 }
@@ -759,7 +778,7 @@ nav a:hover,
   padding: 5px 9px;
   border-radius: 999px;
   background: #f8e8db;
-  color: #a95a43;
+  color: #8f4937;
   font-size: 8px;
 }
 
@@ -777,7 +796,7 @@ nav a:hover,
 .question-meta {
   display: flex;
   justify-content: space-between;
-  color: #829091;
+  color: #52676a;
   font-family: monospace;
   font-size: 9px;
 }
@@ -866,7 +885,7 @@ nav a:hover,
 }
 
 .review-checks small {
-  color: #839091;
+  color: #52676a;
   font-size: 7px;
 }
 
@@ -912,7 +931,7 @@ nav a:hover,
   border: 1px solid #d9d9d0;
   border-radius: 9px;
   background: #faf9f5;
-  color: #6a797b;
+  color: #52676a;
   font-size: 11px;
   font-weight: 650;
 }
@@ -975,7 +994,7 @@ footer {
 .footer-grid > div > p {
   max-width: 370px;
   margin: 0;
-  color: #6b797a;
+  color: #52676a;
   font-size: 11px;
   line-height: 1.6;
 }
@@ -994,12 +1013,27 @@ footer {
   justify-content: space-between;
   padding-block: 18px;
   border-top: 1px solid #ded9cf;
-  color: #829091;
+  color: #52676a;
   font-size: 9px;
 }
 
 .legal-row p {
   margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 @media (max-width: 900px) {

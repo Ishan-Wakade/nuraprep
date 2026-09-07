@@ -162,7 +162,7 @@ function RadioCard({
       />
       <span>
         <strong className="block text-sm">{title}</strong>
-        <span className="mt-1 block text-xs leading-5 text-[#637679]">
+        <span className="mt-1 block text-xs leading-5 text-[#52676a]">
           {body}
         </span>
       </span>
