@@ -625,6 +625,175 @@ test("refuses self-service erasure for a privileged reviewer account", async ({
   }
 });
 
+test("lets a second administrator pseudonymize a privileged account without orphaning review history", async ({
+  page,
+}) => {
+  const administrator = await createAuthenticatedSession();
+  const target = await createAuthenticatedSession();
+  const targetEmail = `${target.userId}@example.test`;
+  const reason =
+    "Verified account-owner erasure request; retain only pseudonymous content attribution.";
+  try {
+    await administrator.pool.query(
+      `INSERT INTO auth_role_grants (user_id, role, granted_by, reason)
+       VALUES ($1, 'ADMIN', 'e2e-security-test',
+        'Authorize the independent administrator for pseudonymization testing.')`,
+      [administrator.userId],
+    );
+    await target.pool.query(
+      `INSERT INTO auth_role_grants (user_id, role, granted_by, reason)
+       VALUES ($1, 'REVIEWER', $2,
+        'Create privileged attribution that must survive identity erasure.')`,
+      [target.userId, administrator.userId],
+    );
+    await target.pool.query(
+      `INSERT INTO learner_profiles
+       (auth_user_id, auth_subject, display_name, email)
+       VALUES ($1, $2, 'Reviewer Learner Profile', $3)`,
+      [target.userId, `auth-user:${target.userId}`, targetEmail],
+    );
+    await target.pool.query(
+      `INSERT INTO auth_accounts
+       (id, issuer, account_id, provider_id, user_id)
+       VALUES ($1, 'https://accounts.google.com', $2, 'google', $3)`,
+      [`e2e-account-${randomUUID()}`, `google-${target.userId}`, target.userId],
+    );
+    const questionVersion = await target.pool.query<{ id: string }>(
+      "SELECT id FROM question_versions ORDER BY created_at ASC LIMIT 1",
+    );
+    await target.pool.query(
+      `INSERT INTO review_decisions
+       (question_version_id, reviewer_id, decision, rubric_scores, notes)
+       VALUES ($1, $2, 'NEEDS_REVISION', '{"math": 4}',
+        'Retain this immutable reviewer attribution after pseudonymization.')`,
+      [questionVersion.rows[0]!.id, target.userId],
+    );
+    await expect(
+      target.pool.query("SELECT erase_nuraprep_account($1, $1, $2)", [
+        target.userId,
+        reason,
+      ]),
+    ).rejects.toThrow(/ACTIVE_ADMIN_REQUIRED_FOR_PRIVILEGED_ERASURE/);
+
+    await page.context().addCookies([administrator.cookie]);
+    await page.goto("/review/accounts");
+    await expect(
+      page.getByRole("heading", { name: "Privileged-account privacy" }),
+    ).toBeVisible();
+
+    const targetCard = page.locator("article").filter({ hasText: targetEmail });
+    await targetCard
+      .getByLabel(`Type ${targetEmail} exactly`)
+      .fill(targetEmail);
+    await targetCard.getByLabel(/Administrative reason/).fill(reason);
+    await targetCard
+      .getByRole("button", { name: "Pseudonymize account" })
+      .click();
+    await expect(
+      page.getByText(
+        "Already pseudonymized; no credentials or active role should remain.",
+      ),
+    ).toBeVisible();
+    await expect(page.getByText(targetEmail)).toHaveCount(0);
+
+    const pseudonymized = await target.pool.query<{
+      name: string;
+      email: string;
+      email_verified: boolean;
+      image: string | null;
+    }>(
+      `SELECT name, email, email_verified, image
+       FROM auth_users WHERE id = $1`,
+      [target.userId],
+    );
+    expect(pseudonymized.rows[0]).toMatchObject({
+      name: "Former reviewer",
+      email_verified: false,
+      image: null,
+    });
+    expect(pseudonymized.rows[0]!.email).toMatch(
+      /^erased-[0-9a-f-]+@users\.invalid$/,
+    );
+    expect(pseudonymized.rows[0]!.email).not.toContain(target.userId);
+
+    const privateData = await target.pool.query<{
+      sessions: number;
+      accounts: number;
+      profiles: number;
+      active_roles: number;
+    }>(
+      `SELECT
+         (SELECT count(*)::int FROM auth_sessions WHERE user_id = $1) AS sessions,
+         (SELECT count(*)::int FROM auth_accounts WHERE user_id = $1) AS accounts,
+         (SELECT count(*)::int FROM learner_profiles WHERE auth_user_id = $1) AS profiles,
+         (SELECT count(*)::int FROM auth_role_grants
+          WHERE user_id = $1 AND revoked_at IS NULL) AS active_roles`,
+      [target.userId],
+    );
+    expect(privateData.rows[0]).toEqual({
+      sessions: 0,
+      accounts: 0,
+      profiles: 0,
+      active_roles: 0,
+    });
+
+    const retained = await target.pool.query<{
+      decisions: number;
+      grants: number;
+      revoked_by: string;
+      events: number;
+      receipts: number;
+    }>(
+      `SELECT
+         (SELECT count(*)::int FROM review_decisions
+          WHERE reviewer_id = $1) AS decisions,
+         (SELECT count(*)::int FROM auth_role_grants
+          WHERE user_id = $1) AS grants,
+         (SELECT revoked_by FROM auth_role_grants
+          WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1) AS revoked_by,
+         (SELECT count(*)::int FROM account_audit_events
+          WHERE user_id = $1
+            AND event_type = 'PRIVILEGED_ACCOUNT_PSEUDONYMIZED') AS events,
+         (SELECT count(*)::int FROM account_deletion_receipts
+          WHERE receipt_version = 'privileged-pseudonymization-v1') AS receipts`,
+      [target.userId],
+    );
+    expect(retained.rows[0]).toMatchObject({
+      decisions: 1,
+      grants: 1,
+      revoked_by: administrator.userId,
+      events: 1,
+    });
+    expect(retained.rows[0]!.receipts).toBeGreaterThan(0);
+  } finally {
+    await administrator.pool.end();
+    await target.pool.end();
+  }
+});
+
+test("denies the privileged-account privacy control to a reviewer", async ({
+  page,
+}) => {
+  const reviewer = await createAuthenticatedSession();
+  try {
+    await reviewer.pool.query(
+      `INSERT INTO auth_role_grants (user_id, role, granted_by, reason)
+       VALUES ($1, 'REVIEWER', 'e2e-security-test',
+        'Verify that reviewer access does not imply administrator authority.')`,
+      [reviewer.userId],
+    );
+    await page.context().addCookies([reviewer.cookie]);
+
+    const response = await page.goto("/review/accounts");
+    expect(response?.status()).toBe(404);
+    await expect(
+      page.getByRole("link", { name: "Account privacy" }),
+    ).toHaveCount(0);
+  } finally {
+    await reviewer.pool.end();
+  }
+});
+
 test("keeps the sign-in surface within a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/sign-in");

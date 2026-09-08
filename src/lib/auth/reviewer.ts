@@ -18,9 +18,9 @@ export async function requireReviewer(): Promise<ReviewerIdentity> {
   const environment = getServerEnvironment();
   const session = await getCurrentSession();
 
-  let hasPrivilegedGrant = false;
+  let privilegedRole: "REVIEWER" | "ADMIN" | undefined;
   if (session?.user) {
-    const [grant] = await getDatabase()
+    const grants = await getDatabase()
       .select({ role: authRoleGrants.role })
       .from(authRoleGrants)
       .where(
@@ -29,17 +29,26 @@ export async function requireReviewer(): Promise<ReviewerIdentity> {
           inArray(authRoleGrants.role, ["REVIEWER", "ADMIN"]),
           isNull(authRoleGrants.revokedAt),
         ),
-      )
-      .limit(1);
-    hasPrivilegedGrant = Boolean(grant);
+      );
+    privilegedRole = grants.some((grant) => grant.role === "ADMIN")
+      ? "ADMIN"
+      : grants.some((grant) => grant.role === "REVIEWER")
+        ? "REVIEWER"
+        : undefined;
   }
 
   const identity = resolveReviewerIdentity(
     session?.user,
-    hasPrivilegedGrant,
+    privilegedRole,
     environment.APP_ENV !== "production" && environment.DEV_REVIEWER_ENABLED,
   );
 
   if (!identity) notFound();
   return identity;
+}
+
+export async function requireAdmin(): Promise<ReviewerIdentity> {
+  const reviewer = await requireReviewer();
+  if (reviewer.role !== "ADMIN") notFound();
+  return reviewer;
 }

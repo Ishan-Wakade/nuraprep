@@ -13,20 +13,20 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 **Working local alpha — content review remains the release gate.** The repository contains the PostgreSQL content model, deterministic answer and math checks, owner-review and publication workflows, persisted topic practice, a coverage-aware diagnostic, a versioned rules-based adaptive scheduler, full timed-test mechanics, a transparent readiness-estimation baseline, and a fail-closed source/generation control plane. Thirty-eight original seed candidates cover every current Math leaf skill and fill the internal 20-family Numbers-and-Algebra and 18-family Measurement-and-Data targets. They remain deliberately unapproved, and browser tests use disposable, explicitly test-only approvals to verify complete learner flows. There is no approved production question bank, configured generation provider, or externally validated score predictor yet.
 
-| Area                                        | Status                                                                                                                |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Public repository and engineering standards | Complete                                                                                                              |
-| Math taxonomy and question data model       | Implemented with migrations and seed data                                                                             |
-| Reviewer and provenance workflow            | Review, publication, coverage gaps, reports, pattern search, and approved improvement plans working locally           |
-| Topic practice                              | Working local multi-format vertical slice                                                                             |
-| Diagnostic                                  | Working local flow with explicit coverage and starting signals                                                        |
-| Adaptive mode                               | Working local, inspectable rules baseline                                                                             |
-| Timed Math practice test                    | Mechanics verified; production bank lacks 38 approved families                                                        |
-| Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                                        |
-| Source and generation controls              | Registry, leased request queue, and worker gates working; provider intentionally off                                  |
-| Account and Google sign-in                  | Sessions, logout, device revocation, export, learner erasure, and roles implemented; real callback awaits credentials |
-| Billing                                     | Stripe-hosted integration implemented fail-closed; sandbox verification and product decisions remain open             |
-| AWS deployment                              | Terraform validated; region cost review, prerequisites, staging apply, and restore drill remain                       |
+| Area                                        | Status                                                                                                                                             |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public repository and engineering standards | Complete                                                                                                                                           |
+| Math taxonomy and question data model       | Implemented with migrations and seed data                                                                                                          |
+| Reviewer and provenance workflow            | Review, publication, coverage gaps, reports, pattern search, and approved improvement plans working locally                                        |
+| Topic practice                              | Working local multi-format vertical slice                                                                                                          |
+| Diagnostic                                  | Working local flow with explicit coverage and starting signals                                                                                     |
+| Adaptive mode                               | Working local, inspectable rules baseline                                                                                                          |
+| Timed Math practice test                    | Mechanics verified; production bank lacks 38 approved families                                                                                     |
+| Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                                                                     |
+| Source and generation controls              | Registry, leased request queue, and worker gates working; provider intentionally off                                                               |
+| Account and Google sign-in                  | Sessions, logout, device revocation, export, learner erasure, privileged pseudonymization, and roles implemented; real callback awaits credentials |
+| Billing                                     | Stripe-hosted integration implemented fail-closed; sandbox verification and product decisions remain open                                          |
+| AWS deployment                              | Terraform validated; region cost review, prerequisites, staging apply, and restore drill remain                                                    |
 
 ## Product preview
 
@@ -51,7 +51,7 @@ These screens are backed by the local PostgreSQL practice flow. The diagnostic s
 - **Publication safety:** immutable question versions, independent reviewer attestations, versioned validator rubrics, and a database-enforced learner publication boundary.
 - **Deterministic educational checks:** typed answer contracts plus programmatic math, formatting, uniqueness, distractor, and originality signals instead of LLM-only grading.
 - **Inspectable personalization:** prerequisite-aware diagnostic signals, adaptive scheduling reasons, spaced-review dates, and versioned score-estimate inputs remain explainable.
-- **Privacy-aware accounts:** database sessions, revocable roles, fresh-session export and erasure controls, token-safe audit events, and shared authentication rate limits.
+- **Privacy-aware accounts:** database sessions, revocable roles, fresh-session export and learner erasure, second-admin privileged pseudonymization, token-safe audit events, and shared authentication rate limits.
 - **Abuse-resistant mutations:** atomic per-account budgets protect session creation, answers, tutoring, reports, predictions, exports, billing sessions, and generation requests across replicas.
 - **Fail-closed billing boundary:** server-owned Stripe Checkout/Portal flows, signed replay-safe webhook receipts, order-independent subscription synchronization, and no card-data handling.
 - **Production-shaped delivery:** isolated browser-test databases, transactional failure tests, a non-root standalone container, one-shot migrations, health checks, and validated cost-gated AWS Terraform.
@@ -182,7 +182,7 @@ The standalone application image, migration job, Compose topology, database-awar
 - Never store raw payment-card data; Stripe-hosted checkout will handle payment details.
 - Keep generation prompts, answer keys, reviewer operations, and provider secrets server-side.
 - Separate learner, reviewer, and administrator permissions and record sensitive review actions.
-- Keep portable export and transactional learner erasure available; define production retention and administrator-assisted privileged-account erasure before launch.
+- Keep portable export, transactional learner erasure, and administrator-assisted privileged pseudonymization available; obtain legal approval for production audit-retention periods before launch.
 - Describe predictions as estimates, show uncertainty, and never present them as official ATI scores.
 - Require review before generated questions reach learners and provide a visible error-report path.
 - Do not claim official equivalence, pass-rate improvements, or predictive accuracy without evidence.

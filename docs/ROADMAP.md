@@ -114,7 +114,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Add explicit ALB forwarded-IP handling, validated proxy CIDRs, and a stable BuildKit/Secrets Manager boundary for self-hosted Server Action encryption.
 - [x] Add atomic per-principal limits for high-impact learner, account, billing, prediction, and generation mutations across application replicas.
 - Configure real Google credentials and test successful, denied, malformed, and replayed provider callbacks before enabling production sign-in.
-- Design administrator-assisted erasure for accounts with reviewer or administrator history without breaking content-audit integrity.
+- [x] Add second-administrator pseudonymization for privileged accounts without breaking immutable content-audit attribution.
 - Verify provider CSRF/state/nonce and production cookie behavior with real provider fixtures.
 
 **Exit:** authorization tests cover learner/reviewer/admin boundaries and deletion behavior is documented and verified.

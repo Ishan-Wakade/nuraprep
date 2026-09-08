@@ -16,6 +16,7 @@ export type ReviewerIdentity = {
   id: string;
   name: string;
   mode: "authenticated" | "development";
+  role: "REVIEWER" | "ADMIN" | "DEVELOPMENT";
 };
 
 export function resolveLearnerIdentity(
@@ -45,12 +46,17 @@ export function resolveLearnerIdentity(
 
 export function resolveReviewerIdentity(
   user: SessionUser | undefined,
-  hasPrivilegedGrant: boolean,
+  privilegedRole: "REVIEWER" | "ADMIN" | undefined,
   developmentAccessEnabled: boolean,
 ): ReviewerIdentity | undefined {
   if (user) {
-    if (!hasPrivilegedGrant) return undefined;
-    return { id: user.id, name: user.name, mode: "authenticated" };
+    if (!privilegedRole) return undefined;
+    return {
+      id: user.id,
+      name: user.name,
+      mode: "authenticated",
+      role: privilegedRole,
+    };
   }
 
   if (!developmentAccessEnabled) return undefined;
@@ -59,5 +65,6 @@ export function resolveReviewerIdentity(
     id: "development-owner",
     name: "Development reviewer",
     mode: "development",
+    role: "DEVELOPMENT",
   };
 }

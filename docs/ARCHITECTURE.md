@@ -67,6 +67,8 @@ The billing boundary uses Stripe-hosted Checkout and Portal sessions. A signed w
 
 High-impact authenticated operations consume fixed-window allowances from `application_rate_limits`. The key hashes the internal principal and action scope, PostgreSQL serializes conflicting upserts, and limits therefore apply across replicas without retaining raw IP or email data. This is separate from Better Auth's IP-aware endpoint limiter: one protects signed-in application behavior, while the other protects the authentication boundary.
 
+Ordinary learner erasure deletes the account and its learner-owned dependency graph in one database transaction. Reviewer/admin history takes a different path: a second active administrator removes credentials and learner data, revokes roles, and converts the identity row to a non-login pseudonymous tombstone. Keeping the opaque internal ID preserves joins from immutable content decisions; this is a retention tradeoff that must remain access-controlled and legally reviewed rather than being mislabeled as anonymization.
+
 ## Quality gates
 
 ```mermaid

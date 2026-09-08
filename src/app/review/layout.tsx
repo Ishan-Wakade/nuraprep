@@ -80,6 +80,14 @@ export default async function ReviewLayout({
             >
               Validator rules
             </Link>
+            {reviewer.role === "ADMIN" ? (
+              <Link
+                href="/review/accounts"
+                className="rounded-lg border border-[#cad6d1] bg-white px-4 py-3 text-sm font-semibold text-[#116b65] hover:border-[#116b65]"
+              >
+                Account privacy
+              </Link>
+            ) : null}
           </nav>
           <div className="mt-7 hidden rounded-xl border border-[#d6ddd8] bg-white/60 p-4 text-xs leading-5 text-[#5f7376] md:block">
             Development access is intentionally unavailable when{" "}

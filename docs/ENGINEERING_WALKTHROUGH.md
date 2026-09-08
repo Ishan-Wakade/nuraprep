@@ -289,6 +289,7 @@ The account page supports:
 - revocation of every other session while preserving the current one;
 - a fresh-session-gated portable export that excludes credentials and answer keys; and
 - fresh-session plus typed-confirmation learner erasure.
+- second-administrator privileged-account pseudonymization that preserves opaque content attribution while removing credentials and learner data.
 
 Erasure runs in one PostgreSQL procedure. It removes learner-owned history in dependency order and writes a non-identifying receipt. A smoke test injects a failure near the end and proves the transaction restores preceding deletions. Accounts with reviewer/admin history are refused because their identifiers can be part of immutable safety records; a reviewed pseudonymization process remains open.
 
@@ -529,9 +530,9 @@ Use these as truthful story structures, not scripts to memorize. Replace “I”
 
 **Task:** Make self-service erasure complete and transactional without corrupting content history.
 
-**Action:** Build one database procedure with narrow deletion-context controls, remove learner-owned dependencies in order, refuse privileged-history accounts, and write a non-identifying receipt. Inject a late failure in a smoke test to prove rollback.
+**Action:** Build one database procedure with narrow deletion-context controls, remove learner-owned dependencies in order, refuse privileged-history accounts from self-service erasure, and write a non-identifying receipt. For privileged requests, require a second active administrator, remove credentials and learner history, revoke roles, and retain only a disabled pseudonymous tombstone linked to immutable content attribution. Inject a late failure in a smoke test to prove ordinary-erasure rollback and use browser/database assertions to verify the privileged path.
 
-**Result:** Ordinary learner erasure is atomic and tested; privileged pseudonymization remains an explicit production blocker.
+**Result:** Ordinary learner erasure is atomic and tested. Privileged pseudonymization is also implemented and tested, while the audit-retention period and legal basis remain explicit launch decisions.
 
 **Follow-up question to expect:** Why retain a receipt? Explain operational proof without retaining an identifier or deleted content.
 

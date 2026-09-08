@@ -1,6 +1,6 @@
 # Authentication and account-security design
 
-Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, shared authentication and application rate limiting, session lifecycle/export audit events, sign-in and sign-out surfaces, account-scoped learner profiles, fresh-session-gated portable export, signed-in-device visibility, transactional session revocation, transactional learner erasure, environment fail-closed checks, explicit proxy trust, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation without exposing tokens, audit creation, concurrent rate-limit enforcement, reviewer denial/approval, export credential exclusion, stale-session denial, complete learner erasure, and privileged-account refusal without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's broad direct deletion endpoint remains disabled because NuraPrep owns its narrower data-erasure transaction.
+Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, shared authentication and application rate limiting, session lifecycle/export audit events, sign-in and sign-out surfaces, account-scoped learner profiles, fresh-session-gated portable export, signed-in-device visibility, transactional session revocation, transactional learner erasure, administrator-assisted privileged-account pseudonymization, environment fail-closed checks, explicit proxy trust, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation without exposing tokens, audit creation, concurrent rate-limit enforcement, reviewer/admin separation, export credential exclusion, stale-session denial, complete learner erasure, and privileged pseudonymization without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's broad direct deletion endpoint remains disabled because NuraPrep owns its narrower data-erasure transaction.
 
 NuraPrep will use Google OpenID Connect through Better Auth with its Drizzle/PostgreSQL adapter. The application will keep database-backed, revocable sessions and will not request access to Google APIs beyond the identity scopes needed for sign-in. Development identities remain available only behind explicit local switches that already fail closed when `APP_ENV=production`.
 
@@ -94,7 +94,11 @@ If an account has a Stripe Customer mapping, the application must first delete t
 
 Deletion-aware trigger behavior is narrow and transaction-local. Append-only records still reject ordinary updates and deletes. Only the erasure procedure sets the local deletion context that permits removal from the specific learner-owned audit tables, and that context ends with the transaction. Database smoke tests inject a failure at the final receipt insert after preceding deletes have executed and verify that the user, profile, role grant, and audit event all return. The UI reports completion only after the receipt exists.
 
-Accounts with any reviewer or administrator grant history are refused by self-service deletion, including after a grant is revoked. Their IDs can be embedded in immutable content-review records that are not learner-owned. An administrator-assisted pseudonymization and retention procedure must be reviewed before production; silently deleting or orphaning those records would undermine content-safety auditability.
+Accounts with any reviewer or administrator grant history are refused by self-service deletion, including after a grant is revoked. Their internal IDs can be embedded in immutable content-review records that are not learner-owned. The separate administrator interface therefore requires a second active administrator, a session created within 15 minutes, the target email typed exactly, and a 20–500 character reason. It rejects self-administration and learner-only targets, shares the account-security rate limit, and repeats authorization in both the Server Action and PostgreSQL procedure.
+
+The assisted procedure removes the target's learner-owned history, provider accounts and tokens, sessions, email-linked verification state, local billing projection, and external Stripe Customer when one exists. It revokes every active role, replaces name/email/image with a disabled `Former reviewer` tombstone under the reserved `.invalid` domain, records the administering principal and reason, and writes a versioned receipt. The stable internal ID and historical role grants remain so existing review, feedback, generation, source-policy, validation, and publication attribution does not become ambiguous. The tombstone has no provider account or session and cannot sign in.
+
+This is deliberately described as **pseudonymization**, not anonymization or complete record deletion. The retained internal ID, role history, administrative reason, and content attribution remain personal-data-adjacent audit material and require a documented retention period, access controls, log-retention review, and legal review before launch. Administrators are instructed not to put identity documents or unnecessary personal data in the retained reason.
 
 ## Threats and controls
 
@@ -105,6 +109,7 @@ Accounts with any reviewer or administrator grant history are refused by self-se
 | Session theft                         | High-entropy server-issued token, HTTPS, `HttpOnly`, short fresh-session window, revocation |
 | Horizontal learner-data access        | Database session validation plus user-ID predicates at the data layer                       |
 | Reviewer privilege escalation         | Explicit database grants, deny-by-default roles, fresh admin session, immutable audit       |
+| Privileged self-erasure or audit loss | Second-admin check, exact confirmation, tombstone, retained role/content attribution        |
 | Unsafe account linking                | Stable provider subject and no email-only implicit merge                                    |
 | Development bypass in production      | Environment validation rejects production startup                                           |
 | Forged forwarded client address       | ALB-only origin ingress, append mode, and exact trusted-proxy CIDRs                         |
@@ -124,7 +129,7 @@ The implementation is not complete until automated tests cover:
 - reviewer grant/revocation with fresh-session enforcement and audit evidence;
 - logout on one device and revoke-other-devices behavior;
 - export scope and credential exclusion;
-- administrator-assisted erasure and pseudonymization for privileged accounts; and
+- administrator-assisted pseudonymization, second-admin denial, and retained-attribution checks;
 - secure cookie attributes in a production-mode integration test.
 
 ## Primary references
