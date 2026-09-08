@@ -70,6 +70,8 @@ Runtime configuration must come from the deployment platform, never from an imag
 
 The production environment validator refuses to start with development identity switches, missing authentication configuration, a non-HTTPS/non-origin public URL, or a non-PostgreSQL database URL. Billing remains inert unless `BILLING_ENABLED=true`; when enabled, configuration must include mode-matching Stripe credentials plus the server-owned price and product IDs. Live Stripe mode is rejected outside production. AWS variables remain absent until infrastructure is approved.
 
+Application database access is deliberately bounded per process: five pooled connections in development and ten in test/production, a five-second connection deadline, a 15-second PostgreSQL statement deadline, a 20-second client query deadline, a 15-second idle-transaction deadline, and a 15-minute maximum connection lifetime. Connections identify their environment through `application_name`, use keepalive, and verify TLS certificates in production. These are defensive defaults rather than proven capacity settings; the staging load-and-pool drill must reconcile task count times pool size with the selected RDS connection budget before launch.
+
 Stripe sandbox testing has no AWS dependency and can be run locally using the setup in [Billing and entitlement design](BILLING.md). Never set `STRIPE_MODE=live` in a developer environment or include Stripe secrets in an image layer.
 
 Build the temporary migration image from the same commit and run it once before shifting application traffic:
