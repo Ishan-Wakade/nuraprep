@@ -56,3 +56,15 @@ test("has no horizontal overflow on a mobile viewport", async ({ page }) => {
   expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
   await expect(page.getByRole("link", { name: /view roadmap/i })).toBeVisible();
 });
+
+test("gives an unknown route a useful recovery path", async ({ page }) => {
+  const response = await page.goto("/this-route-does-not-exist");
+
+  expect(response?.status()).toBe(404);
+  await expect(
+    page.getByRole("heading", { name: /isn't part of nuraprep/i }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /open math practice/i }),
+  ).toHaveAttribute("href", "/practice");
+});

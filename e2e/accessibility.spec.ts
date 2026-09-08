@@ -12,6 +12,7 @@ const entrySurfaces = [
   ["progress", "/practice/progress"],
   ["account", "/account"],
   ["review queue", "/review"],
+  ["not-found recovery", "/this-route-does-not-exist"],
 ] as const;
 
 test.describe("automated accessibility gate", () => {
