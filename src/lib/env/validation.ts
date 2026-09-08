@@ -40,6 +40,32 @@ export function parseServerEnvironment(
   input: Record<string, string | undefined>,
 ): ServerEnvironment {
   const environment = serverEnvironmentSchema.parse(input);
+  const publicUrl = new URL(environment.NEXT_PUBLIC_APP_URL);
+  const databaseUrl = new URL(environment.DATABASE_URL);
+  const directUrl = environment.DIRECT_URL
+    ? new URL(environment.DIRECT_URL)
+    : null;
+
+  if (
+    publicUrl.username ||
+    publicUrl.password ||
+    publicUrl.search ||
+    publicUrl.hash ||
+    (publicUrl.pathname !== "/" && publicUrl.pathname !== "")
+  ) {
+    throw new Error(
+      "NEXT_PUBLIC_APP_URL must be an origin without credentials, path, query, or fragment.",
+    );
+  }
+
+  for (const [name, url] of [
+    ["DATABASE_URL", databaseUrl],
+    ["DIRECT_URL", directUrl],
+  ] as const) {
+    if (url && !["postgres:", "postgresql:"].includes(url.protocol)) {
+      throw new Error(`${name} must use the postgres or postgresql protocol.`);
+    }
+  }
 
   if (
     environment.APP_ENV === "production" &&
@@ -48,6 +74,10 @@ export function parseServerEnvironment(
     throw new Error(
       "Development identity bypasses cannot be enabled in production.",
     );
+  }
+
+  if (environment.APP_ENV === "production" && publicUrl.protocol !== "https:") {
+    throw new Error("Production NEXT_PUBLIC_APP_URL must use HTTPS.");
   }
 
   if (
@@ -72,6 +102,12 @@ export function parseServerEnvironment(
   }
 
   if (environment.BILLING_ENABLED) {
+    if (
+      environment.STRIPE_MODE === "live" &&
+      environment.APP_ENV !== "production"
+    ) {
+      throw new Error("Live Stripe mode is allowed only in production.");
+    }
     if (
       !environment.STRIPE_SECRET_KEY ||
       !environment.STRIPE_WEBHOOK_SECRET ||

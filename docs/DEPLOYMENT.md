@@ -68,7 +68,7 @@ Runtime configuration must come from the deployment platform, never from an imag
 - the same `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` used during the image build;
 - environment-specific Google client credentials.
 
-The production environment validator refuses to start with development identity switches or missing authentication configuration. Billing remains inert unless `BILLING_ENABLED=true`; when enabled, configuration must include mode-matching Stripe credentials plus the server-owned price and product IDs. AWS variables remain absent until infrastructure is approved.
+The production environment validator refuses to start with development identity switches, missing authentication configuration, a non-HTTPS/non-origin public URL, or a non-PostgreSQL database URL. Billing remains inert unless `BILLING_ENABLED=true`; when enabled, configuration must include mode-matching Stripe credentials plus the server-owned price and product IDs. Live Stripe mode is rejected outside production. AWS variables remain absent until infrastructure is approved.
 
 Stripe sandbox testing has no AWS dependency and can be run locally using the setup in [Billing and entitlement design](BILLING.md). Never set `STRIPE_MODE=live` in a developer environment or include Stripe secrets in an image layer.
 

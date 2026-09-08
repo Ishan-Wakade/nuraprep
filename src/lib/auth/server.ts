@@ -11,6 +11,7 @@ import {
   authUsers,
   authVerifications,
 } from "@/db/schema";
+import { getAuthCookiePolicy } from "@/lib/auth/cookie-policy";
 import { getServerEnvironment } from "@/lib/env/server";
 
 const environment = getServerEnvironment();
@@ -59,7 +60,7 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    useSecureCookies: environment.APP_ENV === "production",
+    ...getAuthCookiePolicy(environment),
     disableCSRFCheck: false,
     disableOriginCheck: false,
     ipAddress: {

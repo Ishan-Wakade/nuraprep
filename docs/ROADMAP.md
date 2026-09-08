@@ -115,6 +115,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Add atomic per-principal limits for high-impact learner, account, billing, prediction, and generation mutations across application replicas.
 - Configure real Google credentials and test successful, denied, malformed, and replayed provider callbacks before enabling production sign-in.
 - [x] Add second-administrator pseudonymization for privileged accounts without breaking immutable content-audit attribution.
+- [x] Enforce canonical HTTPS production origins, PostgreSQL URL protocols, non-production live-Stripe denial, and an explicit tested cookie policy.
 - Verify provider CSRF/state/nonce and production cookie behavior with real provider fixtures.
 
 **Exit:** authorization tests cover learner/reviewer/admin boundaries and deletion behavior is documented and verified.

@@ -10,6 +10,8 @@ No learner feature is paywalled yet. The data model and resolver distinguish `FR
 
 NuraPrep creates Checkout Sessions and Customer Portal Sessions on the server, then redirects the authenticated learner to Stripe-hosted pages. Card numbers, security codes, and payment-method details never pass through NuraPrep's React components, route handlers, logs, or PostgreSQL database.
 
+Live Stripe mode is rejected unless `APP_ENV=production`. This prevents a developer or test process from accepting a live secret even when the remaining billing identifiers are syntactically valid. Production can still run Stripe test mode for a controlled pre-launch drill; billing remains disabled unless every required value is present and `BILLING_ENABLED=true`.
+
 The browser cannot choose a price. The server reads one configured recurring price ID and creates a quantity-one subscription. Existing customers are reused through a unique local user-to-customer mapping and a stable customer-creation idempotency key.
 
 ## Trust boundary and data model
