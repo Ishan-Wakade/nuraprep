@@ -144,7 +144,7 @@ To exercise the production-style image locally instead, run `docker compose --pr
 
 ## Environment variables
 
-`.env.example` is the authoritative inventory. Variables are grouped by delivery phase, and secrets must never use the `NEXT_PUBLIC_` prefix. Local database values are development-only; planned integrations use separate staging and production credentials. Production startup requires `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET`; the auth secret must be unique per environment and at least 32 characters.
+`.env.example` is the authoritative inventory. Variables are grouped by delivery phase, and secrets must never use the `NEXT_PUBLIC_` prefix. Local database values are development-only; planned integrations use separate staging and production credentials. Production startup requires unique auth and Server Action encryption keys, Google OAuth credentials, and explicit reverse-proxy CIDRs. The same Server Action key is supplied securely to the image build and all tasks so rolling deployments do not create incompatible action encryption.
 
 ## Quality checks
 

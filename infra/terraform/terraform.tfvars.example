@@ -11,6 +11,9 @@ migration_image_uri = "123456789012.dkr.ecr.us-east-1.amazonaws.com/nuraprep-mig
 
 google_client_id     = "replace-me.apps.googleusercontent.com"
 google_client_secret = "replace-me"
+# Generate once with `openssl rand -base64 32`; supply the same protected value
+# as the Docker BuildKit secret and this Terraform variable.
+next_server_actions_encryption_key = "replace-with-base64-encoded-32-byte-key"
 
 # Billing remains inert until a separate Stripe sandbox review succeeds.
 billing_enabled = false

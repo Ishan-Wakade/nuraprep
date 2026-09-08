@@ -1,6 +1,6 @@
 # Authentication and account-security design
 
-Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, shared database rate limiting, session lifecycle/export audit events, sign-in and sign-out surfaces, account-scoped learner profiles, fresh-session-gated portable export, signed-in-device visibility, transactional session revocation, transactional learner erasure, environment fail-closed checks, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation without exposing tokens, audit creation, rate-limit enforcement, reviewer denial/approval, export credential exclusion, stale-session denial, complete learner erasure, and privileged-account refusal without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's broad direct deletion endpoint remains disabled because NuraPrep owns its narrower data-erasure transaction.
+Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, shared database rate limiting, session lifecycle/export audit events, sign-in and sign-out surfaces, account-scoped learner profiles, fresh-session-gated portable export, signed-in-device visibility, transactional session revocation, transactional learner erasure, environment fail-closed checks, explicit proxy trust, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation without exposing tokens, audit creation, rate-limit enforcement, reviewer denial/approval, export credential exclusion, stale-session denial, complete learner erasure, and privileged-account refusal without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's broad direct deletion endpoint remains disabled because NuraPrep owns its narrower data-erasure transaction.
 
 NuraPrep will use Google OpenID Connect through Better Auth with its Drizzle/PostgreSQL adapter. The application will keep database-backed, revocable sessions and will not request access to Google APIs beyond the identity scopes needed for sign-in. Development identities remain available only behind explicit local switches that already fail closed when `APP_ENV=production`.
 
@@ -44,7 +44,11 @@ The account page shows coarse device type, session timestamps, and IP address on
 
 PostgreSQL records `SESSION_CREATED` and `SESSION_REVOKED` from the session table itself, so direct library and application writes have the same transaction-bound audit behavior. A completed portable export records `DATA_EXPORT_DOWNLOADED`; failed freshness checks do not. Account erasure suppresses new lifecycle events only inside its transaction because it removes the account's audit history and writes a separate non-identifying receipt.
 
-Better Auth rate limiting is enabled in every environment and stored in PostgreSQL so multiple containers cannot each grant a separate in-memory allowance. The general auth limit is 120 requests per 60 seconds, while social sign-in is limited to five starts per 60 seconds for one client/path key. Better Auth atomically consumes a bucket and prunes records older than the longest configured window. The bucket key may contain a client IP but is not linked to a user and has minute-scale retention. The load balancer must sanitize forwarded-IP headers before production; broad, user-controlled proxy trust is not configured in application code.
+Better Auth rate limiting is enabled in every environment and stored in PostgreSQL so multiple containers cannot each grant a separate in-memory allowance. The general auth limit is 120 requests per 60 seconds, while social sign-in is limited to five starts per 60 seconds for one client/path key. Better Auth atomically consumes a bucket and prunes records older than the longest configured window. The bucket key may contain a client IP but is not linked to a user and has minute-scale retention.
+
+Production accepts client IPs only from `X-Forwarded-For` chains interpreted with an explicit `TRUSTED_PROXY_CIDRS` allowlist. The AWS target fixes the ALB to append mode, disables client-port inclusion, restricts ECS ingress to the ALB security group, and supplies only the two ALB subnet CIDRs as trusted proxies. Better Auth then walks the chain from right to left and rejects malformed hops. Production startup fails if the proxy list is empty or malformed; broad values such as `0.0.0.0/0` are operationally prohibited. Forwarded host/protocol trust remains off because the canonical base URL is configured directly.
+
+Self-hosted image builds and all running tasks share one base64-encoded 32-byte `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`. The key enters Docker only through a BuildKit secret mount and enters ECS through Secrets Manager. This supports multiple tasks and rolling deployments without exposing the key as a Docker build argument. Rotating it is a coordinated build-and-runtime release, not an ordinary environment toggle.
 
 ## Google configuration
 
@@ -58,7 +62,7 @@ Account linking fails closed. An existing verified email does not silently merge
 - Every Server Action repeats authentication and ownership checks immediately before mutation.
 - `/review` data and actions require an active `REVIEWER` or `ADMIN` grant retrieved from PostgreSQL.
 - Only `ADMIN` can create or revoke reviewer grants, and the target, actor, reason, and timestamp are audited.
-- Production startup fails if Google credentials, the auth secret, or the production base URL are absent, or if either development bypass is enabled.
+- Production startup fails if Google credentials, auth and Server Action secrets, trusted proxy CIDRs, or the production base URL are absent, or if either development bypass is enabled.
 - Authentication errors disclose no account-existence or provider-token details.
 
 ## Account export and deletion
@@ -84,6 +88,8 @@ Accounts with any reviewer or administrator grant history are refused by self-se
 | Reviewer privilege escalation         | Explicit database grants, deny-by-default roles, fresh admin session, immutable audit       |
 | Unsafe account linking                | Stable provider subject and no email-only implicit merge                                    |
 | Development bypass in production      | Environment validation rejects production startup                                           |
+| Forged forwarded client address       | ALB-only origin ingress, append mode, and exact trusted-proxy CIDRs                         |
+| Incompatible Server Action encryption | One protected build/runtime key shared across every self-hosted task                        |
 | Orphaned personal data after deletion | One documented transaction, FK tests, export/deletion integration tests                     |
 
 ## Verification plan

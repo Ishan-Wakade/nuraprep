@@ -1,13 +1,20 @@
 import { z } from "zod";
 
+import { parseTrustedProxyCidrs } from "@/lib/security/network";
+
 const serverEnvironmentSchema = z.object({
   APP_ENV: z.enum(["development", "test", "production"]).default("development"),
   NEXT_PUBLIC_APP_URL: z.url(),
   DATABASE_URL: z.url(),
   DIRECT_URL: z.url().optional(),
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
+  NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: z
+    .string()
+    .regex(/^[A-Za-z0-9+/]{43}=$/)
+    .optional(),
   GOOGLE_CLIENT_ID: z.string().min(1).optional(),
   GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+  TRUSTED_PROXY_CIDRS: z.string().default("").transform(parseTrustedProxyCidrs),
   BILLING_ENABLED: z
     .enum(["true", "false"])
     .default("false")
@@ -54,10 +61,13 @@ export function parseServerEnvironment(
 
   if (
     environment.APP_ENV === "production" &&
-    (!environment.BETTER_AUTH_SECRET || !environment.GOOGLE_CLIENT_ID)
+    (!environment.BETTER_AUTH_SECRET ||
+      !environment.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY ||
+      !environment.GOOGLE_CLIENT_ID ||
+      environment.TRUSTED_PROXY_CIDRS.length === 0)
   ) {
     throw new Error(
-      "Production requires BETTER_AUTH_SECRET and Google OAuth credentials.",
+      "Production requires auth and Server Action secrets, Google OAuth credentials, and explicit trusted proxy CIDRs.",
     );
   }
 

@@ -71,6 +71,17 @@ variable "google_client_id" {
   sensitive   = true
 }
 
+variable "next_server_actions_encryption_key" {
+  description = "Base64-encoded 32-byte key supplied to both the reviewed image build and every running app task."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9+/]{43}=$", var.next_server_actions_encryption_key))
+    error_message = "next_server_actions_encryption_key must be a base64-encoded 32-byte key such as the output of openssl rand -base64 32."
+  }
+}
+
 variable "google_client_secret" {
   description = "Environment-specific Google OAuth client secret."
   type        = string

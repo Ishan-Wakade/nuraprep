@@ -7,6 +7,16 @@ const baseEnvironment = {
   DATABASE_URL: "postgresql://example.invalid/nuraprep",
 };
 
+const productionEnvironment = {
+  ...baseEnvironment,
+  APP_ENV: "production",
+  BETTER_AUTH_SECRET: "b".repeat(32),
+  NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: "A".repeat(43) + "=",
+  GOOGLE_CLIENT_ID: "google-client",
+  GOOGLE_CLIENT_SECRET: "google-secret",
+  TRUSTED_PROXY_CIDRS: "10.42.0.0/24,10.42.1.0/24",
+};
+
 describe("parseServerEnvironment", () => {
   it("allows explicit development identities only outside production", () => {
     expect(
@@ -28,8 +38,10 @@ describe("parseServerEnvironment", () => {
         APP_ENV: "production",
         DEV_LEARNER_ENABLED: "true",
         BETTER_AUTH_SECRET: "a".repeat(32),
+        NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: "A".repeat(43) + "=",
         GOOGLE_CLIENT_ID: "google-client",
         GOOGLE_CLIENT_SECRET: "google-secret",
+        TRUSTED_PROXY_CIDRS: "10.42.0.0/24",
       }),
     ).toThrow("Development identity bypasses cannot be enabled in production.");
   });
@@ -45,25 +57,36 @@ describe("parseServerEnvironment", () => {
     );
   });
 
-  it("fails production closed without a strong secret and Google credentials", () => {
+  it("fails production closed without auth, action, OAuth, and proxy configuration", () => {
     expect(() =>
       parseServerEnvironment({
         ...baseEnvironment,
         APP_ENV: "production",
       }),
     ).toThrow(
-      "Production requires BETTER_AUTH_SECRET and Google OAuth credentials.",
+      "Production requires auth and Server Action secrets, Google OAuth credentials, and explicit trusted proxy CIDRs.",
     );
 
-    expect(
+    expect(parseServerEnvironment(productionEnvironment)).toMatchObject({
+      APP_ENV: "production",
+      TRUSTED_PROXY_CIDRS: ["10.42.0.0/24", "10.42.1.0/24"],
+    });
+  });
+
+  it("rejects malformed action keys and trusted proxy ranges", () => {
+    expect(() =>
       parseServerEnvironment({
-        ...baseEnvironment,
-        APP_ENV: "production",
-        BETTER_AUTH_SECRET: "b".repeat(32),
-        GOOGLE_CLIENT_ID: "google-client",
-        GOOGLE_CLIENT_SECRET: "google-secret",
+        ...productionEnvironment,
+        NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: "not-base64",
       }),
-    ).toMatchObject({ APP_ENV: "production" });
+    ).toThrow();
+
+    expect(() =>
+      parseServerEnvironment({
+        ...productionEnvironment,
+        TRUSTED_PROXY_CIDRS: "10.42.0.0/99",
+      }),
+    ).toThrow("TRUSTED_PROXY_CIDRS contains an invalid IP address or CIDR");
   });
 
   it("rejects auth secrets shorter than 32 characters", () => {

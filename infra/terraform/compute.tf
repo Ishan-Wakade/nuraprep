@@ -67,6 +67,8 @@ resource "aws_lb" "app" {
   subnets                    = [for subnet in aws_subnet.public : subnet.id]
   drop_invalid_header_fields = true
   enable_deletion_protection = var.environment == "production"
+  xff_header_processing_mode = "append"
+  enable_xff_client_port     = false
 }
 
 resource "aws_lb_target_group" "app" {

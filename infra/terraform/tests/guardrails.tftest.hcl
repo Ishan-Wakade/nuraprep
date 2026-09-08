@@ -23,17 +23,18 @@ mock_provider "aws" {
 }
 
 variables {
-  environment          = "staging"
-  app_url              = "https://staging.example.com"
-  certificate_arn      = "arn:aws:acm:us-east-1:123456789012:certificate/test"
-  app_image_uri        = "123456789012.dkr.ecr.us-east-1.amazonaws.com/nuraprep-app@sha256:test"
-  migration_image_uri  = "123456789012.dkr.ecr.us-east-1.amazonaws.com/nuraprep-migrate@sha256:test"
-  google_client_id     = "test.apps.googleusercontent.com"
-  google_client_secret = "test-only-secret"
-  alert_email          = "owner@example.com"
-  desired_task_count   = 0
-  maximum_task_count   = 1
-  monthly_budget_usd   = 100
+  environment                        = "staging"
+  app_url                            = "https://staging.example.com"
+  certificate_arn                    = "arn:aws:acm:us-east-1:123456789012:certificate/test"
+  app_image_uri                      = "123456789012.dkr.ecr.us-east-1.amazonaws.com/nuraprep-app@sha256:test"
+  migration_image_uri                = "123456789012.dkr.ecr.us-east-1.amazonaws.com/nuraprep-migrate@sha256:test"
+  google_client_id                   = "test.apps.googleusercontent.com"
+  google_client_secret               = "test-only-secret"
+  next_server_actions_encryption_key = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+  alert_email                        = "owner@example.com"
+  desired_task_count                 = 0
+  maximum_task_count                 = 1
+  monthly_budget_usd                 = 100
 }
 
 run "staging_bootstrap_is_private_and_recoverable" {

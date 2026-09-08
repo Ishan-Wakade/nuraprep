@@ -20,6 +20,8 @@ Validation and the mocked guardrail tests do not create infrastructure or requir
 - Application and database tasks have no public IPs; only the load balancer is internet-facing.
 - The database is not publicly reachable, requires TLS, encrypts storage, and exports PostgreSQL logs.
 - ECS receives runtime values from one Secrets Manager document. Terraform 1.16 write-only fields keep generated database and auth values out of plans and state.
+- The ALB appends the last-hop client address, ECS accepts traffic only from the ALB security group, and the application trusts only the two explicit ALB subnet CIDRs.
+- One owner-generated Server Action encryption key must be provided to both the BuildKit image build and Terraform runtime secret; a matching non-secret build-version label prevents stale Docker cache reuse, and the key is intentionally not generated after images already exist.
 - Image variables require digest-pinned ECR URIs.
 - Production configuration fails validation unless RDS is Multi-AZ and deletion-protected, final snapshots are enabled, each app subnet has independent NAT egress, and at least two app tasks are requested.
 - Staging can use one NAT gateway and one database instance to reduce recurring cost.

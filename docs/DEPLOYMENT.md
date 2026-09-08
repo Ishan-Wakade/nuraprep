@@ -48,11 +48,13 @@ Volume deletion is intentionally not part of the normal command because it destr
 
 ## Image build and release contract
 
-The public application origin is the only build argument; it is not a secret:
+The public application origin is the only build argument; it is not a secret. Self-hosted Server Actions also require one stable base64-encoded 32-byte key. Generate it once, store it in an approved secret store, and expose it to BuildKit by environment variable name rather than value:
 
 ```bash
 docker build \
+  --secret id=next_server_actions_encryption_key,env=NEXT_SERVER_ACTIONS_ENCRYPTION_KEY \
   --build-arg NEXT_PUBLIC_APP_URL=https://staging.example.com \
+  --build-arg NEXT_SERVER_ACTIONS_KEY_VERSION=staging-v1 \
   --target runner \
   --tag nuraprep:staging .
 ```
@@ -63,6 +65,7 @@ Runtime configuration must come from the deployment platform, never from an imag
 - the exact HTTPS `NEXT_PUBLIC_APP_URL` used at build time;
 - a TLS-validated `DATABASE_URL`;
 - a unique `BETTER_AUTH_SECRET` of at least 32 characters; and
+- the same `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` used during the image build;
 - environment-specific Google client credentials.
 
 The production environment validator refuses to start with development identity switches or missing authentication configuration. Billing remains inert unless `BILLING_ENABLED=true`; when enabled, configuration must include mode-matching Stripe credentials plus the server-owned price and product IDs. AWS variables remain absent until infrastructure is approved.
@@ -73,7 +76,9 @@ Build the temporary migration image from the same commit and run it once before 
 
 ```bash
 docker build \
+  --secret id=next_server_actions_encryption_key,env=NEXT_SERVER_ACTIONS_ENCRYPTION_KEY \
   --build-arg NEXT_PUBLIC_APP_URL=https://staging.example.com \
+  --build-arg NEXT_SERVER_ACTIONS_KEY_VERSION=staging-v1 \
   --target builder \
   --tag nuraprep-migrate:staging .
 
@@ -85,7 +90,7 @@ docker run --rm \
   nuraprep-migrate:staging pnpm db:migrate
 ```
 
-In a real deployment, secrets are injected by the orchestrator and are not written directly on a command line. The release process must stop if migration fails. Destructive rollback migrations are not automatic; application rollback must remain compatible with the migrated schema or use an explicitly reviewed forward fix.
+`NEXT_SERVER_ACTIONS_KEY_VERSION` is a non-secret rotation label that invalidates Docker's build cache; increment it whenever the underlying protected key changes. In a real deployment, runtime secrets are injected by the orchestrator and are not written directly on a command line. The release process must stop if migration fails. Destructive rollback migrations are not automatic; application rollback must remain compatible with the migrated schema or use an explicitly reviewed forward fix.
 
 ## AWS infrastructure: validated, not applied
 
@@ -134,6 +139,7 @@ Before the first plan that could lead to an apply, the owner must provide or app
 - a calculator-generated monthly estimate for the exact region and selected sizes;
 - a hostname, DNS ownership, and validated ACM certificate;
 - separate staging Google OAuth credentials and approved callback URL;
+- one protected Server Action encryption key supplied to both BuildKit and Terraform;
 - two ECR image digests built from the same reviewed commit;
 - a private, versioned, encrypted Terraform-state bucket with narrow operator access;
 - backup retention, deletion, incident-notification, and teardown expectations; and
@@ -158,7 +164,7 @@ The final command uses mocked providers to prove the private-network, recoverabl
 
 The checked-in `backend.hcl.example` and `terraform.tfvars.example` contain placeholders only. Copy them to their gitignored real names, supply secrets through protected `TF_VAR_*` environment variables where possible, and never commit a plan file or credentials.
 
-1. Build the `runner` and `builder` Docker stages from one reviewed commit, push them to pre-created ECR repositories, and record their immutable `@sha256:` URIs.
+1. Build the `runner` and `builder` Docker stages from one reviewed commit using the same protected Server Action BuildKit secret, push them to pre-created ECR repositories, and record their immutable `@sha256:` URIs.
 2. Initialize the pre-created remote state backend with `terraform init -backend-config=backend.hcl`.
 3. Generate a saved staging plan with `desired_task_count=0`. This creates the network and data services without starting an app against an empty schema.
 4. Review the plan for exact account, region, names, counts, replacement actions, secret handling, and monthly cost. Applying requires a separate explicit owner approval.

@@ -16,11 +16,20 @@ FROM base AS builder
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+ARG NEXT_SERVER_ACTIONS_KEY_VERSION=local
 ENV APP_ENV=test
 ENV BETTER_AUTH_SECRET=container-build-only-secret-not-used-at-runtime
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
-RUN pnpm build
+# A staging/production build supplies the stable Server Action key through a
+# BuildKit secret. Local and CI test builds may omit it and use Next.js's
+# disposable generated key.
+RUN --mount=type=secret,id=next_server_actions_encryption_key,required=false \
+    test -n "$NEXT_SERVER_ACTIONS_KEY_VERSION"; \
+    if [ -s /run/secrets/next_server_actions_encryption_key ]; then \
+      export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(cat /run/secrets/next_server_actions_encryption_key)"; \
+    fi; \
+    pnpm build
 
 FROM node:24-alpine AS runner
 ENV NODE_ENV=production

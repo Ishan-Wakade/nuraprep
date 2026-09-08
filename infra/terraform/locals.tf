@@ -24,6 +24,7 @@ locals {
     { name = "DEV_REVIEWER_ENABLED", value = "false" },
     { name = "BILLING_ENABLED", value = tostring(var.billing_enabled) },
     { name = "STRIPE_MODE", value = var.stripe_mode },
+    { name = "TRUSTED_PROXY_CIDRS", value = "10.42.0.0/24,10.42.1.0/24" },
     { name = "SOURCE_ARTIFACTS_BUCKET", value = aws_s3_bucket.source_artifacts.id },
   ]
 
@@ -31,6 +32,7 @@ locals {
     { name = "DATABASE_URL", valueFrom = "${aws_secretsmanager_secret.runtime.arn}:DATABASE_URL::" },
     { name = "DIRECT_URL", valueFrom = "${aws_secretsmanager_secret.runtime.arn}:DIRECT_URL::" },
     { name = "BETTER_AUTH_SECRET", valueFrom = "${aws_secretsmanager_secret.runtime.arn}:BETTER_AUTH_SECRET::" },
+    { name = "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY", valueFrom = "${aws_secretsmanager_secret.runtime.arn}:NEXT_SERVER_ACTIONS_ENCRYPTION_KEY::" },
     { name = "GOOGLE_CLIENT_ID", valueFrom = "${aws_secretsmanager_secret.runtime.arn}:GOOGLE_CLIENT_ID::" },
     { name = "GOOGLE_CLIENT_SECRET", valueFrom = "${aws_secretsmanager_secret.runtime.arn}:GOOGLE_CLIENT_SECRET::" },
   ]

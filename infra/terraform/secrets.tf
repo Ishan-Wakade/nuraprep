@@ -7,11 +7,12 @@ locals {
   database_url = "postgresql://${var.database_username}:${urlencode(ephemeral.random_password.database.result)}@${aws_db_instance.main.address}:5432/${var.database_name}?sslmode=require"
   runtime_secret_payload = jsonencode(merge(
     {
-      DATABASE_URL         = local.database_url
-      DIRECT_URL           = local.database_url
-      BETTER_AUTH_SECRET   = ephemeral.random_password.better_auth.result
-      GOOGLE_CLIENT_ID     = var.google_client_id
-      GOOGLE_CLIENT_SECRET = var.google_client_secret
+      DATABASE_URL                       = local.database_url
+      DIRECT_URL                         = local.database_url
+      BETTER_AUTH_SECRET                 = ephemeral.random_password.better_auth.result
+      NEXT_SERVER_ACTIONS_ENCRYPTION_KEY = var.next_server_actions_encryption_key
+      GOOGLE_CLIENT_ID                   = var.google_client_id
+      GOOGLE_CLIENT_SECRET               = var.google_client_secret
     },
     var.billing_enabled ? {
       STRIPE_SECRET_KEY         = var.stripe_secret_key
