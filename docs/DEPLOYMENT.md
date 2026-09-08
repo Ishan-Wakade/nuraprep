@@ -197,3 +197,17 @@ Before public traffic, staging must pass:
 - a fresh provider-calculator cost estimate with an accepted monthly ceiling.
 
 Until those checks run against a real environment, describe the repository as having validated, cost-gated infrastructure code—not a deployed, production-ready AWS system.
+
+## Repeatable load smoke test
+
+With the local application already running, exercise health, landing, and practice reads using only Node's built-in HTTP client:
+
+```bash
+pnpm test:load
+```
+
+The default run sends 100 requests with concurrency 10, rejects any request error, and uses a deliberately loose 1,500 ms local p95 ceiling. Override the workload or threshold with `LOAD_REQUESTS`, `LOAD_CONCURRENCY`, `LOAD_TIMEOUT_MS`, `LOAD_MAX_P95_MS`, and `LOAD_MAX_ERROR_RATE`. The script prints the exact configuration, elapsed time, status counts, throughput, and nearest-rank p50/p95/p99/max latency as JSON.
+
+The harness refuses a non-local origin unless `ALLOW_REMOTE_LOAD_TEST=true` is explicitly set. That switch is not authorization: obtain the environment owner's approval, define a safe ceiling, and observe application/database metrics before targeting staging. Local numbers vary with hardware and development mode and are not product performance claims. A real staging test must use the release image, realistic read/write distribution and data volume, a warm-up period, longer duration, and concurrent monitoring of ALB, task, database, connection-pool, and error metrics.
+
+Use [the incident-response runbook](INCIDENT_RESPONSE.md) for containment and recovery procedures and [the launch checklist](LAUNCH_CHECKLIST.md) as the final evidence-based go/no-go gate.

@@ -103,7 +103,7 @@ Important boundaries:
 - Adaptive recommendations and score estimates retain their inputs, model version, explanation, and uncertainty.
 - Authentication foundations protect learner and reviewer flows. Billing is disabled by default and ready for a zero-upfront-cost Stripe sandbox exercise; no learner feature is paywalled yet.
 
-See the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md), [Architecture](docs/ARCHITECTURE.md), [authentication and account security](docs/AUTHENTICATION.md), [billing and entitlements](docs/BILLING.md), [container and deployment operations](docs/DEPLOYMENT.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Practice-test blueprint](docs/PRACTICE_TEST.md), [Score estimation](docs/SCORE_ESTIMATION.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), [source research log](docs/SOURCE_RESEARCH_LOG.md), [generation pipeline](docs/GENERATION_PIPELINE.md), and [Roadmap](docs/ROADMAP.md).
+See the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md), [Architecture](docs/ARCHITECTURE.md), [authentication and account security](docs/AUTHENTICATION.md), [billing and entitlements](docs/BILLING.md), [container and deployment operations](docs/DEPLOYMENT.md), [incident-response runbook](docs/INCIDENT_RESPONSE.md), [launch checklist](docs/LAUNCH_CHECKLIST.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Practice-test blueprint](docs/PRACTICE_TEST.md), [Score estimation](docs/SCORE_ESTIMATION.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), [source research log](docs/SOURCE_RESEARCH_LOG.md), [generation pipeline](docs/GENERATION_PIPELINE.md), and [Roadmap](docs/ROADMAP.md).
 
 ## Technology
 
@@ -157,11 +157,14 @@ pnpm test
 pnpm test:db
 pnpm build
 pnpm test:e2e
+pnpm test:load # with the local app already running
 ```
 
 `pnpm check` runs formatting, linting, type-checking, unit tests, and the production build. `pnpm test:db` requires the local PostgreSQL container. `pnpm test:e2e` derives or uses `E2E_DATABASE_URL`, refuses any database name that does not end in `_e2e`, resets only that isolated schema, and applies migrations plus seed data automatically. This keeps synthetic browser fixtures out of the development database. GitHub Actions provisions fresh PostgreSQL databases and runs the complete sequence on every pull request and `main` push.
 
 The browser suite also runs automated WCAG A/AA checks across the public, learner, account, and reviewer entry surfaces. Automated analysis is a regression gate, not a substitute for keyboard, screen-reader, zoom, reduced-motion, and human usability review.
+
+The load command is a bounded local smoke test, not a benchmark claim. It refuses remote targets without an explicit opt-in and prints its workload, thresholds, status counts, throughput, and latency percentiles so results remain interpretable.
 
 ## Deployment direction
 

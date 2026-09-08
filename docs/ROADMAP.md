@@ -138,7 +138,8 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Add validated infrastructure as code for private app hosting, RDS, governed S3, write-only secret injection, logs, alarms, backups, narrow IAM, and account-wide budget alerts.
 - Build and push immutable ECR images, bootstrap remote state, calculate region-specific cost, and receive explicit owner approval before the first staging apply.
 - Separate staging/production, run restore and teardown drills, and document expected cost before approval.
-- Complete privacy policy, terms, accessibility audit, load test, incident runbook, and launch checklist.
+- Complete privacy policy, terms, manual accessibility audit, and staging load test.
+- [x] Add a safe local load-smoke harness, incident-response runbook, and evidence-based launch checklist.
 - [x] Add an automated WCAG A/AA regression gate for public, learner, account, and reviewer entry surfaces.
 - Complete manual keyboard, screen-reader, zoom, reduced-motion, and assistive-technology review before launch.
 
