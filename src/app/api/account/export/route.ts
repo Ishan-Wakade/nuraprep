@@ -4,6 +4,11 @@ import { accountAuditEvents } from "@/db/schema";
 import { requireLearner } from "@/lib/auth/learner";
 import { isFreshSession } from "@/lib/auth/fresh-session";
 import { getCurrentSession } from "@/lib/auth/session";
+import {
+  APPLICATION_RATE_LIMITS,
+  consumeApplicationRateLimit,
+  rateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 export async function GET() {
   const identity = await requireLearner();
@@ -19,6 +24,23 @@ export async function GET() {
         { status: 403, headers: { "Cache-Control": "no-store" } },
       );
     }
+  }
+
+  const rateLimit = await consumeApplicationRateLimit(
+    identity.subject,
+    APPLICATION_RATE_LIMITS.accountExport,
+  );
+  if (!rateLimit.allowed) {
+    return Response.json(
+      { error: rateLimitMessage(rateLimit) },
+      {
+        status: 429,
+        headers: {
+          "Cache-Control": "no-store",
+          "Retry-After": String(rateLimit.retryAfterSeconds),
+        },
+      },
+    );
   }
 
   const exportData = await buildLearnerDataExport(identity);

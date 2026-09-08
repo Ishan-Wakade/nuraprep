@@ -35,6 +35,12 @@ import {
   learnerQuestionReportSchema,
   practiceSessionFiltersSchema,
 } from "@/lib/practice/contracts";
+import {
+  APPLICATION_RATE_LIMITS,
+  consumeApplicationRateLimit,
+  rateLimitMessage,
+  type ApplicationRateLimitPolicy,
+} from "@/lib/security/rate-limit";
 
 export type PracticeActionState = {
   status: "idle" | "error" | "success";
@@ -58,6 +64,11 @@ export async function startPracticeSession(
   formData: FormData,
 ): Promise<PracticeActionState> {
   const identity = await requireLearner();
+  const rateLimit = await enforceLearnerRateLimit(
+    identity.subject,
+    APPLICATION_RATE_LIMITS.learnerSessionStart,
+  );
+  if (rateLimit) return rateLimit;
   const raw = startSessionInputSchema.safeParse(Object.fromEntries(formData));
   if (!raw.success) {
     return { status: "error", message: "Choose valid practice settings." };
@@ -212,6 +223,11 @@ export async function startDiagnosticSession(
   void _previousState;
   void _formData;
   const identity = await requireLearner();
+  const rateLimit = await enforceLearnerRateLimit(
+    identity.subject,
+    APPLICATION_RATE_LIMITS.learnerSessionStart,
+  );
+  if (rateLimit) return rateLimit;
   const database = getDatabase();
   const learner = await ensureLearnerProfile(identity);
   const candidates = await database
@@ -291,6 +307,11 @@ export async function startAdaptiveSession(
 ): Promise<PracticeActionState> {
   void _previousState;
   const identity = await requireLearner();
+  const rateLimit = await enforceLearnerRateLimit(
+    identity.subject,
+    APPLICATION_RATE_LIMITS.learnerSessionStart,
+  );
+  if (rateLimit) return rateLimit;
   const parsed = startAdaptiveInputSchema.safeParse(
     Object.fromEntries(formData),
   );
@@ -351,6 +372,11 @@ export async function startPracticeTestSession(
   void _previousState;
   void _formData;
   const identity = await requireLearner();
+  const rateLimit = await enforceLearnerRateLimit(
+    identity.subject,
+    APPLICATION_RATE_LIMITS.learnerSessionStart,
+  );
+  if (rateLimit) return rateLimit;
   const database = getDatabase();
   const learner = await ensureLearnerProfile(identity);
   const test = await buildPracticeTest(randomUUID());
@@ -419,6 +445,11 @@ export async function submitPracticeAnswer(
   formData: FormData,
 ): Promise<PracticeActionState> {
   const identity = await requireLearner();
+  const rateLimit = await enforceLearnerRateLimit(
+    identity.subject,
+    APPLICATION_RATE_LIMITS.learnerAnswer,
+  );
+  if (rateLimit) return rateLimit;
   const parsed = answerSubmissionSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return {
@@ -708,6 +739,11 @@ export async function submitQuestionReport(
   formData: FormData,
 ): Promise<PracticeActionState> {
   const identity = await requireLearner();
+  const rateLimit = await enforceLearnerRateLimit(
+    identity.subject,
+    APPLICATION_RATE_LIMITS.learnerReport,
+  );
+  if (rateLimit) return rateLimit;
   const parsed = learnerQuestionReportSchema.safeParse(
     Object.fromEntries(formData),
   );
@@ -796,6 +832,11 @@ export async function requestTutorStep(
   formData: FormData,
 ): Promise<PracticeActionState> {
   const identity = await requireLearner();
+  const rateLimit = await enforceLearnerRateLimit(
+    identity.subject,
+    APPLICATION_RATE_LIMITS.learnerTutor,
+  );
+  if (rateLimit) return rateLimit;
   const parsed = tutorRequestSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { status: "error", message: "Invalid tutor request." };
@@ -876,6 +917,16 @@ export async function requestTutorStep(
       ? "A reviewed tutor step is now visible."
       : "That tutor step was already requested.",
   };
+}
+
+async function enforceLearnerRateLimit(
+  principal: string,
+  policy: ApplicationRateLimitPolicy,
+): Promise<PracticeActionState | null> {
+  const decision = await consumeApplicationRateLimit(principal, policy);
+  return decision.allowed
+    ? null
+    : { status: "error", message: rateLimitMessage(decision) };
 }
 
 function buildLearnerAnswer(

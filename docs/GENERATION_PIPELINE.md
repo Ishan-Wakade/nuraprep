@@ -73,6 +73,8 @@ A run receives at most three execution attempts: the initial claim and up to two
 
 A reviewer may cancel only a still-pending request. Cancellation requires a 20–2,000 character reason and stores the authenticated reviewer identity; the database rejects missing evidence, cancellation after a worker claim, and any later mutation of the terminal audit record.
 
+Provider-bound generation requests are limited to twenty per reviewer per hour in shared PostgreSQL storage. The existing per-run micro-cost ceiling remains authoritative; this request limiter protects queue/provider churn but does not replace aggregate budget controls or worker-side wall-clock rate limits.
+
 The reviewer console reports global queue counts, stale leases, historical retry exhaustion, active worst-case cost exposure, recorded provider-cost estimates, and terminal outcomes. These are operational indicators; cost figures are explicitly not represented as billing truth.
 
 Batch accounting reserves each claimed job's full cost ceiling rather than optimistic estimated spend. `maxJobs` is bounded to 100, the batch budget is bounded to the corresponding 500,000,000-micro ceiling, and the runner stops when no eligible job fits the remaining budget. Actual provider usage is still recorded per run. This is a safety budget, not billing or a claim of provider-price accuracy.

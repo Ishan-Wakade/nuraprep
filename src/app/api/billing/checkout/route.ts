@@ -3,6 +3,11 @@ import { auth } from "@/lib/auth/server";
 import { hasTrustedMutationOrigin } from "@/lib/billing/request-security";
 import { getStripeClient } from "@/lib/billing/stripe";
 import { getServerEnvironment } from "@/lib/env/server";
+import {
+  APPLICATION_RATE_LIMITS,
+  consumeApplicationRateLimit,
+  rateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +25,20 @@ export async function POST(request: Request) {
     return Response.redirect(
       `${environment.NEXT_PUBLIC_APP_URL}/sign-in?returnTo=/account`,
       303,
+    );
+  }
+
+  const rateLimit = await consumeApplicationRateLimit(
+    session.user.id,
+    APPLICATION_RATE_LIMITS.billingSession,
+  );
+  if (!rateLimit.allowed) {
+    return Response.json(
+      { error: rateLimitMessage(rateLimit) },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+      },
     );
   }
 

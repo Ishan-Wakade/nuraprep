@@ -190,6 +190,13 @@
       "when": 1788828398517,
       "tag": "20260908004638_robust_sentry",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1788841966660,
+      "tag": "20260908043246_slimy_king_bedlam",
+      "breakpoints": true
     }
   ]
 }

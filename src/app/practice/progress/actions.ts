@@ -16,6 +16,11 @@ import {
 } from "@/db/schema";
 import { requireLearner } from "@/lib/auth/learner";
 import { STUDY_PLAN_MODEL_VERSION } from "@/lib/score/estimator";
+import {
+  APPLICATION_RATE_LIMITS,
+  consumeApplicationRateLimit,
+  rateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 export type ScoreActionState = {
   status: "idle" | "success" | "error";
@@ -29,6 +34,13 @@ export async function generateScoreEstimate(
   void _previousState;
   void _formData;
   const identity = await requireLearner();
+  const rateLimit = await consumeApplicationRateLimit(
+    identity.subject,
+    APPLICATION_RATE_LIMITS.scoreEstimate,
+  );
+  if (!rateLimit.allowed) {
+    return { status: "error", message: rateLimitMessage(rateLimit) };
+  }
   const learner = await ensureLearnerProfile(identity);
   const { result, skillIds } = await calculateLearnerScoreEstimate(learner.id);
   const database = getDatabase();

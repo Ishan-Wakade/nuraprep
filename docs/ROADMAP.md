@@ -112,9 +112,10 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Add fresh-session and typed-confirmation learner account erasure, including linked reviewer evidence, rollback verification, and a non-identifying receipt.
 - [x] Add database-transaction session lifecycle/export audit events, shared atomic auth rate limits, and global browser-safety response headers.
 - [x] Add explicit ALB forwarded-IP handling, validated proxy CIDRs, and a stable BuildKit/Secrets Manager boundary for self-hosted Server Action encryption.
+- [x] Add atomic per-principal limits for high-impact learner, account, billing, prediction, and generation mutations across application replicas.
 - Configure real Google credentials and test successful, denied, malformed, and replayed provider callbacks before enabling production sign-in.
 - Design administrator-assisted erasure for accounts with reviewer or administrator history without breaking content-audit integrity.
-- Verify provider CSRF/state/nonce and production cookie behavior; add broader application mutation-abuse controls.
+- Verify provider CSRF/state/nonce and production cookie behavior with real provider fixtures.
 
 **Exit:** authorization tests cover learner/reviewer/admin boundaries and deletion behavior is documented and verified.
 

@@ -11,6 +11,11 @@ import { isFreshSession } from "@/lib/auth/fresh-session";
 import { getCurrentSession } from "@/lib/auth/session";
 import { getStripeClient } from "@/lib/billing/stripe";
 import { getServerEnvironment } from "@/lib/env/server";
+import {
+  APPLICATION_RATE_LIMITS,
+  consumeApplicationRateLimit,
+  rateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 export type AccountActionState = {
   status: "idle" | "success" | "error";
@@ -30,6 +35,14 @@ export async function revokeOtherSessions(
       status: "error",
       message: "Your session is no longer active. Sign in again to continue.",
     };
+  }
+
+  const rateLimit = await consumeApplicationRateLimit(
+    current.user.id,
+    APPLICATION_RATE_LIMITS.accountSecurityMutation,
+  );
+  if (!rateLimit.allowed) {
+    return { status: "error", message: rateLimitMessage(rateLimit) };
   }
 
   const database = getDatabase();
@@ -101,6 +114,14 @@ export async function deleteAccount(
       message:
         "Reviewer and administrator accounts require an administrator-assisted erasure so content audit history remains trustworthy.",
     };
+  }
+
+  const rateLimit = await consumeApplicationRateLimit(
+    current.user.id,
+    APPLICATION_RATE_LIMITS.accountSecurityMutation,
+  );
+  if (!rateLimit.allowed) {
+    return { status: "error", message: rateLimitMessage(rateLimit) };
   }
 
   let externalBillingRemoved = false;

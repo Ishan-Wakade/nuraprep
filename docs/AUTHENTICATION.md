@@ -1,6 +1,6 @@
 # Authentication and account-security design
 
-Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, shared database rate limiting, session lifecycle/export audit events, sign-in and sign-out surfaces, account-scoped learner profiles, fresh-session-gated portable export, signed-in-device visibility, transactional session revocation, transactional learner erasure, environment fail-closed checks, explicit proxy trust, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation without exposing tokens, audit creation, rate-limit enforcement, reviewer denial/approval, export credential exclusion, stale-session denial, complete learner erasure, and privileged-account refusal without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's broad direct deletion endpoint remains disabled because NuraPrep owns its narrower data-erasure transaction.
+Status: reviewed design with core Better Auth tables, encrypted OAuth-token configuration, database sessions, shared authentication and application rate limiting, session lifecycle/export audit events, sign-in and sign-out surfaces, account-scoped learner profiles, fresh-session-gated portable export, signed-in-device visibility, transactional session revocation, transactional learner erasure, environment fail-closed checks, explicit proxy trust, database-enforced reviewer grants, role-grant constraints, and account-audit boundaries implemented. Browser tests exercise signed sessions, revocation without exposing tokens, audit creation, concurrent rate-limit enforcement, reviewer denial/approval, export credential exclusion, stale-session denial, complete learner erasure, and privileged-account refusal without contacting Google. The production Google callback remains disabled until real credentials and provider-response fixtures are available. Better Auth's broad direct deletion endpoint remains disabled because NuraPrep owns its narrower data-erasure transaction.
 
 NuraPrep will use Google OpenID Connect through Better Auth with its Drizzle/PostgreSQL adapter. The application will keep database-backed, revocable sessions and will not request access to Google APIs beyond the identity scopes needed for sign-in. Development identities remain available only behind explicit local switches that already fail closed when `APP_ENV=production`.
 
@@ -25,6 +25,7 @@ The authentication foundation includes:
 - `auth_sessions`: unique credential token, user, expiry, creation/update timestamps, and optional coarse device metadata;
 - `auth_verifications`: short-lived verification state required by the library;
 - `auth_rate_limits`: a short-lived, shared request bucket used to enforce atomic limits across application replicas;
+- `application_rate_limits`: hashed principal/scope keys, fixed-window counts, and short expirations for authenticated high-impact operations;
 - `auth_role_grants`: user, `LEARNER`/`REVIEWER`/`ADMIN` role, granting principal, reason, and immutable timestamps; and
 - `account_audit_events`: append-only sign-in, sign-out, revocation, role, export, and deletion events with no raw credential values.
 
@@ -50,6 +51,22 @@ Production accepts client IPs only from `X-Forwarded-For` chains interpreted wit
 
 Self-hosted image builds and all running tasks share one base64-encoded 32-byte `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`. The key enters Docker only through a BuildKit secret mount and enters ECS through Secrets Manager. This supports multiple tasks and rolling deployments without exposing the key as a Docker build argument. Rotating it is a coordinated build-and-runtime release, not an ordinary environment toggle.
 
+Application actions have a second, identity-based limiter because IP limits alone are weak after sign-in and in shared networks. One PostgreSQL upsert atomically consumes a fixed-window allowance across every application replica. The stored key is a SHA-256 digest of a domain separator, action scope, and internal principal; raw user IDs, email addresses, and IP addresses are not stored in this table. Expired rows older than one day are pruned in bounded batches during later requests. A database failure rejects the protected operation instead of silently bypassing the control.
+
+| Protected operation                  | Allowance per account or reviewer |
+| ------------------------------------ | --------------------------------- |
+| Start any learner session            | 30 per hour                       |
+| Submit answers                       | 300 per hour                      |
+| Report question problems             | 10 per hour                       |
+| Reveal reviewed tutor steps          | 60 per hour                       |
+| Generate readiness estimates         | 12 per hour                       |
+| Download portable account exports    | 5 per hour                        |
+| Create Checkout or Portal sessions   | 10 combined per hour              |
+| Queue provider-bound generation work | 20 per reviewer per hour          |
+| Revoke sessions or request erasure   | 20 combined per hour              |
+
+These are abuse ceilings, not learner targets or product quotas. The full 38-question timed flow remains comfortably below the answer allowance. Browser tests issue concurrent export requests and prove that the database admits exactly the configured maximum rather than granting one allowance per process.
+
 ## Google configuration
 
 Request only `openid`, `email`, and `profile`. Require Google's verified-email claim, use Google's stable provider subject as the external identifier, and configure exact callback URLs separately for local, staging, and production environments. Google requires an exact redirect-URI match and recommends `state`; its OpenID Connect documentation also describes `nonce` for replay protection. Those checks remain library-owned rather than being reimplemented in application code.
@@ -68,6 +85,8 @@ Account linking fails closed. An existing verified email does not silently merge
 ## Account export and deletion
 
 Export produces a versioned, user-scoped JSON archive of profile, non-token session metadata, practice sessions, attempts, reports, report-status history, tutor interactions, estimates, and study plans. It excludes provider credentials, session tokens, answer keys, and internal reviewer identities or notes. The response is rebuilt at request time, requires a fresh authenticated session outside local development, is marked `no-store` and `nosniff`, and records an audit event only after the archive is built successfully.
+
+The export also excludes transient abuse-control rows. They contain no raw principal and expire automatically; after erasure their digest is no longer linkable through NuraPrep account tables.
 
 Deletion requires a session created within the last 15 minutes plus an exact typed `DELETE` confirmation. The application calls one PostgreSQL erasure procedure that locks the account; removes learner-derived improvement evidence; deletes report history, practice and tutor history, score estimates, and study plans in dependency order; removes the learner profile, account audit events, role grants, provider credentials, sessions, and email-linked verification records; then deletes the auth user. No calibration record is retained in version 1. The procedure writes a receipt containing only per-table deletion counts, a schema version, and completion time; it stores no user ID, email, provider subject, token, answer, or report text.
 
@@ -90,6 +109,7 @@ Accounts with any reviewer or administrator grant history are refused by self-se
 | Development bypass in production      | Environment validation rejects production startup                                           |
 | Forged forwarded client address       | ALB-only origin ingress, append mode, and exact trusted-proxy CIDRs                         |
 | Incompatible Server Action encryption | One protected build/runtime key shared across every self-hosted task                        |
+| Authenticated action flooding         | Atomic per-principal database limits shared by all application replicas                     |
 | Orphaned personal data after deletion | One documented transaction, FK tests, export/deletion integration tests                     |
 
 ## Verification plan

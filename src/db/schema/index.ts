@@ -296,6 +296,30 @@ export const authRateLimits = pgTable("auth_rate_limits", {
   lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 });
 
+export const applicationRateLimits = pgTable(
+  "application_rate_limits",
+  {
+    key: varchar("key", { length: 64 }).primaryKey(),
+    scope: varchar("scope", { length: 80 }).notNull(),
+    count: integer("count").notNull(),
+    windowStartedAt: timestamp("window_started_at", {
+      withTimezone: true,
+    }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("application_rate_limits_expiry_idx").on(table.expiresAt),
+    check("application_rate_limits_count_check", sql`${table.count} > 0`),
+    check(
+      "application_rate_limits_window_check",
+      sql`${table.expiresAt} > ${table.windowStartedAt}`,
+    ),
+  ],
+);
+
 export const authRoleGrants = pgTable(
   "auth_role_grants",
   {

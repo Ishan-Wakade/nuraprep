@@ -24,6 +24,8 @@ Stripe does not guarantee webhook delivery order. For every supported subscripti
 
 The webhook accepts only a raw request body with a valid `Stripe-Signature`, and the event's live/test flag must match the configured mode. Checkout and portal endpoints require a database session plus an exact same-origin POST. Development identities are not allowed to enter billing.
 
+Checkout and Portal creation share an atomic per-account allowance of ten requests per hour. This limits provider-side object and session churn across multiple app replicas. Stripe webhook delivery is not subject to this learner limit because signed provider retries must remain processable.
+
 ## Zero-upfront-cost sandbox setup
 
 1. Create a Stripe sandbox and a recurring price for one Premium Math product. This does not activate live charges.

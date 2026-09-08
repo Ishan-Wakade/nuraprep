@@ -16,6 +16,11 @@ import {
   createGenerationPromptHash,
   generationRequestSchema,
 } from "@/lib/generation/contracts";
+import {
+  APPLICATION_RATE_LIMITS,
+  consumeApplicationRateLimit,
+  rateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 export type GenerationActionState = {
   status: "idle" | "error" | "success";
@@ -77,6 +82,13 @@ export async function requestQuestionRegeneration(
   formData: FormData,
 ): Promise<GenerationActionState> {
   const reviewer = await requireReviewer();
+  const rateLimit = await consumeApplicationRateLimit(
+    reviewer.id,
+    APPLICATION_RATE_LIMITS.generationRequest,
+  );
+  if (!rateLimit.allowed) {
+    return { status: "error", message: rateLimitMessage(rateLimit) };
+  }
   const parsed = generationRequestSchema.safeParse(
     Object.fromEntries(formData),
   );

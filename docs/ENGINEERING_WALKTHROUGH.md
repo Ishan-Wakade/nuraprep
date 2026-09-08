@@ -277,6 +277,8 @@ The key distinction is authentication versus authorization:
 - authentication establishes which local account owns the session;
 - authorization checks an active database role and resource ownership near every query or mutation.
 
+High-impact authenticated actions also consume atomic fixed-window allowances in PostgreSQL. Their keys hash the principal and action scope, so horizontally scaled tasks cannot each grant a separate quota and the limiter does not retain raw email or IP data.
+
 The reviewer UI being hidden is not a security boundary. Reviewer reads and Server Actions independently require a current `REVIEWER` or `ADMIN` grant. Learner queries include the authenticated subject in their SQL predicates.
 
 Sessions are database-backed and revocable. Tokens remain out of page props, logs, and export files. Production configuration rejects development identity switches, missing Google credentials, missing auth secrets, and non-HTTPS public URLs.

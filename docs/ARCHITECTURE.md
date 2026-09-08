@@ -65,6 +65,8 @@ For local development, the job adapter may execute synchronously or poll Postgre
 
 The billing boundary uses Stripe-hosted Checkout and Portal sessions. A signed webhook receipt ledger is append-only, while subscription rows are explicitly a replaceable local projection. Supported subscription events trigger a fresh provider retrieval before synchronization, so access control does not depend on webhook arrival order. Only the configured product in `ACTIVE` or `TRIALING` state grants Premium Math access. See [Billing and entitlement design](BILLING.md).
 
+High-impact authenticated operations consume fixed-window allowances from `application_rate_limits`. The key hashes the internal principal and action scope, PostgreSQL serializes conflicting upserts, and limits therefore apply across replicas without retaining raw IP or email data. This is separate from Better Auth's IP-aware endpoint limiter: one protects signed-in application behavior, while the other protects the authentication boundary.
+
 ## Quality gates
 
 ```mermaid

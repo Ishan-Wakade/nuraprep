@@ -1,4 +1,4 @@
-import { createHmac, randomUUID } from "node:crypto";
+import { createHash, createHmac, randomUUID } from "node:crypto";
 
 import { expect, test } from "@playwright/test";
 import { Pool } from "pg";
@@ -240,6 +240,63 @@ test("exports only portable learner data without credentials", async ({
       [authenticated.userId],
     );
     expect(exportAudit.rows[0]?.count).toBe(1);
+  } finally {
+    await authenticated.pool.end();
+  }
+});
+
+test("rate limits repeated sensitive account exports per account", async ({
+  page,
+}) => {
+  const authenticated = await createAuthenticatedSession();
+  try {
+    await authenticated.pool.query(
+      `INSERT INTO learner_profiles
+       (auth_user_id, auth_subject, display_name, email)
+       VALUES ($1, $2, 'Rate Limited Learner', $3)`,
+      [
+        authenticated.userId,
+        `auth-user:${authenticated.userId}`,
+        `${authenticated.userId}@example.test`,
+      ],
+    );
+    await page.context().addCookies([authenticated.cookie]);
+
+    const responses = await Promise.all(
+      Array.from({ length: 6 }, () => page.request.get("/api/account/export")),
+    );
+    expect(
+      responses.filter((response) => response.status() === 200),
+    ).toHaveLength(5);
+    const rejected = responses.find((response) => response.status() === 429);
+    expect(rejected).toBeTruthy();
+    if (!rejected)
+      throw new Error("Expected one rate-limited export response.");
+    expect(rejected.status()).toBe(429);
+    expect(rejected.headers()["retry-after"]).toBeTruthy();
+    expect(await rejected.json()).toMatchObject({
+      error: expect.stringContaining("Too many requests"),
+    });
+
+    const rateLimitKey = createHash("sha256")
+      .update(
+        `nuraprep-rate-limit-v1\0account-export\0auth-user:${authenticated.userId}`,
+      )
+      .digest("hex");
+    const stored = await authenticated.pool.query<{
+      count: number;
+      principal_exposed: boolean;
+    }>(
+      `SELECT count,
+              position($1 in key) > 0 AS principal_exposed
+       FROM application_rate_limits
+       WHERE key = $2 AND scope = 'account-export'`,
+      [authenticated.userId, rateLimitKey],
+    );
+    expect(stored.rows[0]).toMatchObject({
+      count: 5,
+      principal_exposed: false,
+    });
   } finally {
     await authenticated.pool.end();
   }
