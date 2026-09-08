@@ -302,7 +302,7 @@ Erasure runs in one PostgreSQL procedure. It removes learner-owned history in de
 
 Stripe is integrated as a disabled, server-owned boundary. The browser never receives a secret key and NuraPrep never handles card details. Checkout and customer-portal sessions are created only for an authenticated local account, against server-configured product and price identifiers.
 
-Webhook processing verifies the signature over the raw body before parsing. Event IDs are persisted idempotently so replay cannot apply a second transition. Subscription projection uses Stripe event creation time and event ID ordering, preventing an older delayed event from overwriting a newer state. Entitlements deny by default when billing is disabled, unconfigured, missing, or not in an allowed subscription state.
+Webhook processing bounds the raw body, verifies its signature before parsing, and persists Event IDs idempotently so replay cannot apply a second transition. For every supported event, NuraPrep re-fetches the current Subscription from Stripe instead of treating an out-of-order webhook payload as current state. Entitlements deny by default when billing is disabled, unconfigured, missing, or not in an allowed subscription state.
 
 Configuration keeps test and live modes explicit. Live credentials are rejected outside `APP_ENV=production`, and production can still run in Stripe test mode for a controlled launch drill. This build did not create any Stripe product, customer, price, or webhook endpoint, and no feature has been paywalled.
 

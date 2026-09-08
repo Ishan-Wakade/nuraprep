@@ -24,7 +24,7 @@ The browser cannot choose a price. The server reads one configured recurring pri
 
 Stripe does not guarantee webhook delivery order. For every supported subscription event, NuraPrep retrieves the current Subscription from Stripe before updating its local projection. Exact repeated Event IDs are ignored transactionally. A processing failure returns a non-success status so Stripe can retry; an unsupported event is recorded as ignored and returns success.
 
-The webhook accepts only a raw request body with a valid `Stripe-Signature`, and the event's live/test flag must match the configured mode. Checkout and portal endpoints require a database session plus an exact same-origin POST. Development identities are not allowed to enter billing.
+The webhook accepts only a raw request body with a valid `Stripe-Signature`, and the event's live/test flag must match the configured mode. It rejects a declared or streamed body above the internal one-megabyte ceiling before signature verification can allocate unbounded memory. Checkout and portal endpoints require a database session plus an exact same-origin POST. Development identities are not allowed to enter billing.
 
 Checkout and Portal creation share an atomic per-account allowance of ten requests per hour. This limits provider-side object and session churn across multiple app replicas. Stripe webhook delivery is not subject to this learner limit because signed provider retries must remain processable.
 

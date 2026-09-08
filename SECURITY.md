@@ -27,6 +27,7 @@ The maintainer will acknowledge a complete report as soon as practical, validate
 - use least-privilege roles for learners, reviewers, administrators, jobs, and infrastructure;
 - keep secrets server-side and out of logs, errors, fixtures, and client bundles;
 - use signed, idempotent webhook handling for external providers;
+- bound unauthenticated webhook bodies before signature verification;
 - retain audit events for publishing, role, billing, and deletion operations;
 - minimize learner data and document retention/deletion before launch; and
 - treat prompt injection and source-content poisoning as content-pipeline security risks.

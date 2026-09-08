@@ -1,6 +1,11 @@
 import { processStripeEvent } from "@/data/billing";
 import { getStripeClient } from "@/lib/billing/stripe";
 import { getServerEnvironment } from "@/lib/env/server";
+import {
+  MAX_STRIPE_WEBHOOK_BODY_BYTES,
+  readBoundedRequestBody,
+  RequestBodyTooLargeError,
+} from "@/lib/security/request-body";
 
 export const dynamic = "force-dynamic";
 
@@ -19,9 +24,27 @@ export async function POST(request: Request) {
   }
 
   const stripe = getStripeClient();
+  let rawBody: Buffer;
+  try {
+    rawBody = await readBoundedRequestBody(
+      request,
+      MAX_STRIPE_WEBHOOK_BODY_BYTES,
+    );
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return Response.json(
+        { error: "Stripe webhook body is too large." },
+        { status: 413, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    return Response.json(
+      { error: "Stripe webhook body could not be read." },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   let event;
   try {
-    const rawBody = await request.text();
     event = stripe.webhooks.constructEvent(
       rawBody,
       signature,
@@ -30,7 +53,7 @@ export async function POST(request: Request) {
   } catch {
     return Response.json(
       { error: "Invalid Stripe signature." },
-      { status: 400 },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
     );
   }
 
