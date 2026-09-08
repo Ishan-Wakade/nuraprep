@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import { parseTrustedProxyCidrs } from "@/lib/security/network";
 
+const LOCAL_ONLY_AUTH_SECRET = "nuraprep-local-only-auth-secret-change-me";
+
 const serverEnvironmentSchema = z.object({
   APP_ENV: z.enum(["development", "test", "production"]).default("development"),
   NEXT_PUBLIC_APP_URL: z.url(),
@@ -78,6 +80,15 @@ export function parseServerEnvironment(
 
   if (environment.APP_ENV === "production" && publicUrl.protocol !== "https:") {
     throw new Error("Production NEXT_PUBLIC_APP_URL must use HTTPS.");
+  }
+
+  if (
+    environment.APP_ENV === "production" &&
+    environment.BETTER_AUTH_SECRET === LOCAL_ONLY_AUTH_SECRET
+  ) {
+    throw new Error(
+      "Production cannot use the public local-only authentication secret.",
+    );
   }
 
   if (

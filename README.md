@@ -145,7 +145,7 @@ To exercise the production-style image locally instead, run `docker compose --pr
 
 ## Environment variables
 
-`.env.example` is the authoritative inventory. Variables are grouped by delivery phase, and secrets must never use the `NEXT_PUBLIC_` prefix. Local database values are development-only; planned integrations use separate staging and production credentials. Production startup requires a canonical HTTPS origin, PostgreSQL URLs, unique auth and Server Action encryption keys, Google OAuth credentials, and explicit reverse-proxy CIDRs. Live Stripe mode is rejected outside production. The same Server Action key is supplied securely to the image build and all tasks so rolling deployments do not create incompatible action encryption.
+`.env.example` is the authoritative inventory. Variables are grouped by delivery phase, and secrets must never use the `NEXT_PUBLIC_` prefix. Its authentication value is an intentionally public local-only placeholder so a fresh clone builds without relying on a library default; production validation rejects it. Local database values are development-only, and every non-local environment needs unique credentials. Production startup requires a canonical HTTPS origin, PostgreSQL URLs, unique auth and Server Action encryption keys, Google OAuth credentials, and explicit reverse-proxy CIDRs. Live Stripe mode is rejected outside production. The same Server Action key is supplied securely to the image build and all tasks so rolling deployments do not create incompatible action encryption.
 
 ## Quality checks
 

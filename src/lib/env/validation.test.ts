@@ -139,6 +139,17 @@ describe("parseServerEnvironment", () => {
     ).toThrow();
   });
 
+  it("rejects the documented local-only auth secret in production", () => {
+    expect(() =>
+      parseServerEnvironment({
+        ...productionEnvironment,
+        BETTER_AUTH_SECRET: "nuraprep-local-only-auth-secret-change-me",
+      }),
+    ).toThrow(
+      "Production cannot use the public local-only authentication secret.",
+    );
+  });
+
   it("keeps billing disabled without Stripe credentials", () => {
     expect(parseServerEnvironment(baseEnvironment)).toMatchObject({
       BILLING_ENABLED: false,
