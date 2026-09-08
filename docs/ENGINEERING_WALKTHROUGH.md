@@ -36,8 +36,9 @@ The implementation sequence deliberately followed risk:
 5. add diagnostic, adaptive, timed-test, and score-estimation flows;
 6. add controlled generation and recurring-feedback infrastructure;
 7. add authentication and account lifecycle controls;
-8. harden delivery, accessibility, Docker, CI, and public documentation; and
-9. defer live providers, payments, and cloud resources until local boundaries are testable.
+8. harden delivery, accessibility, Docker, CI, and public documentation;
+9. implement fail-closed Google, Stripe, and AWS boundaries without activating paid resources; and
+10. add abuse controls, privacy operations, recovery drills, and security scanning before external launch work.
 
 This avoided a common failure mode: generating a large content bank before there was a safe way to prove, review, revise, or remove its contents.
 
@@ -70,7 +71,7 @@ There are still extraction boundaries:
 - content, practice, learning, prediction, identity, and future billing rules live in separate modules; and
 - immutable identifiers and records can cross a queue without sharing mutable in-memory state.
 
-If measured traffic later shows that generation consumes materially different resources, the worker can move to a separate process or SQS-backed service without splitting the learner transaction model first.
+If measured traffic later shows that generation consumes materially different resources, the worker can move to a separate process or SQS-backed service without splitting the learner transaction model first. The same restraint applies to Redis and a vector database: neither exists merely to make the architecture look larger.
 
 ## 4. Repository map
 
@@ -281,29 +282,41 @@ High-impact authenticated actions also consume atomic fixed-window allowances in
 
 The reviewer UI being hidden is not a security boundary. Reviewer reads and Server Actions independently require a current `REVIEWER` or `ADMIN` grant. Learner queries include the authenticated subject in their SQL predicates.
 
-Sessions are database-backed and revocable. Tokens remain out of page props, logs, and export files. Production configuration rejects development identity switches, missing Google credentials, missing auth secrets, and non-HTTPS public URLs.
+Sessions are database-backed and revocable. Tokens remain out of page props, logs, and export files. Production uses a host-only, `Secure`, `HttpOnly`, `SameSite=Lax` session cookie with the `__Secure-` prefix. Production configuration rejects development identity switches, the public local-only auth secret, missing Google credentials, missing Server Action encryption, broad or absent proxy trust, non-HTTPS/non-origin public URLs, non-PostgreSQL database URLs, and live Stripe mode outside production.
+
+Application mutation limits are stored atomically in PostgreSQL rather than process memory. This means ten application replicas still share one allowance. The key is a SHA-256 derivation of action scope and account principal, so the limiter does not retain the raw email, user ID, or address it protects. Expired rows are pruned incrementally to avoid requiring a separate cleanup service.
 
 The account page supports:
 
 - coarse signed-in-device visibility;
 - revocation of every other session while preserving the current one;
-- a fresh-session-gated portable export that excludes credentials and answer keys; and
-- fresh-session plus typed-confirmation learner erasure.
+- a fresh-session-gated portable export that excludes credentials and answer keys;
+- fresh-session plus typed-confirmation learner erasure; and
 - second-administrator privileged-account pseudonymization that preserves opaque content attribution while removing credentials and learner data.
 
-Erasure runs in one PostgreSQL procedure. It removes learner-owned history in dependency order and writes a non-identifying receipt. A smoke test injects a failure near the end and proves the transaction restores preceding deletions. Accounts with reviewer/admin history are refused because their identifiers can be part of immutable safety records; a reviewed pseudonymization process remains open.
+Erasure runs in one PostgreSQL procedure. It removes learner-owned history in dependency order and writes a non-identifying receipt. A smoke test injects a failure near the end and proves the transaction restores preceding deletions. Accounts with reviewer/admin history are refused by self-service deletion because their internal IDs can be part of immutable safety records. Their separate path requires a fresh session, exact email confirmation, a written reason, and a second active administrator; it deletes credentials and learner history, revokes roles, and retains a disabled `Former reviewer` tombstone. This is explicitly pseudonymization, not anonymization, and its production retention basis still requires legal review.
 
-## 12. Accessibility and interface decisions
+## 12. Billing boundary without live billing
+
+Stripe is integrated as a disabled, server-owned boundary. The browser never receives a secret key and NuraPrep never handles card details. Checkout and customer-portal sessions are created only for an authenticated local account, against server-configured product and price identifiers.
+
+Webhook processing verifies the signature over the raw body before parsing. Event IDs are persisted idempotently so replay cannot apply a second transition. Subscription projection uses Stripe event creation time and event ID ordering, preventing an older delayed event from overwriting a newer state. Entitlements deny by default when billing is disabled, unconfigured, missing, or not in an allowed subscription state.
+
+Configuration keeps test and live modes explicit. Live credentials are rejected outside `APP_ENV=production`, and production can still run in Stripe test mode for a controlled launch drill. This build did not create any Stripe product, customer, price, or webhook endpoint, and no feature has been paywalled.
+
+## 13. Accessibility, recovery, and interface decisions
 
 The visual identity uses calm teal, warm neutral surfaces, readable serif display headings, and restrained progress cues. Copy is encouraging without suggesting a guaranteed score.
 
 The interface includes visible labels, keyboard-operable controls, a skip link, focus styles, semantic landmarks, responsive layouts, accessible table descriptions, and reduced-motion handling. Color contrast was measured rather than judged by appearance alone.
 
-Automated axe scans cover public, sign-in, practice, diagnostic, adaptive, timed-test, progress, account, and reviewer entry surfaces. Workflow tests also scan dynamic hint, answer-feedback, summary, provenance, and template-improvement states.
+Automated axe scans cover public, sign-in, practice, diagnostic, adaptive, timed-test, progress, account, reviewer, and not-found surfaces. Workflow tests also scan dynamic hint, answer-feedback, summary, provenance, and template-improvement states.
+
+Unexpected route failures render a retry action and a safe link back to Math practice without exposing the thrown message. A separate root fallback owns its entire HTML document because it must still render when the root layout fails. Unknown URLs return a real 404 with useful navigation instead of the framework default.
 
 Automation cannot prove screen-reader comprehension, zoom usability, mathematical pronunciation, or cognitive clarity. Manual assistive-technology review remains a launch condition.
 
-## 13. Testing strategy
+## 14. Testing strategy
 
 The test pyramid is organized by failure cost.
 
@@ -321,11 +334,17 @@ Playwright tests complete real workflows through rendered pages and Server Actio
 
 The suite covers learner practice, diagnostic, adaptive selection, 38-item timed tests, estimates, reviewer revision/publication behavior, source governance, feedback proposals, generation controls, authentication, export, revocation, deletion, response headers, mobile overflow, and accessibility.
 
-### CI and container verification
+### CI, security, container, and recovery verification
 
-GitHub Actions starts PostgreSQL and runs format, lint, type, unit, migration, database, build, browser, peer-dependency, and Docker checks. The Dockerfile builds a Next.js standalone server and runs it as a non-root user. Compose supplies a one-shot migration service before the application starts and exposes a database-aware health route.
+GitHub Actions starts PostgreSQL and runs Terraform formatting, validation, guardrail tests, application formatting, linting, type checking, unit tests, migration and database checks, a production build, a container build, and browser tests. A separate CodeQL workflow scans JavaScript and TypeScript on changes and weekly using SHA-pinned actions and extended security queries. Dependabot covers npm, GitHub Actions, and Docker; secret-scanning push protection is enabled.
 
-## 14. Important setbacks and what changed
+The Dockerfile builds a Next.js standalone server and runs it as a non-root user. Compose supplies a one-shot migration service before the application starts and exposes a database-aware health route. The application pool has explicit connection, statement, client-query, idle-transaction, idle-connection, and connection-lifetime bounds; staging still needs to prove those values against its real task and RDS connection budgets.
+
+The unapplied Terraform target uses an HTTPS load balancer, private Fargate tasks, isolated encrypted PostgreSQL, Secrets Manager injection, a private source-artifact bucket, bounded logs, operational alarms, and an account budget. Production input guards require multiple application tasks, Multi-AZ RDS, deletion protection, a final snapshot, and one NAT gateway per availability zone. Those safeguards intentionally make production more expensive than staging; no plan or apply is authorized until the owner sees a region-specific cost and exact resources.
+
+A bounded local load harness refuses remote targets without explicit opt-in and reports status distribution, throughput, and latency percentiles without turning a development-machine run into a product benchmark. Recovery checkpoints contain a complete Git bundle plus a custom-format PostgreSQL dump. The dump was restored into an isolated database and queried before cleanup. A second drill cloned the public repository into a new directory, installed the exact lockfile, migrated and seeded disposable databases, and ran the full static, unit, database, build, and browser gates.
+
+## 15. Important setbacks and what changed
 
 These are useful interview examples because they show correction rather than a frictionless story.
 
@@ -359,7 +378,23 @@ A normal development build is not the same artifact as a small production contai
 
 Lesson: build success is incomplete until the actual deployment artifact is built and exercised.
 
-## 15. Rebuilding NuraPrep from scratch
+### Clean-clone authentication defaults
+
+A backup clone passed installation but the first production build failed because required origin/database values were absent. Repeating the documented `.env.example` step allowed the build, but Better Auth then emitted warnings because it fell back to its public default secret.
+
+The example now contains an explicitly public local-only value so copy-and-run development is quiet and deterministic. Production validation rejects that exact value. This preserves a good onboarding path without teaching users to treat a checked-in placeholder as a real secret.
+
+Lesson: fail-closed configuration and smooth local setup are compatible when environment intent is explicit.
+
+### Parallel receipt assertion
+
+The public-clone browser drill exposed a flaky account-erasure assertion. The learner test counted every deletion receipt while the privileged-pseudonymization test could append a different receipt in parallel. The product transactions were correct; the test had asserted global state.
+
+The check was narrowed to the ordinary-erasure receipt version, then the complete suite passed twice from fresh E2E resets. The receipt remains non-identifying rather than adding a user ID merely to simplify a test.
+
+Lesson: concurrent integration tests must isolate evidence without weakening the production privacy model.
+
+## 16. Rebuilding NuraPrep from scratch
 
 This is the recommended order if recreating the project rather than copying its files.
 
@@ -422,7 +457,9 @@ Definition of done: a fake provider can complete one valid candidate, malformed 
 2. Store sessions and role grants in PostgreSQL.
 3. Recheck ownership and role in every server mutation.
 4. Add session revocation, export, and deletion transactions.
-5. Test production configuration fail-closed behavior before using credentials.
+5. Add second-admin pseudonymization for privileged attribution.
+6. Add shared database-backed limits for sensitive mutations.
+7. Test cookie and production configuration fail-closed behavior before using credentials.
 
 Definition of done: learner isolation, reviewer denial, token exclusion, revocation, export, deletion, and rollback are browser/database tested.
 
@@ -432,8 +469,12 @@ Definition of done: learner isolation, reviewer denial, token exclusion, revocat
 2. Run as non-root.
 3. Add a one-shot migration job and health endpoint.
 4. Separate development, E2E, staging, and production databases.
-5. Encode cloud boundaries as validated Terraform without applying them.
-6. Apply staging only after cost, restore, IAM, retention, and teardown plans receive explicit approval.
+5. Bound pool connections, query time, transaction idle time, and connection lifetime.
+6. Add accessible route, global-error, and not-found recovery.
+7. Add dependency, secret, and CodeQL scanning.
+8. Encode cloud boundaries as validated Terraform without applying them.
+9. Run local backup/restore and clean-clone drills.
+10. Apply staging only after cost, restore, IAM, retention, and teardown plans receive explicit approval.
 
 ### Exact local reproduction
 
@@ -460,7 +501,7 @@ To verify the deployment-shaped image:
 docker compose --profile application up --build
 ```
 
-## 16. Behavioral interview preparation
+## 17. Behavioral interview preparation
 
 Use these as truthful story structures, not scripts to memorize. Replace “I” claims with what you personally decided, reviewed, tested, or implemented. If AI tools helped write code, describe them as engineering tools and be ready to explain how you validated the result. Do not claim adoption, revenue, accuracy, or user outcomes that do not exist.
 
@@ -536,7 +577,19 @@ Use these as truthful story structures, not scripts to memorize. Replace “I”
 
 **Follow-up question to expect:** Why retain a receipt? Explain operational proof without retaining an identifier or deleted content.
 
-## 17. What is not complete
+### Story 7: finding failures through reproducibility
+
+**Situation:** Local and GitHub checks were green, but the repository still had to prove that a new contributor could start from public artifacts rather than the maintainer's configured machine.
+
+**Task:** Verify recovery and onboarding without touching reviewed development data.
+
+**Action:** Create and verify a complete Git bundle, dump PostgreSQL in a portable custom format, restore it into an isolated database, then clone the public repository into a new temporary directory. Use separate disposable database names for migrations, seeds, and browser tests. The drill found both the local auth-secret warning and a parallel receipt-count assertion.
+
+**Result:** The supported setup path is reproducible, the backup is proven restorable, and the two discovered defects have regression coverage. No claim is made that RDS restore or production disaster recovery is proven.
+
+**Follow-up question to expect:** Why not just trust CI? Explain that CI verifies a checkout under prepared environment variables, while a recovery drill also tests public visibility, documentation order, backup format, clean database creation, and hidden local-state assumptions.
+
+## 18. What is not complete
 
 The following must not be described as shipped:
 
@@ -547,25 +600,27 @@ The following must not be described as shipped:
 - a configured question-generation provider and production queue schedule;
 - calibrated originality thresholds against a legally usable benchmark;
 - a configured Stripe sandbox, verified subscription lifecycle, approved premium feature boundary, or live billing;
-- an applied AWS environment, executed backups/restore drills, live monitoring, or provider-calculator cost validation;
+- an applied AWS environment, RDS backup/restore drills, live monitoring, or provider-calculator cost validation;
 - manual screen-reader and assistive-technology review; and
 - external calibration or claimed accuracy of the readiness estimate.
 
 The strongest accurate description is: **a working local TEAS Math alpha with production-shaped content governance, learner workflows, explainable personalization, authentication and billing foundations, validated cost-gated infrastructure code, and automated quality gates; content and external services remain pre-production.**
 
-## 18. Glossary
+## 19. Glossary
 
-| Term                  | Meaning in NuraPrep                                                      |
-| --------------------- | ------------------------------------------------------------------------ |
-| Question family       | Stable conceptual item identity across revisions                         |
-| Question version      | Immutable prompt, answer, explanation, metadata, and provenance snapshot |
-| Publication           | Separate ledger record making one eligible version learner-safe          |
-| Validator rule        | Versioned definition of one publication requirement                      |
-| Validation run        | Evidence for one rule against one exact question version                 |
-| Generation template   | Versioned constraints for creating a candidate                           |
-| Generation run        | Idempotent, leased, budgeted request producing at most one draft         |
-| Improvement proposal  | Immutable evidence-backed plan addressing recurring feedback             |
-| Implementation record | Immutable link from an approved proposal to a new draft template version |
-| Adaptive estimate     | Internal heuristic learning signal, not a calibrated mastery probability |
-| Readiness estimate    | Internal, uncertain practice estimate, not an ATI score                  |
-| Development identity  | Local-only learner or reviewer bypass rejected in production             |
+| Term                   | Meaning in NuraPrep                                                      |
+| ---------------------- | ------------------------------------------------------------------------ |
+| Question family        | Stable conceptual item identity across revisions                         |
+| Question version       | Immutable prompt, answer, explanation, metadata, and provenance snapshot |
+| Publication            | Separate ledger record making one eligible version learner-safe          |
+| Validator rule         | Versioned definition of one publication requirement                      |
+| Validation run         | Evidence for one rule against one exact question version                 |
+| Generation template    | Versioned constraints for creating a candidate                           |
+| Generation run         | Idempotent, leased, budgeted request producing at most one draft         |
+| Improvement proposal   | Immutable evidence-backed plan addressing recurring feedback             |
+| Implementation record  | Immutable link from an approved proposal to a new draft template version |
+| Adaptive estimate      | Internal heuristic learning signal, not a calibrated mastery probability |
+| Readiness estimate     | Internal, uncertain practice estimate, not an ATI score                  |
+| Development identity   | Local-only learner or reviewer bypass rejected in production             |
+| Privileged tombstone   | Disabled pseudonymous row retaining internal content-attribution joins   |
+| Entitlement projection | Local replay-safe view of Stripe subscription state; denies by default   |
