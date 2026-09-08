@@ -32,3 +32,5 @@ The maintainer will acknowledge a complete report as soon as practical, validate
 - treat prompt injection and source-content poisoning as content-pipeline security risks.
 
 The authentication foundation remains pre-production: real Google callback fixtures, production cookie verification, and legal approval of privileged-audit retention are still required. Stripe and AWS infrastructure will not ship until their threat models, costs, and tests are reviewed.
+
+GitHub dependency alerts, secret scanning with push protection, and CodeQL JavaScript/TypeScript analysis provide continuous repository checks. CodeQL runs on changes to `main`, pull requests, and a weekly schedule with SHA-pinned actions and the extended security query suite. Automated findings are triage inputs, not evidence that the application is vulnerability-free.

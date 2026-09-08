@@ -3,6 +3,7 @@
 > An independent, open-source TEAS Math preparation platform built around explainable practice, measurable mastery, and reviewable question quality.
 
 [![CI](https://github.com/Ishan-Wakade/nuraprep/actions/workflows/ci.yml/badge.svg)](https://github.com/Ishan-Wakade/nuraprep/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Ishan-Wakade/nuraprep/actions/workflows/codeql.yml/badge.svg)](https://github.com/Ishan-Wakade/nuraprep/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0f766e.svg)](LICENSE)
 
 NuraPrep is being built for nursing-school applicants who want to understand what to study, practice deliberately, and see honest uncertainty around their progress. The first release is limited to Math. Reading, Science, and English and Language Usage will be added only after the Math experience is working and reviewed.
@@ -55,6 +56,7 @@ These screens are backed by the local PostgreSQL practice flow. The diagnostic s
 - **Abuse-resistant mutations:** atomic per-account budgets protect session creation, answers, tutoring, reports, predictions, exports, billing sessions, and generation requests across replicas.
 - **Fail-closed billing boundary:** server-owned Stripe Checkout/Portal flows, signed replay-safe webhook receipts, order-independent subscription synchronization, and no card-data handling.
 - **Production-shaped delivery:** isolated browser-test databases, transactional failure tests, a non-root standalone container, one-shot migrations, health checks, and validated cost-gated AWS Terraform.
+- **Continuous security review:** dependency alerts, secret-scanning push protection, and weekly plus change-triggered CodeQL analysis using SHA-pinned actions.
 
 For a system-level tour, exact rebuild sequence, tradeoff analysis, and truthful interview-story framework, read the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md).
 
