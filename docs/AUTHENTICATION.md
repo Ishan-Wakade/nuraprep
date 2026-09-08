@@ -55,17 +55,18 @@ Self-hosted image builds and all running tasks share one base64-encoded 32-byte 
 
 Application actions have a second, identity-based limiter because IP limits alone are weak after sign-in and in shared networks. One PostgreSQL upsert atomically consumes a fixed-window allowance across every application replica. The stored key is a SHA-256 digest of a domain separator, action scope, and internal principal; raw user IDs, email addresses, and IP addresses are not stored in this table. Expired rows older than one day are pruned in bounded batches during later requests. A database failure rejects the protected operation instead of silently bypassing the control.
 
-| Protected operation                  | Allowance per account or reviewer |
-| ------------------------------------ | --------------------------------- |
-| Start any learner session            | 30 per hour                       |
-| Submit answers                       | 300 per hour                      |
-| Report question problems             | 10 per hour                       |
-| Reveal reviewed tutor steps          | 60 per hour                       |
-| Generate readiness estimates         | 12 per hour                       |
-| Download portable account exports    | 5 per hour                        |
-| Create Checkout or Portal sessions   | 10 combined per hour              |
-| Queue provider-bound generation work | 20 per reviewer per hour          |
-| Revoke sessions or request erasure   | 20 combined per hour              |
+| Protected operation                   | Allowance per account or reviewer |
+| ------------------------------------- | --------------------------------- |
+| Start any learner session             | 30 per hour                       |
+| Submit answers                        | 300 per hour                      |
+| Add or remove timed-test review marks | 300 per hour                      |
+| Report question problems              | 10 per hour                       |
+| Reveal reviewed tutor steps           | 60 per hour                       |
+| Generate readiness estimates          | 12 per hour                       |
+| Download portable account exports     | 5 per hour                        |
+| Create Checkout or Portal sessions    | 10 combined per hour              |
+| Queue provider-bound generation work  | 20 per reviewer per hour          |
+| Revoke sessions or request erasure    | 20 combined per hour              |
 
 These are abuse ceilings, not learner targets or product quotas. The full 38-question timed flow remains comfortably below the answer allowance. Browser tests issue concurrent export requests and prove that the database admits exactly the configured maximum rather than granting one allowance per process.
 

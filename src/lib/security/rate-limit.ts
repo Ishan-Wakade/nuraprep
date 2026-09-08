@@ -27,6 +27,11 @@ export const APPLICATION_RATE_LIMITS = {
     limit: 300,
     windowSeconds: 60 * 60,
   },
+  learnerReviewFlag: {
+    scope: "learner-review-flag",
+    limit: 300,
+    windowSeconds: 60 * 60,
+  },
   learnerReport: {
     scope: "learner-report",
     limit: 10,

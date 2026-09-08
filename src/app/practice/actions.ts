@@ -611,6 +611,11 @@ export async function setPracticeItemReviewFlag(
 ): Promise<PracticeActionState> {
   void _previousState;
   const identity = await requireLearner();
+  const rateLimit = await enforceLearnerRateLimit(
+    identity.subject,
+    APPLICATION_RATE_LIMITS.learnerReviewFlag,
+  );
+  if (rateLimit) return rateLimit;
   const parsed = reviewFlagSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { status: "error", message: "Invalid review-flag request." };
