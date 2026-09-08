@@ -120,6 +120,6 @@ This estimate is not an ATI score conversion. Estimate records are append-only; 
 1. **Local:** Next.js plus PostgreSQL in Docker; local object-storage emulator only when required.
 2. **Preview:** ephemeral app preview with an isolated disposable database and synthetic content.
 3. **Staging:** AWS environment with non-production OAuth, Stripe test mode, monitored jobs, and sanitized content.
-4. **Production:** separate AWS account or strongly isolated environment, RDS backups, encrypted S3, least-privilege IAM, alarms, budget limits, and a tested restore path.
+4. **Production:** separate AWS account or strongly isolated environment, RDS backups, encrypted S3, least-privilege IAM, alarms, budget alerts, and a tested restore path.
 
-Production infrastructure requires a reviewed threat model, cost estimate, data-retention policy, and explicit approval.
+The validated Terraform root under `infra/terraform` encodes the intended ALB, private Fargate, isolated RDS, Secrets Manager, S3, alarm, and account-budget boundaries. It has not been applied. Production infrastructure still requires a reviewed threat model, provider-specific cost estimate, data-retention policy, restore drill, and explicit approval.

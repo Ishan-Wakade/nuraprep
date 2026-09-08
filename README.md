@@ -26,7 +26,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 | Source and generation controls              | Registry, leased request queue, and worker gates working; provider intentionally off                                  |
 | Account and Google sign-in                  | Sessions, logout, device revocation, export, learner erasure, and roles implemented; real callback awaits credentials |
 | Billing                                     | Stripe-hosted integration implemented fail-closed; sandbox verification and product decisions remain open             |
-| AWS deployment                              | Deferred pending infrastructure design, cost review, and explicit approval                                            |
+| AWS deployment                              | Terraform validated; region cost review, prerequisites, staging apply, and restore drill remain                       |
 
 ## Product preview
 
@@ -53,7 +53,7 @@ These screens are backed by the local PostgreSQL practice flow. The diagnostic s
 - **Inspectable personalization:** prerequisite-aware diagnostic signals, adaptive scheduling reasons, spaced-review dates, and versioned score-estimate inputs remain explainable.
 - **Privacy-aware accounts:** database sessions, revocable roles, fresh-session export and erasure controls, token-safe audit events, and shared authentication rate limits.
 - **Fail-closed billing boundary:** server-owned Stripe Checkout/Portal flows, signed replay-safe webhook receipts, order-independent subscription synchronization, and no card-data handling.
-- **Production-shaped delivery:** isolated browser-test databases, transactional failure tests, a non-root standalone container, one-shot migrations, health checks, and CI that builds the real image.
+- **Production-shaped delivery:** isolated browser-test databases, transactional failure tests, a non-root standalone container, one-shot migrations, health checks, and validated cost-gated AWS Terraform.
 
 For a system-level tour, exact rebuild sequence, tradeoff analysis, and truthful interview-story framework, read the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md).
 
@@ -114,7 +114,7 @@ See the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md), [Architectur
 - Vitest, Testing Library, Playwright, and automated axe WCAG checks
 - Docker Compose for local PostgreSQL
 - Provider-neutral generation interface and auditable request queue; external provider adapter intentionally not configured
-- AWS deployment plan after the core experience is proven
+- Terraform 1.16 deployment root for an approval-gated AWS staging and production path
 
 No vector database or separate API service is planned for version 1. They will be introduced only if measured product requirements justify them.
 
@@ -164,16 +164,16 @@ The browser suite also runs automated WCAG A/AA checks across the public, learne
 
 ## Deployment direction
 
-The production target is AWS with separate staging and production environments:
+The validated, unapplied production target is AWS with separate staging and production environments:
 
-- containerized Next.js application on ECS Fargate or App Runner;
+- containerized Next.js application on ECS Fargate behind an HTTPS Application Load Balancer;
 - PostgreSQL on RDS with encryption, automated backups, and deletion protection;
 - S3 for permitted source artifacts and generated assets;
 - Secrets Manager or Parameter Store for credentials;
 - CloudWatch logs, alarms, and audit-friendly structured events;
 - least-privilege IAM and budget alerts.
 
-The standalone application image, migration job, Compose topology, and database-aware health endpoint are implemented and tested locally. No cloud resources are provisioned. A cost estimate, teardown plan, and explicit approval are required before deployment; see [deployment operations](docs/DEPLOYMENT.md).
+The standalone application image, migration job, Compose topology, database-aware health endpoint, and Terraform configuration are implemented and validated. The infrastructure root enforces digest-pinned images, private tasks and database subnets, production availability guards, secret injection, alarms, and an account-wide budget. No cloud resources are provisioned. A region-specific estimate, prerequisite setup, teardown review, and explicit approval are required before the first staging apply; see [deployment operations](docs/DEPLOYMENT.md).
 
 ## Security, privacy, and educational integrity
 

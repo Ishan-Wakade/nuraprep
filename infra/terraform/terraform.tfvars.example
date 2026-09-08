@@ -1,0 +1,28 @@
+# Copy to a gitignored terraform.tfvars only after the pre-deployment review.
+# Prefer TF_VAR_* environment variables for secrets. Never commit real values.
+environment     = "staging"
+aws_region      = "us-east-1"
+app_url         = "https://staging.example.com"
+certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-me"
+
+# Build both stages from the same reviewed commit, push them to ECR, and pin digests.
+app_image_uri       = "123456789012.dkr.ecr.us-east-1.amazonaws.com/nuraprep-app@sha256:replace-me"
+migration_image_uri = "123456789012.dkr.ecr.us-east-1.amazonaws.com/nuraprep-migrate@sha256:replace-me"
+
+google_client_id     = "replace-me.apps.googleusercontent.com"
+google_client_secret = "replace-me"
+
+# Billing remains inert until a separate Stripe sandbox review succeeds.
+billing_enabled = false
+stripe_mode     = "test"
+
+# Staging defaults trade availability for lower recurring cost.
+database_instance_class       = "db.t4g.micro"
+database_multi_az             = false
+database_deletion_protection  = false
+database_skip_final_snapshot  = true
+single_nat_gateway            = true
+desired_task_count            = 1
+maximum_task_count            = 2
+monthly_budget_usd            = 150
+alert_email                   = "owner@example.com"

@@ -429,7 +429,8 @@ Definition of done: learner isolation, reviewer denial, token exclusion, revocat
 2. Run as non-root.
 3. Add a one-shot migration job and health endpoint.
 4. Separate development, E2E, staging, and production databases.
-5. Add cloud infrastructure only after cost, restore, IAM, retention, and teardown plans are approved.
+5. Encode cloud boundaries as validated Terraform without applying them.
+6. Apply staging only after cost, restore, IAM, retention, and teardown plans receive explicit approval.
 
 ### Exact local reproduction
 
@@ -543,11 +544,11 @@ The following must not be described as shipped:
 - a configured question-generation provider and production queue schedule;
 - calibrated originality thresholds against a legally usable benchmark;
 - a configured Stripe sandbox, verified subscription lifecycle, approved premium feature boundary, or live billing;
-- AWS infrastructure, backups, restore drills, monitoring, or cost validation;
+- an applied AWS environment, executed backups/restore drills, live monitoring, or provider-calculator cost validation;
 - manual screen-reader and assistive-technology review; and
 - external calibration or claimed accuracy of the readiness estimate.
 
-The strongest accurate description is: **a working local TEAS Math alpha with production-shaped content governance, learner workflows, explainable personalization, authentication and billing foundations, and automated quality gates; content and external services remain pre-production.**
+The strongest accurate description is: **a working local TEAS Math alpha with production-shaped content governance, learner workflows, explainable personalization, authentication and billing foundations, validated cost-gated infrastructure code, and automated quality gates; content and external services remain pre-production.**
 
 ## 18. Glossary
 

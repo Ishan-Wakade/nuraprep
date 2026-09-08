@@ -47,3 +47,13 @@ next-env.d.ts
 /test-results/
 /work/
 /outputs/
+
+# terraform local state and secret-bearing inputs
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+backend.hcl
+!backend.hcl.example

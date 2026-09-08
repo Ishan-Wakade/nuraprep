@@ -1,0 +1,6 @@
+# The state bucket is a prerequisite and is intentionally not created by this stack.
+# Enable bucket versioning, encryption, account-level public-access blocking, and
+# tightly restricted IAM before using it. Do not put AWS credentials in this file.
+bucket = "replace-with-private-terraform-state-bucket"
+key    = "nuraprep/staging/terraform.tfstate"
+region = "us-east-1"

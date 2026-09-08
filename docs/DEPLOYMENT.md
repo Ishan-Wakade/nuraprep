@@ -87,17 +87,107 @@ docker run --rm \
 
 In a real deployment, secrets are injected by the orchestrator and are not written directly on a command line. The release process must stop if migration fails. Destructive rollback migrations are not automatic; application rollback must remain compatible with the migrated schema or use an explicitly reviewed forward fix.
 
-## AWS target, pending approval
+## AWS infrastructure: validated, not applied
 
-The first defensible AWS layout is:
+The Terraform root at [`infra/terraform`](../infra/terraform) defines the intended deployment. Running its formatter, provider initialization with the backend disabled, and `terraform validate` does not create resources. No NuraPrep AWS resource or recurring charge has been created.
 
-1. ECR for immutable application and migration images;
-2. ECS Fargate behind an Application Load Balancer for the web task;
-3. a private RDS PostgreSQL instance with encryption, backups, deletion protection, and restricted security groups;
-4. Secrets Manager for database, Better Auth, Google, and later Stripe credentials;
-5. CloudWatch structured logs, health alarms, and retained security events;
-6. S3 only for source artifacts whose storage rights were approved;
-7. separate staging and production accounts or strongly separated networks and secrets; and
-8. AWS Budgets plus service-level alarms before public traffic.
+```mermaid
+flowchart TB
+    Internet --> ALB[Public HTTPS Application Load Balancer]
+    ALB --> AppA[Private Fargate app task · AZ A]
+    ALB --> AppB[Private Fargate app task · AZ B]
+    AppA --> RDS[(Isolated RDS PostgreSQL)]
+    AppB --> RDS
+    AppA --> NAT[NAT egress for Google and Stripe]
+    AppB --> NAT
+    Secrets[Secrets Manager] --> AppA
+    Secrets --> AppB
+    Logs[CloudWatch logs and alarms] --- AppA
+    Artifacts[Private versioned S3] --- AppA
+    Budget[Account-wide AWS Budget alerts] --- Logs
+```
 
-Do not create this infrastructure until expected monthly cost, region, domain, data-retention policy, backup/restore procedure, and teardown plan are reviewed. Deployment is not considered complete until a restore drill, least-privilege review, accessibility pass, load test, and incident exercise succeed in staging.
+The stack creates:
+
+1. a two-availability-zone VPC with public load-balancer, private application, and isolated database subnets;
+2. an HTTPS Application Load Balancer that redirects HTTP and can reach only port 3000 on the app security group;
+3. private ECS Fargate application tasks and a separately invokable migration task;
+4. encrypted PostgreSQL 17 on RDS with TLS required, automated backups, log exports, and no public endpoint;
+5. a private, encrypted, versioned S3 bucket that refuses public and non-TLS access and cannot be automatically force-deleted;
+6. Secrets Manager injection for generated database/auth values plus owner-supplied Google and optional Stripe values;
+7. CloudWatch log retention and alarms for server errors, task/database CPU, and database free storage; and
+8. an account-wide monthly AWS Budget with actual-spend and forecast notifications.
+
+The application task role currently has no AWS data permissions. In particular, the app cannot access the S3 bucket until a real object-storage adapter exists and its exact key-level access is reviewed. This is intentional least privilege, not a claimed finished storage integration.
+
+## Why this has no upfront cost today
+
+Source code, local Docker development, Terraform validation, Stripe test mode, and Google OAuth development setup can all be prepared before paying NuraPrep infrastructure charges. Charges begin only if an owner explicitly applies the stack or purchases a domain. An applied stack has recurring costs even with no learners: the load balancer, NAT gateway, Fargate task, RDS instance/storage, logs, secrets, and data transfer are billable services. AWS free-tier eligibility varies by account and date and must never be assumed in a budget.
+
+For a portfolio-only phase, keep the application local and use GitHub for the code and screenshots. This preserves the full engineering demonstration with no NuraPrep cloud bill. A publicly hosted product is a later product decision, not a prerequisite for listing the project on a resume.
+
+## Prerequisites requiring owner input
+
+Before the first plan that could lead to an apply, the owner must provide or approve:
+
+- the AWS account and region, with account MFA and billing alerts enabled;
+- a calculator-generated monthly estimate for the exact region and selected sizes;
+- a hostname, DNS ownership, and validated ACM certificate;
+- separate staging Google OAuth credentials and approved callback URL;
+- two ECR image digests built from the same reviewed commit;
+- a private, versioned, encrypted Terraform-state bucket with narrow operator access;
+- backup retention, deletion, incident-notification, and teardown expectations; and
+- an explicit approval for the reviewed saved plan.
+
+Stripe is not a staging prerequisite. Keep `billing_enabled = false` until the separate Stripe sandbox lifecycle and free/premium product boundary are approved.
+
+## Validate without credentials or charges
+
+Terraform 1.16.1 or a compatible `~> 1.16.0` release is required because generated database and auth values use ephemeral expressions and provider write-only fields.
+
+```bash
+terraform -chdir=infra/terraform fmt -check -recursive
+terraform -chdir=infra/terraform init -backend=false -input=false
+terraform -chdir=infra/terraform validate
+terraform -chdir=infra/terraform test
+```
+
+The final command uses mocked providers to prove the private-network, recoverable-storage, billing-configuration, and production-resilience guardrails without AWS credentials. GitHub Actions performs all four checks on every pull request and main-branch push. Provider selections are committed in `.terraform.lock.hcl` for reproducibility.
+
+## First staging release procedure
+
+The checked-in `backend.hcl.example` and `terraform.tfvars.example` contain placeholders only. Copy them to their gitignored real names, supply secrets through protected `TF_VAR_*` environment variables where possible, and never commit a plan file or credentials.
+
+1. Build the `runner` and `builder` Docker stages from one reviewed commit, push them to pre-created ECR repositories, and record their immutable `@sha256:` URIs.
+2. Initialize the pre-created remote state backend with `terraform init -backend-config=backend.hcl`.
+3. Generate a saved staging plan with `desired_task_count=0`. This creates the network and data services without starting an app against an empty schema.
+4. Review the plan for exact account, region, names, counts, replacement actions, secret handling, and monthly cost. Applying requires a separate explicit owner approval.
+5. After an approved apply, run the migration task in the output private subnets and app security group. Wait for it to stop and require container exit code zero.
+6. Generate and approve a second plan with `desired_task_count=1` to start staging.
+7. Point the approved DNS hostname at the load balancer, confirm the SNS email subscription, and verify health, Google callbacks, logs, alarms, and budget notifications.
+8. Seed only reviewed staging content. Never run the development or E2E seed against staging.
+
+Production is a separate environment. Terraform refuses production configuration unless it requests at least two app tasks, one NAT gateway per availability zone, Multi-AZ RDS, deletion protection, and a final snapshot. Those controls improve resilience but increase cost; they are not silently enabled in staging.
+
+## Release, rollback, and database safety
+
+Every application release must use a digest-pinned image. Run compatible forward migrations before changing application traffic. If migration fails, do not update the service. If health checks fail after an application update, the ECS deployment circuit breaker rolls tasks back, but the previous application must remain compatible with the forward-migrated schema. Database rollback is an explicitly reviewed forward fix or restore operation, never an automatic destructive migration.
+
+Before any staging teardown, export the required database records, verify an RDS snapshot, retain legally permitted source artifacts, and identify every Terraform target in the saved destruction plan. The source bucket has `force_destroy = false`, so retained objects block accidental deletion. Production deletion protection and final snapshots are mandatory. A teardown is a separate destructive approval, not part of routine deployment.
+
+## Cost and operational gates
+
+AWS Budgets is a delayed notification mechanism, not a hard cap. The Terraform budget intentionally covers the whole deployment account so an untagged resource cannot evade the alert. The notification email must be correct, SNS subscription confirmation must be completed, and alerts must be tested in staging.
+
+Before public traffic, staging must pass:
+
+- database backup and restore drill;
+- migration failure and app rollback exercise;
+- least-privilege IAM and secret-rotation review;
+- alarm and incident-notification test;
+- load and database-connection-pool test;
+- manual keyboard, screen-reader, zoom, and reduced-motion review;
+- privacy, retention, account deletion, terms, and support review; and
+- a fresh provider-calculator cost estimate with an accepted monthly ceiling.
+
+Until those checks run against a real environment, describe the repository as having validated, cost-gated infrastructure code—not a deployed, production-ready AWS system.

@@ -133,7 +133,8 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 ## 9. AWS staging and production readiness
 
 - [x] Add a non-root Next.js standalone image, one-shot migration container, local Compose topology, database-aware health check, and CI image build.
-- Add infrastructure as code for app hosting, RDS, S3, secrets, logs, alarms, backups, IAM, and budgets.
+- [x] Add validated infrastructure as code for private app hosting, RDS, governed S3, write-only secret injection, logs, alarms, backups, narrow IAM, and account-wide budget alerts.
+- Build and push immutable ECR images, bootstrap remote state, calculate region-specific cost, and receive explicit owner approval before the first staging apply.
 - Separate staging/production, run restore and teardown drills, and document expected cost before approval.
 - Complete privacy policy, terms, accessibility audit, load test, incident runbook, and launch checklist.
 - [x] Add an automated WCAG A/AA regression gate for public, learner, account, and reviewer entry surfaces.
