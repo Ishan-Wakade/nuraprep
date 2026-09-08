@@ -2,7 +2,7 @@
 
 ## Current status
 
-The Stripe integration is implemented but disabled by default. It can be exercised in a Stripe sandbox without charging a real card or creating AWS resources. No product, price, customer, subscription, or webhook endpoint has been created in the owner's Stripe account by this repository.
+The Stripe integration is implemented but disabled by default. It can be exercised in a Stripe sandbox without charging a real card or creating AWS resources. The repository contains no live Stripe identifiers or evidence that a product, price, customer, subscription, or webhook endpoint was created; external account state must be verified directly before testing.
 
 No learner feature is paywalled yet. The data model and resolver distinguish `FREE` from `PREMIUM_MATH`, but a product decision must identify a fair premium feature set before access checks are added to learner services.
 
