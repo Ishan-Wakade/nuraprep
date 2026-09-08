@@ -142,6 +142,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - Complete privacy policy, terms, manual accessibility audit, and staging load test.
 - [x] Add a safe local load-smoke harness, incident-response runbook, and evidence-based launch checklist.
 - [x] Add an automated WCAG A/AA regression gate for public, learner, account, and reviewer entry surfaces.
+- [x] Add and exercise a baseline Content Security Policy without sacrificing static rendering; retain strict nonce/integrity evaluation as a staging decision.
 - Complete manual keyboard, screen-reader, zoom, reduced-motion, and assistive-technology review before launch.
 
 **Exit:** staging passes security, backup/restore, observability, accessibility, and cost reviews before any production approval.

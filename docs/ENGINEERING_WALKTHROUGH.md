@@ -284,6 +284,8 @@ The reviewer UI being hidden is not a security boundary. Reviewer reads and Serv
 
 Sessions are database-backed and revocable. Tokens remain out of page props, logs, and export files. Production uses a host-only, `Secure`, `HttpOnly`, `SameSite=Lax` session cookie with the `__Secure-` prefix. Production configuration rejects development identity switches, the public local-only auth secret, missing Google credentials, missing Server Action encryption, broad or absent proxy trust, non-HTTPS/non-origin public URLs, non-PostgreSQL database URLs, and live Stripe mode outside production.
 
+Browser responses add defense in depth with a source-restricting Content Security Policy, blocked object/frame/base injection, disabled inline event-handler attributes, and no framework identity header. The current baseline still permits inline script and style blocks needed by static Next.js hydration. A strict per-request nonce would force every page to render dynamically and remove CDN caching, while the framework's integrity alternative is experimental; staging must evaluate that cost and compatibility before claiming a strict CSP.
+
 Application mutation limits are stored atomically in PostgreSQL rather than process memory. This means ten application replicas still share one allowance. The key is a SHA-256 derivation of action scope and account principal, so the limiter does not retain the raw email, user ID, or address it protects. Expired rows are pruned incrementally to avoid requiring a separate cleanup service.
 
 The account page supports:

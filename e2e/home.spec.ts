@@ -35,6 +35,13 @@ test("applies browser safety headers to application responses", async ({
 }) => {
   const response = await request.get("/");
 
+  const contentSecurityPolicy = response.headers()["content-security-policy"];
+  expect(contentSecurityPolicy).toContain("default-src 'self'");
+  expect(contentSecurityPolicy).toContain("script-src-attr 'none'");
+  expect(contentSecurityPolicy).toContain("object-src 'none'");
+  expect(contentSecurityPolicy).toContain("base-uri 'none'");
+  expect(contentSecurityPolicy).toContain("form-action 'self'");
+  expect(contentSecurityPolicy).toContain("frame-ancestors 'none'");
   expect(response.headers()["x-content-type-options"]).toBe("nosniff");
   expect(response.headers()["x-frame-options"]).toBe("DENY");
   expect(response.headers()["referrer-policy"]).toBe(
@@ -42,6 +49,7 @@ test("applies browser safety headers to application responses", async ({
   );
   expect(response.headers()["permissions-policy"]).toContain("camera=()");
   expect(response.headers()["x-dns-prefetch-control"]).toBe("off");
+  expect(response.headers()["x-powered-by"]).toBeUndefined();
 });
 
 test("has no horizontal overflow on a mobile viewport", async ({ page }) => {
