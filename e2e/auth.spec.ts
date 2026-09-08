@@ -532,7 +532,9 @@ test("deletes a learner account and its connected private history atomically", a
       ],
     );
     const receiptsBefore = await authenticated.pool.query<{ count: number }>(
-      "SELECT count(*)::int AS count FROM account_deletion_receipts",
+      `SELECT count(*)::int AS count
+       FROM account_deletion_receipts
+       WHERE receipt_version = 'account-erasure-v1'`,
     );
 
     await page.context().addCookies([authenticated.cookie]);
@@ -582,7 +584,9 @@ test("deletes a learner account and its connected private history atomically", a
     });
 
     const receiptsAfter = await authenticated.pool.query<{ count: number }>(
-      "SELECT count(*)::int AS count FROM account_deletion_receipts",
+      `SELECT count(*)::int AS count
+       FROM account_deletion_receipts
+       WHERE receipt_version = 'account-erasure-v1'`,
     );
     expect(receiptsAfter.rows[0]!.count).toBe(
       receiptsBefore.rows[0]!.count + 1,
