@@ -79,6 +79,20 @@ test("returns an uncached anonymous session before sign-in", async ({
   expect(response.headers()["cache-control"]).toContain("no-store");
 });
 
+test("keeps billing visibly and operationally disabled without configuration", async ({
+  page,
+}) => {
+  await page.goto("/account");
+
+  await expect(page.getByRole("heading", { name: "Free plan" })).toBeVisible();
+  await expect(
+    page.getByText("Payments are not activated in this environment."),
+  ).toBeVisible();
+
+  const checkout = await page.request.post("/api/billing/checkout");
+  expect(checkout.status()).toBe(404);
+});
+
 test("rate limits repeated auth requests in shared storage", async ({
   request,
 }) => {
@@ -206,6 +220,7 @@ test("exports only portable learner data without credentials", async ({
       account: { displayName: string; mode: string };
       profile: { authUserId: string };
       accountSessions: Array<Record<string, unknown>>;
+      billing: Array<Record<string, unknown>>;
     };
     expect(exportData.exportVersion).toBe("nuraprep-learner-export-v1");
     expect(exportData.account).toMatchObject({
@@ -214,6 +229,7 @@ test("exports only portable learner data without credentials", async ({
     });
     expect(exportData.profile.authUserId).toBe(authenticated.userId);
     expect(exportData.accountSessions).toHaveLength(1);
+    expect(exportData.billing).toEqual([]);
     expect(exportData.accountSessions[0]).not.toHaveProperty("token");
     expect(rawExport).not.toContain(authenticated.token);
 

@@ -7,6 +7,8 @@ import {
   accountAuditEvents,
   attempts,
   authSessions,
+  billingCustomers,
+  billingSubscriptions,
   learnerProfiles,
   learnerQuestionReportEvents,
   learnerQuestionReports,
@@ -60,6 +62,26 @@ export async function buildLearnerDataExport(identity: LearnerIdentity) {
         .where(eq(accountAuditEvents.userId, identity.authUserId))
         .orderBy(asc(accountAuditEvents.createdAt))
     : [];
+  const billingRows = identity.authUserId
+    ? await database
+        .select({
+          providerCustomerId: billingCustomers.stripeCustomerId,
+          providerSubscriptionId: billingSubscriptions.stripeSubscriptionId,
+          providerProductId: billingSubscriptions.stripeProductId,
+          providerPriceId: billingSubscriptions.stripePriceId,
+          status: billingSubscriptions.status,
+          cancelAtPeriodEnd: billingSubscriptions.cancelAtPeriodEnd,
+          currentPeriodEnd: billingSubscriptions.currentPeriodEnd,
+          lastSyncedAt: billingSubscriptions.lastSyncedAt,
+        })
+        .from(billingCustomers)
+        .leftJoin(
+          billingSubscriptions,
+          eq(billingSubscriptions.billingCustomerId, billingCustomers.id),
+        )
+        .where(eq(billingCustomers.userId, identity.authUserId))
+        .orderBy(asc(billingSubscriptions.createdAt))
+    : [];
 
   if (!profile) {
     return {
@@ -73,6 +95,7 @@ export async function buildLearnerDataExport(identity: LearnerIdentity) {
       profile: null,
       accountSessions,
       accountAuditEvents: auditEvents,
+      billing: billingRows,
       practiceSessions: [],
       practiceItems: [],
       tutorInteractions: [],
@@ -241,6 +264,7 @@ export async function buildLearnerDataExport(identity: LearnerIdentity) {
     profile,
     accountSessions,
     accountAuditEvents: auditEvents,
+    billing: billingRows,
     practiceSessions: sessionRows,
     practiceItems: itemRows,
     tutorInteractions: tutorRows,

@@ -63,6 +63,8 @@ For local development, the job adapter may execute synchronously or poll Postgre
 - Provider APIs are wrapped in interfaces. Prompts and model identifiers are stored with generation runs, while secrets remain outside the database.
 - Published question payloads are selected from immutable approved versions. Draft content is unavailable to learner routes.
 
+The billing boundary uses Stripe-hosted Checkout and Portal sessions. A signed webhook receipt ledger is append-only, while subscription rows are explicitly a replaceable local projection. Supported subscription events trigger a fresh provider retrieval before synchronization, so access control does not depend on webhook arrival order. Only the configured product in `ACTIVE` or `TRIALING` state grants Premium Math access. See [Billing and entitlement design](BILLING.md).
+
 ## Quality gates
 
 ```mermaid

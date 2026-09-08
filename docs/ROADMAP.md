@@ -119,9 +119,14 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 ## 8. Billing
 
-- Define free and paid entitlements without dark patterns.
-- Implement Stripe-hosted checkout, customer portal, signed idempotent webhooks, subscription synchronization, and test clocks.
-- Keep raw card data out of NuraPrep systems.
+- [x] Add a fail-closed `FREE`/`PREMIUM_MATH` entitlement resolver without assigning a premium feature set prematurely.
+- [x] Implement server-created Stripe-hosted Checkout and Customer Portal sessions with authenticated same-origin entry points.
+- [x] Add signed raw-body webhook verification, event-mode checks, duplicate receipts, order-independent subscription retrieval, and transactional synchronization.
+- [x] Keep raw card and payment-method data out of NuraPrep systems and include only non-secret billing identifiers/status in portable export.
+- [x] Coordinate Stripe Customer deletion with transactional local account erasure.
+- [ ] Decide the free/paid feature boundary and subscription terms without dark patterns.
+- [ ] Configure a Stripe sandbox and verify purchase, renewal, failure/recovery, cancellation, replay, out-of-order delivery, and test clocks.
+- [ ] Approve and configure live products, prices, portal policy, tax behavior, support, refund terms, and operational alerts.
 
 **Exit:** test-mode lifecycle covers purchase, renewal, failure, cancellation, refund, replay, and out-of-order webhook delivery.
 

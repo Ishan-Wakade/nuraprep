@@ -178,6 +178,23 @@ export const authRoleEnum = pgEnum("auth_role", [
   "REVIEWER",
   "ADMIN",
 ]);
+export const billingSubscriptionStatusEnum = pgEnum(
+  "billing_subscription_status",
+  [
+    "ACTIVE",
+    "CANCELED",
+    "INCOMPLETE",
+    "INCOMPLETE_EXPIRED",
+    "PAST_DUE",
+    "PAUSED",
+    "TRIALING",
+    "UNPAID",
+  ],
+);
+export const billingWebhookOutcomeEnum = pgEnum("billing_webhook_outcome", [
+  "PROCESSED",
+  "IGNORED",
+]);
 
 export const authUsers = pgTable("auth_users", {
   id: text("id").primaryKey(),
@@ -341,6 +358,99 @@ export const accountDeletionReceipts = pgTable("account_deletion_receipts", {
     .notNull()
     .defaultNow(),
 });
+
+export const billingCustomers = pgTable(
+  "billing_customers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    stripeCustomerId: varchar("stripe_customer_id", { length: 255 }).notNull(),
+    ...auditColumns,
+  },
+  (table) => [
+    uniqueIndex("billing_customer_user_idx").on(table.userId),
+    uniqueIndex("billing_customer_stripe_idx").on(table.stripeCustomerId),
+    check(
+      "billing_customer_stripe_id_check",
+      sql`${table.stripeCustomerId} LIKE 'cus\\_%' ESCAPE '\\'`,
+    ),
+  ],
+);
+
+export const billingSubscriptions = pgTable(
+  "billing_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    billingCustomerId: uuid("billing_customer_id")
+      .notNull()
+      .references(() => billingCustomers.id, { onDelete: "cascade" }),
+    stripeSubscriptionId: varchar("stripe_subscription_id", {
+      length: 255,
+    }).notNull(),
+    stripeProductId: varchar("stripe_product_id", { length: 255 }).notNull(),
+    stripePriceId: varchar("stripe_price_id", { length: 255 }),
+    status: billingSubscriptionStatusEnum("status").notNull(),
+    cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+    lastStripeEventCreatedAt: timestamp("last_stripe_event_created_at", {
+      withTimezone: true,
+    }).notNull(),
+    lastStripeEventId: varchar("last_stripe_event_id", {
+      length: 255,
+    }).notNull(),
+    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    ...auditColumns,
+  },
+  (table) => [
+    uniqueIndex("billing_subscription_stripe_idx").on(
+      table.stripeSubscriptionId,
+    ),
+    index("billing_subscription_customer_status_idx").on(
+      table.billingCustomerId,
+      table.status,
+    ),
+    check(
+      "billing_subscription_stripe_id_check",
+      sql`${table.stripeSubscriptionId} LIKE 'sub\\_%' ESCAPE '\\'`,
+    ),
+    check(
+      "billing_subscription_product_id_check",
+      sql`${table.stripeProductId} LIKE 'prod\\_%' ESCAPE '\\'`,
+    ),
+  ],
+);
+
+export const billingWebhookEvents = pgTable(
+  "billing_webhook_events",
+  {
+    stripeEventId: varchar("stripe_event_id", { length: 255 }).primaryKey(),
+    eventType: varchar("event_type", { length: 160 }).notNull(),
+    stripeObjectId: varchar("stripe_object_id", { length: 255 }),
+    livemode: boolean("livemode").notNull(),
+    eventCreatedAt: timestamp("event_created_at", {
+      withTimezone: true,
+    }).notNull(),
+    outcome: billingWebhookOutcomeEnum("outcome").notNull(),
+    reasonCode: varchar("reason_code", { length: 120 }).notNull(),
+    processedAt: timestamp("processed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("billing_webhook_event_type_created_idx").on(
+      table.eventType,
+      table.eventCreatedAt,
+    ),
+    check(
+      "billing_webhook_event_id_check",
+      sql`${table.stripeEventId} LIKE 'evt\\_%' ESCAPE '\\'`,
+    ),
+  ],
+);
 
 export const examSpecifications = pgTable(
   "exam_specifications",

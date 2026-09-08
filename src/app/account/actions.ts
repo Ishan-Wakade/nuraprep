@@ -1,13 +1,16 @@
 "use server";
 
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { getDatabase, getDatabasePool } from "@/db/client";
-import { accountAuditEvents, authSessions } from "@/db/schema";
+import { accountAuditEvents, authRoleGrants, authSessions } from "@/db/schema";
+import { deleteStripeCustomerForAccountErasure } from "@/data/billing";
 import { isFreshSession } from "@/lib/auth/fresh-session";
 import { getCurrentSession } from "@/lib/auth/session";
+import { getStripeClient } from "@/lib/billing/stripe";
+import { getServerEnvironment } from "@/lib/env/server";
 
 export type AccountActionState = {
   status: "idle" | "success" | "error";
@@ -82,7 +85,31 @@ export async function deleteAccount(
     };
   }
 
+  const [privilegedGrant] = await getDatabase()
+    .select({ id: authRoleGrants.id })
+    .from(authRoleGrants)
+    .where(
+      and(
+        eq(authRoleGrants.userId, current.user.id),
+        inArray(authRoleGrants.role, ["REVIEWER", "ADMIN"]),
+      ),
+    )
+    .limit(1);
+  if (privilegedGrant) {
+    return {
+      status: "error",
+      message:
+        "Reviewer and administrator accounts require an administrator-assisted erasure so content audit history remains trustworthy.",
+    };
+  }
+
+  let externalBillingRemoved = false;
   try {
+    const environment = getServerEnvironment();
+    externalBillingRemoved = await deleteStripeCustomerForAccountErasure(
+      current.user.id,
+      environment.BILLING_ENABLED ? getStripeClient() : null,
+    );
     await getDatabasePool().query(
       "SELECT erase_nuraprep_account($1) AS receipt_id",
       [current.user.id],
@@ -98,10 +125,21 @@ export async function deleteAccount(
           "Reviewer and administrator accounts require an administrator-assisted erasure so content audit history remains trustworthy.",
       };
     }
+    if (
+      error instanceof Error &&
+      error.message.includes("BILLING_PROVIDER_REQUIRED_FOR_ERASURE")
+    ) {
+      return {
+        status: "error",
+        message:
+          "Billing must be reconnected before this account can be safely erased. No account data was deleted.",
+      };
+    }
     return {
       status: "error",
-      message:
-        "Account deletion did not complete. No partial deletion was committed; please try again.",
+      message: externalBillingRemoved
+        ? "Billing was canceled, but local account erasure did not complete. Your local data remains intact; please retry account deletion."
+        : "Account deletion did not complete. Your local account data remains intact; please try again.",
     };
   }
 

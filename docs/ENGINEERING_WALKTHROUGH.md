@@ -1,12 +1,12 @@
 # NuraPrep engineering walkthrough
 
-This document explains the implemented local alpha as of commit `6695b1e`. It is written for three uses:
+This document explains the implemented local alpha. It is written for three uses:
 
 1. rebuilding the system from first principles;
 2. preparing for technical and behavioral interviews; and
 3. reviewing the tradeoffs before production decisions are made.
 
-It is not a launch announcement. NuraPrep still has no production-approved question bank, configured generation provider, live Google callback verification, Stripe integration, AWS environment, or externally validated score predictor.
+It is not a launch announcement. NuraPrep still has no production-approved question bank, configured generation provider, live Google callback verification, verified Stripe sandbox lifecycle, AWS environment, or externally validated score predictor.
 
 ## 1. The problem the architecture is solving
 
@@ -542,12 +542,12 @@ The following must not be described as shipped:
 - a provider-backed conversational tutor;
 - a configured question-generation provider and production queue schedule;
 - calibrated originality thresholds against a legally usable benchmark;
-- Stripe checkout, portal, webhook synchronization, or entitlements;
+- a configured Stripe sandbox, verified subscription lifecycle, approved premium feature boundary, or live billing;
 - AWS infrastructure, backups, restore drills, monitoring, or cost validation;
 - manual screen-reader and assistive-technology review; and
 - external calibration or claimed accuracy of the readiness estimate.
 
-The strongest accurate description is: **a working local TEAS Math alpha with production-shaped content governance, learner workflows, explainable personalization, authentication foundations, and automated quality gates; content and external integrations remain pre-production.**
+The strongest accurate description is: **a working local TEAS Math alpha with production-shaped content governance, learner workflows, explainable personalization, authentication and billing foundations, and automated quality gates; content and external services remain pre-production.**
 
 ## 18. Glossary
 

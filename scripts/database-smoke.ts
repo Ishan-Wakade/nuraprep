@@ -1262,6 +1262,63 @@ async function main() {
       throw new Error("A revoked auth role grant allowed another update.");
     }
 
+    const billingCustomerId = randomUUID();
+    const billingSubscriptionId = randomUUID();
+    const billingEventId = `evt_${randomUUID()}`;
+    await client.query(
+      `INSERT INTO billing_customers
+       (id, user_id, stripe_customer_id)
+       VALUES ($1, $2, $3)`,
+      [billingCustomerId, authUserId, `cus_${randomUUID()}`],
+    );
+    await client.query(
+      `INSERT INTO billing_subscriptions
+       (id, billing_customer_id, stripe_subscription_id, stripe_product_id,
+        stripe_price_id, status, current_period_end,
+        last_stripe_event_created_at, last_stripe_event_id)
+       VALUES ($1, $2, $3, $4, $5, 'ACTIVE', now() + interval '30 days',
+               now(), $6)`,
+      [
+        billingSubscriptionId,
+        billingCustomerId,
+        `sub_${randomUUID()}`,
+        `prod_${randomUUID()}`,
+        `price_${randomUUID()}`,
+        billingEventId,
+      ],
+    );
+    await client.query(
+      `INSERT INTO billing_webhook_events
+       (stripe_event_id, event_type, stripe_object_id, livemode,
+        event_created_at, outcome, reason_code)
+       VALUES ($1, 'customer.subscription.created', $2, false, now(),
+               'PROCESSED', 'SUBSCRIPTION_SYNCHRONIZED')`,
+      [billingEventId, `sub_${randomUUID()}`],
+    );
+    await client.query("SAVEPOINT billing_event_immutability_check");
+    let billingEventMutationBlocked = false;
+    try {
+      await client.query(
+        `UPDATE billing_webhook_events
+         SET reason_code = 'MUTATED'
+         WHERE stripe_event_id = $1`,
+        [billingEventId],
+      );
+    } catch (error) {
+      billingEventMutationBlocked =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "55000";
+    } finally {
+      await client.query(
+        "ROLLBACK TO SAVEPOINT billing_event_immutability_check",
+      );
+    }
+    if (!billingEventMutationBlocked) {
+      throw new Error("A billing webhook audit event allowed mutation.");
+    }
+
     await client.query(
       `INSERT INTO learner_profiles
        (auth_user_id, auth_subject, display_name, email)
@@ -1308,20 +1365,26 @@ async function main() {
       profiles: number;
       audit_events: number;
       role_grants: number;
+      billing_customers: number;
+      billing_subscriptions: number;
     }>(
       `SELECT
         (SELECT count(*)::int FROM auth_users WHERE id = $1) AS users,
         (SELECT count(*)::int FROM learner_profiles WHERE auth_user_id = $1) AS profiles,
         (SELECT count(*)::int FROM account_audit_events WHERE user_id = $1) AS audit_events,
-        (SELECT count(*)::int FROM auth_role_grants WHERE user_id = $1) AS role_grants`,
-      [authUserId],
+        (SELECT count(*)::int FROM auth_role_grants WHERE user_id = $1) AS role_grants,
+        (SELECT count(*)::int FROM billing_customers WHERE user_id = $1) AS billing_customers,
+        (SELECT count(*)::int FROM billing_subscriptions WHERE billing_customer_id = $2) AS billing_subscriptions`,
+      [authUserId, billingCustomerId],
     );
     if (
       !rollbackState.rows[0] ||
       rollbackState.rows[0].users !== 1 ||
       rollbackState.rows[0].profiles !== 1 ||
       rollbackState.rows[0].audit_events !== 1 ||
-      rollbackState.rows[0].role_grants !== 1
+      rollbackState.rows[0].role_grants !== 1 ||
+      rollbackState.rows[0].billing_customers !== 1 ||
+      rollbackState.rows[0].billing_subscriptions !== 1
     ) {
       throw new Error("Account erasure left partial changes after a failure.");
     }
@@ -1334,18 +1397,24 @@ async function main() {
       users: number;
       profiles: number;
       receipts: number;
+      billing_customers: number;
+      billing_subscriptions: number;
     }>(
       `SELECT
         (SELECT count(*)::int FROM auth_users WHERE id = $1) AS users,
         (SELECT count(*)::int FROM learner_profiles WHERE auth_user_id = $1) AS profiles,
-        (SELECT count(*)::int FROM account_deletion_receipts WHERE id = $2) AS receipts`,
-      [authUserId, erasure.rows[0]?.receipt_id],
+        (SELECT count(*)::int FROM account_deletion_receipts WHERE id = $2) AS receipts,
+        (SELECT count(*)::int FROM billing_customers WHERE user_id = $1) AS billing_customers,
+        (SELECT count(*)::int FROM billing_subscriptions WHERE billing_customer_id = $3) AS billing_subscriptions`,
+      [authUserId, erasure.rows[0]?.receipt_id, billingCustomerId],
     );
     if (
       !successfulErasure.rows[0] ||
       successfulErasure.rows[0].users !== 0 ||
       successfulErasure.rows[0].profiles !== 0 ||
-      successfulErasure.rows[0].receipts !== 1
+      successfulErasure.rows[0].receipts !== 1 ||
+      successfulErasure.rows[0].billing_customers !== 0 ||
+      successfulErasure.rows[0].billing_subscriptions !== 0
     ) {
       throw new Error("Account erasure did not complete with a receipt.");
     }

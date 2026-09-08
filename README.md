@@ -25,7 +25,8 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 | Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                                        |
 | Source and generation controls              | Registry, leased request queue, and worker gates working; provider intentionally off                                  |
 | Account and Google sign-in                  | Sessions, logout, device revocation, export, learner erasure, and roles implemented; real callback awaits credentials |
-| Billing and AWS deployment                  | Deferred until authenticated core flows and content review are complete                                               |
+| Billing                                     | Stripe-hosted integration implemented fail-closed; sandbox verification and product decisions remain open             |
+| AWS deployment                              | Deferred pending infrastructure design, cost review, and explicit approval                                            |
 
 ## Product preview
 
@@ -51,6 +52,7 @@ These screens are backed by the local PostgreSQL practice flow. The diagnostic s
 - **Deterministic educational checks:** typed answer contracts plus programmatic math, formatting, uniqueness, distractor, and originality signals instead of LLM-only grading.
 - **Inspectable personalization:** prerequisite-aware diagnostic signals, adaptive scheduling reasons, spaced-review dates, and versioned score-estimate inputs remain explainable.
 - **Privacy-aware accounts:** database sessions, revocable roles, fresh-session export and erasure controls, token-safe audit events, and shared authentication rate limits.
+- **Fail-closed billing boundary:** server-owned Stripe Checkout/Portal flows, signed replay-safe webhook receipts, order-independent subscription synchronization, and no card-data handling.
 - **Production-shaped delivery:** isolated browser-test databases, transactional failure tests, a non-root standalone container, one-shot migrations, health checks, and CI that builds the real image.
 
 For a system-level tour, exact rebuild sequence, tradeoff analysis, and truthful interview-story framework, read the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md).
@@ -98,9 +100,9 @@ Important boundaries:
 - Source material is never copied into generated questions. Acquisition requires a recorded license/terms/robots decision.
 - Objective math is checked in code wherever possible. LLM review supplements deterministic checks; it does not replace them.
 - Adaptive recommendations and score estimates retain their inputs, model version, explanation, and uncertainty.
-- Authentication foundations now protect learner and reviewer flows; billing remains deferred until the authenticated core and reviewed content are ready.
+- Authentication foundations protect learner and reviewer flows. Billing is disabled by default and ready for a zero-upfront-cost Stripe sandbox exercise; no learner feature is paywalled yet.
 
-See the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md), [Architecture](docs/ARCHITECTURE.md), [authentication and account security](docs/AUTHENTICATION.md), [container and deployment operations](docs/DEPLOYMENT.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Practice-test blueprint](docs/PRACTICE_TEST.md), [Score estimation](docs/SCORE_ESTIMATION.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), [source research log](docs/SOURCE_RESEARCH_LOG.md), [generation pipeline](docs/GENERATION_PIPELINE.md), and [Roadmap](docs/ROADMAP.md).
+See the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md), [Architecture](docs/ARCHITECTURE.md), [authentication and account security](docs/AUTHENTICATION.md), [billing and entitlements](docs/BILLING.md), [container and deployment operations](docs/DEPLOYMENT.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Practice-test blueprint](docs/PRACTICE_TEST.md), [Score estimation](docs/SCORE_ESTIMATION.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), [source research log](docs/SOURCE_RESEARCH_LOG.md), [generation pipeline](docs/GENERATION_PIPELINE.md), and [Roadmap](docs/ROADMAP.md).
 
 ## Technology
 
@@ -108,6 +110,7 @@ See the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md), [Architectur
 - Tailwind CSS 4
 - PostgreSQL 17 with Drizzle ORM and append-only audit records
 - Database-backed sessions, account lifecycle controls, and shared authentication rate limits
+- Stripe-hosted subscription boundary, disabled until sandbox or live credentials are explicitly configured
 - Vitest, Testing Library, Playwright, and automated axe WCAG checks
 - Docker Compose for local PostgreSQL
 - Provider-neutral generation interface and auditable request queue; external provider adapter intentionally not configured

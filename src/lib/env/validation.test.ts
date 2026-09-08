@@ -74,4 +74,49 @@ describe("parseServerEnvironment", () => {
       }),
     ).toThrow();
   });
+
+  it("keeps billing disabled without Stripe credentials", () => {
+    expect(parseServerEnvironment(baseEnvironment)).toMatchObject({
+      BILLING_ENABLED: false,
+      STRIPE_MODE: "test",
+    });
+  });
+
+  it("requires a complete Stripe configuration before enabling billing", () => {
+    expect(() =>
+      parseServerEnvironment({
+        ...baseEnvironment,
+        BILLING_ENABLED: "true",
+        STRIPE_SECRET_KEY: "sk_test_example",
+      }),
+    ).toThrow(
+      "Enabled billing requires Stripe secret, webhook secret, price, and premium product identifiers.",
+    );
+
+    expect(
+      parseServerEnvironment({
+        ...baseEnvironment,
+        BILLING_ENABLED: "true",
+        STRIPE_MODE: "test",
+        STRIPE_SECRET_KEY: "sk_test_example",
+        STRIPE_WEBHOOK_SECRET: "whsec_example",
+        STRIPE_PRICE_ID: "price_example",
+        STRIPE_PREMIUM_PRODUCT_ID: "prod_example",
+      }),
+    ).toMatchObject({ BILLING_ENABLED: true, STRIPE_MODE: "test" });
+  });
+
+  it("rejects a live Stripe secret in test mode", () => {
+    expect(() =>
+      parseServerEnvironment({
+        ...baseEnvironment,
+        BILLING_ENABLED: "true",
+        STRIPE_MODE: "test",
+        STRIPE_SECRET_KEY: "sk_live_example",
+        STRIPE_WEBHOOK_SECRET: "whsec_example",
+        STRIPE_PRICE_ID: "price_example",
+        STRIPE_PREMIUM_PRODUCT_ID: "prod_example",
+      }),
+    ).toThrow("STRIPE_SECRET_KEY must match configured test mode.");
+  });
 });
