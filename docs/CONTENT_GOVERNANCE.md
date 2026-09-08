@@ -74,6 +74,25 @@ For an approved `GENERATION_TEMPLATE` proposal, a reviewer may record completed 
 
 Regeneration creates a new run and new question version. Regenerating only an explanation or distractors still creates a new complete version so published records remain reproducible.
 
+## Representative owner-review findings — 2026-09-07
+
+The first owner pass covered 11 distinct candidate versions across six Math leaf skills. This is enough qualitative evidence to improve the workflow and create revision candidates; it is not a statistically representative quality sample and does not approve the remaining bank.
+
+The pass produced four actionable content findings:
+
+- `calculate-mean-001` and `table-mean-001` calculate correctly but should explain what a mean represents before applying the procedure;
+- `table-mean-001` should move from Proficient to Developing under the internal difficulty rubric;
+- `supplementary-angle-001` should move from Foundational to Developing because the learner must identify and apply the supplementary-angle relationship; and
+- `evaluate-linear-expression-001` was marked Approved while its note requested a move from Foundational to Developing, so the note is treated as revision evidence rather than as a clean approval.
+
+The pass also revealed two workflow defects. A preselected `NEEDS_REVISION` value caused accidental audit events, and the static preview did not let the reviewer exercise response controls. The remediation requires explicit decision and score selection, displays the internal difficulty and explanation rubrics, adds a no-write interactive learner sandbox, and defaults the queue to one latest non-test candidate per family.
+
+No owner decision from this pass is converted into validator evidence or publication automatically. Revised versions begin unreviewed and must pass the current deterministic and human gates independently.
+
+## Synthetic-fixture containment
+
+Browser-test publications use a dedicated `_e2e` database. After an earlier configuration leaked 37 test approvals into the development database, those publication records were retired rather than deleted so the audit trail remains inspectable. Learner-bank queries now independently reject publications made by the E2E fixture actor outside `APP_ENV=test`. Synthetic items may verify mechanics in the disposable test environment but never count as reviewed educational content.
+
 ## Takedowns and corrections
 
 - Provide a documented rights-holder contact before launch.

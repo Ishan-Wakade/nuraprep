@@ -10,6 +10,7 @@ import type {
   MisconceptionRule,
   TutorGuidance,
 } from "@/lib/questions/contracts";
+import { REVIEW_SCORE_RUBRIC } from "@/lib/questions/review-rubrics";
 
 import {
   createQuestionRevision,
@@ -36,44 +37,58 @@ export function DecisionForm({ versionId }: { versionId: string }) {
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="versionId" value={versionId} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="text-xs font-bold text-[#52676a]">
+      <div className="space-y-3">
+        <label className="block max-w-sm text-xs font-bold text-[#52676a]">
           Decision
           <select
             name="decision"
+            required
             className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
-            defaultValue="NEEDS_REVISION"
+            defaultValue=""
           >
+            <option value="" disabled>
+              Select a decision
+            </option>
             <option value="APPROVED">Approved</option>
             <option value="NEEDS_REVISION">Needs revision</option>
             <option value="REJECTED">Rejected</option>
           </select>
         </label>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
           {[
-            ["mathematicalCorrectness", "Math"],
+            ["mathematicalCorrectness", "Mathematical correctness"],
             ["clarity", "Clarity"],
-            ["alignment", "Align"],
-            ["accessibility", "A11y"],
-            ["originality", "Original"],
+            ["alignment", "Topic alignment"],
+            ["accessibility", "Accessibility"],
+            ["originality", "Originality"],
           ].map(([name, label]) => (
-            <label
-              key={name}
-              className="text-center text-[10px] font-bold text-[#52676a]"
-            >
+            <label key={name} className="text-xs font-bold text-[#52676a]">
               {label}
               <select
                 name={name}
-                defaultValue="3"
-                className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-1 py-2.5 text-center text-sm"
+                defaultValue=""
+                required
+                aria-label={`${label} score`}
+                className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-2 py-2.5 text-sm"
               >
+                <option value="" disabled>
+                  Score
+                </option>
                 {[1, 2, 3, 4].map((score) => (
-                  <option key={score}>{score}</option>
+                  <option key={score} value={score}>
+                    {score}
+                  </option>
                 ))}
               </select>
             </label>
           ))}
         </div>
+      </div>
+      <div className="rounded-xl border border-[#d8ded9] bg-[#faf9f4] p-3 text-xs leading-5 text-[#52676a]">
+        <strong className="text-[#123136]">Score guide:</strong>{" "}
+        {Object.entries(REVIEW_SCORE_RUBRIC)
+          .map(([score, meaning]) => `${score} = ${meaning}`)
+          .join(" · ")}
       </div>
       <label className="block text-xs font-bold text-[#52676a]">
         Review notes

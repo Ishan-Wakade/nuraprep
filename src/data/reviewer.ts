@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, not, or, sql } from "drizzle-orm";
 import { connection } from "next/server";
 
 import { getDatabase } from "@/db/client";
@@ -34,6 +34,7 @@ import {
 } from "@/lib/questions/validation";
 
 export type ReviewQueueFilters = {
+  scope?: "CURRENT" | "HISTORY";
   query?: string;
   difficulty?: (typeof questionVersions.difficulty.enumValues)[number];
   questionType?: (typeof questionVersions.questionType.enumValues)[number];
@@ -73,6 +74,14 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
     .innerJoin(skills, eq(skills.id, questionVersions.primarySkillId))
     .where(
       and(
+        not(ilike(questions.internalSlug, "e2e-%")),
+        filters.scope === "HISTORY"
+          ? undefined
+          : sql`${questionVersions.version} = (
+              SELECT max(latest_version.version)
+              FROM question_versions AS latest_version
+              WHERE latest_version.question_id = ${questionVersions.questionId}
+            )`,
         filters.query
           ? or(
               ilike(questionVersions.prompt, `%${filters.query}%`),
@@ -90,7 +99,7 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
       ),
     )
     .orderBy(desc(questionVersions.createdAt), desc(questionVersions.version))
-    .limit(200);
+    .limit(filters.scope === "HISTORY" ? 500 : 200);
 
   const versionIds = rows.map((row) => row.versionId);
   const [
@@ -179,6 +188,8 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
         SELECT version.primary_skill_id AS skill_id,
                count(DISTINCT version.question_id)::int AS candidate_families
         FROM question_versions AS version
+        INNER JOIN questions AS question ON question.id = version.question_id
+        WHERE question.internal_slug NOT LIKE 'e2e-%'
         GROUP BY version.primary_skill_id
       ), published_counts AS (
         SELECT version.primary_skill_id AS skill_id,
@@ -187,7 +198,10 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
         FROM question_publications AS publication
         INNER JOIN question_versions AS version
           ON version.id = publication.question_version_id
+        INNER JOIN questions AS question ON question.id = publication.question_id
         WHERE publication.retired_at IS NULL
+          AND publication.published_by <> 'e2e-fixture-reviewer'
+          AND question.internal_slug NOT LIKE 'e2e-%'
         GROUP BY version.primary_skill_id
       )
       SELECT leaf.id AS skill_id,
@@ -536,6 +550,7 @@ export async function getQuestionReviewDetail(versionId: string) {
         LEFT JOIN latest_decisions AS decision
           ON decision.question_version_id = latest.version_id
        WHERE question.section = 'MATH'
+         AND question.internal_slug NOT LIKE 'e2e-%'
        ORDER BY CASE coalesce(decision.decision::text, 'UNREVIEWED')
                   WHEN 'UNREVIEWED' THEN 0
                   WHEN 'NEEDS_REVISION' THEN 1

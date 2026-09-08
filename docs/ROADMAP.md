@@ -19,6 +19,10 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Reject malformed numeric grouping, duplicate display options, equivalent numeric distractors, and duplicate unit aliases.
 - [x] Build a local reviewer browse/filter/preview/version/feedback/decision flow.
 - [x] Add latest-version progress, next-action navigation, and a guardrail against reviewing stale historical versions.
+- [x] Default the queue to one latest non-test candidate per family while preserving explicit version-history access.
+- [x] Require an explicit decision and all five rubric scores so a form default cannot create an accidental review judgment.
+- [x] Add a no-write interactive learner sandbox for choice, numeric, multiple-select, and ordered-response review.
+- [x] Publish internal difficulty rubric v2 and explanation rubric v2 in the reviewer workspace.
 - [x] Add safe deterministic math recipes, reviewer-attested evidence, and an explicit publication ledger.
 - [x] Require structured exact-version, current-rubric, and independent-judgment attestations for reviewer validator evidence.
 - [x] Show the exact active validator version and rubric description before reviewer evidence is submitted.
@@ -79,6 +83,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Implement a fail-closed source/license registry and abstract coverage-intake workflow.
 - [x] Add due/overdue source-policy rechecks with immutable before-and-after audit evidence.
 - [x] Isolate destructive browser fixtures in an automatically prepared `_e2e` database.
+- [x] Add learner-query containment for E2E fixture publications and retire the leaked development publications without deleting audit history.
 - [x] Add a provider-neutral boundary, versioned template approval, idempotent regeneration requests, immutable lifecycle controls, and per-request cost ceilings.
 - [x] Add a strict bodyless metadata acquisition adapter contract that rejects returned content bodies.
 - [x] Add budgeted provider-worker orchestration and atomic, one-candidate-only draft persistence with regeneration-scope enforcement.

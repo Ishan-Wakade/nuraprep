@@ -114,6 +114,15 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
   }
 
   await page.getByLabel("Decision").selectOption("APPROVED");
+  for (const scoreLabel of [
+    "Mathematical correctness score",
+    "Clarity score",
+    "Topic alignment score",
+    "Accessibility score",
+    "Originality score",
+  ]) {
+    await page.getByLabel(scoreLabel).selectOption("4");
+  }
   await page
     .getByLabel("Review notes")
     .fill("E2E review confirms all required evidence is present.");

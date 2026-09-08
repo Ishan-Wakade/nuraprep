@@ -20,6 +20,7 @@ const reviewStatuses = [
   "NEEDS_REVISION",
   "REJECTED",
 ] as const;
+const scopes = ["CURRENT", "HISTORY"] as const;
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -36,7 +37,9 @@ export default async function ReviewQueuePage({
   const difficulty = single(params.difficulty);
   const questionType = single(params.questionType);
   const reviewStatus = single(params.status);
+  const scope = single(params.scope);
   const filters: ReviewQueueFilters = {
+    scope: scopes.find((value) => value === scope) ?? "CURRENT",
     query: single(params.q)?.trim() || undefined,
     difficulty: difficulties.find((value) => value === difficulty),
     questionType: questionTypes.find((value) => value === questionType),
@@ -61,7 +64,10 @@ export default async function ReviewQueuePage({
           </p>
         </div>
         <span className="rounded-full border border-[#c9d9d3] bg-[#e8f3ef] px-3 py-2 text-xs font-semibold text-[#116b65]">
-          {queue.summary.total} visible versions
+          {queue.summary.total} visible versions ·{" "}
+          {filters.scope === "CURRENT"
+            ? "latest candidate per family"
+            : "full history"}
         </span>
       </div>
 
@@ -155,7 +161,7 @@ export default async function ReviewQueuePage({
         </div>
       </section>
 
-      <form className="mt-6 grid gap-3 rounded-2xl border border-[#d8ded9] bg-[#fffdf8] p-4 shadow-sm md:grid-cols-2 lg:grid-cols-5">
+      <form className="mt-6 grid gap-3 rounded-2xl border border-[#d8ded9] bg-[#fffdf8] p-4 shadow-sm md:grid-cols-2 lg:grid-cols-6">
         <label className="lg:col-span-2">
           <span className="mb-1.5 block text-xs font-bold text-[#52676a]">
             Search
@@ -167,6 +173,13 @@ export default async function ReviewQueuePage({
             className="w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
           />
         </label>
+        <FilterSelect
+          label="Version scope"
+          name="scope"
+          value={filters.scope}
+          options={scopes}
+          includeAll={false}
+        />
         <FilterSelect
           label="Status"
           name="status"
@@ -298,11 +311,13 @@ function FilterSelect({
   name,
   value,
   options,
+  includeAll = true,
 }: {
   label: string;
   name: string;
   value?: string;
   options: readonly string[];
+  includeAll?: boolean;
 }) {
   return (
     <label>
@@ -314,7 +329,7 @@ function FilterSelect({
         defaultValue={value}
         className="w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
       >
-        <option value="">All</option>
+        {includeAll && <option value="">All</option>}
         {options.map((option) => (
           <option key={option} value={option}>
             {formatLabel(option)}

@@ -50,6 +50,13 @@ test("filters the review queue and opens full provenance", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("Model input: not permitted")).toBeVisible();
   await expect(page.getByText(/publication blockers/i)).toBeVisible();
+  await expect(page.getByLabel("Decision")).toHaveValue("");
+  await expect(page.getByText(/Internal difficulty:/i).first()).toBeVisible();
+  await page.locator('input[name="sandbox-choice"][value="c"]').check();
+  await page.getByRole("button", { name: "Check sandbox answer" }).click();
+  await expect(
+    page.getByText(/stored answer contract accepts this response/i),
+  ).toBeVisible();
   await expectNoA11yViolations(page);
 });
 
@@ -59,6 +66,15 @@ test("records a decision and creates an immutable revision", async ({
   await page.goto(`/review/questions/${firstVersionId}`);
 
   await page.getByLabel("Decision").selectOption("NEEDS_REVISION");
+  for (const scoreLabel of [
+    "Mathematical correctness score",
+    "Clarity score",
+    "Topic alignment score",
+    "Accessibility score",
+    "Originality score",
+  ]) {
+    await page.getByLabel(scoreLabel).selectOption("3");
+  }
   await page
     .getByLabel("Review notes")
     .fill("Clarify the practical context before approving this candidate.");

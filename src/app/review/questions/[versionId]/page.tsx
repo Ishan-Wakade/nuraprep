@@ -3,6 +3,12 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { getQuestionReviewDetail } from "@/data/reviewer";
+import {
+  DIFFICULTY_RUBRIC_VERSION,
+  EXPLANATION_RUBRIC,
+  EXPLANATION_RUBRIC_VERSION,
+  INTERNAL_DIFFICULTY_RUBRIC,
+} from "@/lib/questions/review-rubrics";
 
 import {
   AutomatedValidationForm,
@@ -14,6 +20,7 @@ import {
   ReviewerValidationForm,
   RevisionForm,
 } from "./review-forms";
+import { LearnerSandbox } from "./learner-sandbox";
 
 export default async function QuestionReviewPage({
   params,
@@ -113,7 +120,7 @@ export default async function QuestionReviewPage({
           <div className="flex flex-wrap gap-2 text-[11px] font-bold tracking-wide uppercase">
             <Badge>{question.skillTitle}</Badge>
             <Badge>{label(question.questionType)}</Badge>
-            <Badge>{label(question.difficulty)}</Badge>
+            <Badge>Internal difficulty: {label(question.difficulty)}</Badge>
             <Badge>Version {question.version}</Badge>
           </div>
           <h1 className="mt-4 font-serif text-3xl tracking-[-0.03em] sm:text-4xl">
@@ -176,21 +183,10 @@ export default async function QuestionReviewPage({
                 Graph description: {question.stimulus.accessibleDescription}
               </p>
             )}
-            {question.choices && (
-              <ol className="mt-5 grid gap-3 sm:grid-cols-2">
-                {question.choices.map((choice) => (
-                  <li
-                    key={choice.id}
-                    className="rounded-xl border border-[#d8ded9] bg-[#fafbf8] px-4 py-3 text-sm"
-                  >
-                    <span className="mr-2 font-bold text-[#116b65]">
-                      {choice.id.toUpperCase()}.
-                    </span>
-                    {choice.content}
-                  </li>
-                ))}
-              </ol>
-            )}
+            <LearnerSandbox
+              answerSpec={question.answerSpec}
+              choices={question.choices ?? null}
+            />
           </Panel>
 
           <Panel
@@ -205,6 +201,16 @@ export default async function QuestionReviewPage({
             </KeyValue>
             <KeyValue label="Worked explanation">
               <p className="leading-7">{question.explanation}</p>
+              <details className="mt-4 rounded-xl border border-[#d8ded9] bg-[#faf9f4] p-3 text-xs leading-5">
+                <summary className="cursor-pointer font-bold text-[#116b65]">
+                  Explanation rubric v{EXPLANATION_RUBRIC_VERSION}
+                </summary>
+                <ol className="mt-2 list-decimal space-y-1 pl-5 text-[#52676a]">
+                  {EXPLANATION_RUBRIC.map((criterion) => (
+                    <li key={criterion}>{criterion}</li>
+                  ))}
+                </ol>
+              </details>
             </KeyValue>
             <KeyValue label="Distractor rationales">
               <CodeBlock value={question.distractorRationales} />
@@ -360,7 +366,11 @@ export default async function QuestionReviewPage({
                 value={question.learningObjective}
               />
               <Meta
-                term="Difficulty rationale"
+                term={`Internal difficulty (rubric v${DIFFICULTY_RUBRIC_VERSION})`}
+                value={`${INTERNAL_DIFFICULTY_RUBRIC[question.difficulty].label}: ${INTERNAL_DIFFICULTY_RUBRIC[question.difficulty].summary}`}
+              />
+              <Meta
+                term="Item-specific difficulty rationale"
                 value={question.difficultyRationale}
               />
               <Meta
@@ -368,8 +378,8 @@ export default async function QuestionReviewPage({
                 value={`${question.estimatedSeconds} seconds`}
               />
               <Meta
-                term="Calculator"
-                value={label(question.calculatorPolicy)}
+                term="Calculator policy"
+                value={`${label(question.calculatorPolicy)}. This label describes the intended solving experience; difficulty must come from reasoning, not arithmetic burden alone.`}
               />
               <Meta
                 term="Authoring"

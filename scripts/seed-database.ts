@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { config } from "dotenv";
 import { Pool } from "pg";
@@ -30,6 +31,12 @@ import {
   validateMisconceptionRules,
   validateQuestionContent,
 } from "../src/lib/questions/validation";
+import {
+  DIFFICULTY_RUBRIC_VERSION,
+  EXPLANATION_RUBRIC,
+  EXPLANATION_RUBRIC_VERSION,
+  INTERNAL_DIFFICULTY_RUBRIC,
+} from "../src/lib/questions/review-rubrics";
 
 config({ path: ".env.local", quiet: true });
 
@@ -443,9 +450,9 @@ const seedQuestions: SeedQuestion[] = [
     primarySkillId: ids.algebraicExpressions,
     learningObjective:
       "Evaluate a linear algebraic expression for a given variable value.",
-    difficulty: "FOUNDATIONAL",
+    difficulty: "DEVELOPING",
     difficultyRationale:
-      "Requires substitution followed by multiplication and addition.",
+      "Requires substituting a value and then applying the order of operations across two linked calculations.",
     estimatedSeconds: 55,
     calculatorPolicy: "NOT_NEEDED",
     misconceptions: ["ADDS_BEFORE_MULTIPLYING", "OMITS_CONSTANT_TERM"],
@@ -494,7 +501,7 @@ const seedQuestions: SeedQuestion[] = [
       ],
       answerSpec: { type: "single_choice", choiceId: "c" },
       explanation:
-        "Substitute 7 for n, then follow the order of operations: 3(7) + 8 = 21 + 8 = 29.",
+        "Evaluating an expression means replacing the variable with its given value. Substitute 7 for n, then follow the order of operations: multiply before adding. This gives 3(7) + 8 = 21 + 8 = 29.",
       distractorRationales: {
         a: "This does not correctly evaluate both terms after substitution.",
         b: "This calculates 3 × 7 but omits the added 8.",
@@ -1852,9 +1859,9 @@ const measurementDataExpansion: SeedQuestion[] = [
     slug: "supplementary-angle-001",
     primarySkillId: ids.geometry,
     learningObjective: "Find an angle supplementary to a given angle.",
-    difficulty: "FOUNDATIONAL",
+    difficulty: "DEVELOPING",
     difficultyRationale:
-      "Requires recalling that a linear pair totals 180 degrees and subtracting once.",
+      "Requires identifying the straight-line relationship as supplementary and then subtracting from 180 degrees.",
     estimatedSeconds: 55,
     calculatorPolicy: "NOT_NEEDED",
     misconceptions: ["USES_COMPLEMENTARY_TOTAL"],
@@ -1900,9 +1907,9 @@ const measurementDataExpansion: SeedQuestion[] = [
     slug: "table-mean-001",
     primarySkillId: ids.dataInterpretation,
     learningObjective: "Read a table and calculate the mean of its values.",
-    difficulty: "PROFICIENT",
+    difficulty: "DEVELOPING",
     difficultyRationale:
-      "Requires extracting all table values, summing them, and dividing by the number of observations.",
+      "Requires reading five values from a simple table and completing the two linked mean steps: sum, then divide by the count.",
     estimatedSeconds: 90,
     calculatorPolicy: "ALLOWED",
     misconceptions: ["DIVIDES_BY_WRONG_OBSERVATION_COUNT"],
@@ -1940,7 +1947,7 @@ const measurementDataExpansion: SeedQuestion[] = [
       ],
       answerSpec: { type: "single_choice", choiceId: "c" },
       explanation:
-        "Add the five values to get 60, then divide by 5: 60 ÷ 5 = 12 calls.",
+        "The mean is the equal-share average: the value each day would have if the total were distributed evenly. Add the five daily counts to get 60, then divide by the 5 days: 60 ÷ 5 = 12 calls per day. The result is reasonable because it falls between the smallest value, 8, and the largest, 16.",
       distractorRationales: {
         a: "This does not use the total of all five values divided by 5.",
         b: "This is one below the calculated mean.",
@@ -2135,7 +2142,8 @@ const measurementDataExpansion: SeedQuestion[] = [
       questionType: "NUMERIC",
       prompt: "What is the mean of 7, 10, 13, 6, and 9?",
       answerSpec: numericAnswer(9),
-      explanation: "Add the values to get 45, then divide by 5: 45 ÷ 5 = 9.",
+      explanation:
+        "The mean is the equal-share average: the value each observation would have if the total were distributed evenly. Add the five values to get 45, then divide by the 5 observations: 45 ÷ 5 = 9. The result is reasonable because 9 falls between the smallest value, 6, and the largest, 13.",
       distractorRationales: {},
     },
     verificationSpec: {
@@ -2644,6 +2652,67 @@ async function main() {
         .insert(validatorRules)
         .values(ruleRows)
         .onConflictDoNothing();
+
+      const reviewerRuleRevisions = [
+        {
+          id: "1a000000-0000-4000-8000-000000000001",
+          key: "difficulty-calibration",
+          version: DIFFICULTY_RUBRIC_VERSION,
+          description: `Apply NuraPrep's internal difficulty rubric v${DIFFICULTY_RUBRIC_VERSION}. ${Object.values(
+            INTERNAL_DIFFICULTY_RUBRIC,
+          )
+            .map((band) => `${band.label}: ${band.summary}`)
+            .join(" ")}`,
+          changeNotes:
+            "Representative owner review found inconsistent labels, so this revision defines each band by reasoning and representation demands rather than arithmetic size.",
+        },
+        {
+          id: "1a000000-0000-4000-8000-000000000002",
+          key: "explanation-consistency",
+          version: EXPLANATION_RUBRIC_VERSION,
+          description: `Apply NuraPrep's explanation rubric v${EXPLANATION_RUBRIC_VERSION}. ${EXPLANATION_RUBRIC.join(
+            " ",
+          )}`,
+          changeNotes:
+            "Representative owner review found mathematically correct explanations that did not teach the underlying concept, so this revision requires conceptual framing and setup rationale.",
+        },
+      ] as const;
+
+      for (const revision of reviewerRuleRevisions) {
+        const existing = await transaction
+          .select({ id: validatorRules.id })
+          .from(validatorRules)
+          .where(
+            and(
+              eq(validatorRules.key, revision.key),
+              eq(validatorRules.version, revision.version),
+            ),
+          )
+          .limit(1);
+        if (existing[0]) continue;
+
+        const activatedAt = new Date("2026-09-07T22:00:00Z");
+        await transaction
+          .update(validatorRules)
+          .set({
+            active: false,
+            retiredAt: activatedAt,
+            retiredBy: "owner-review-2026-09-07",
+          })
+          .where(
+            and(
+              eq(validatorRules.key, revision.key),
+              eq(validatorRules.active, true),
+            ),
+          );
+        await transaction.insert(validatorRules).values({
+          ...revision,
+          blocksPublication: true,
+          active: true,
+          createdBy: "owner-feedback-implementation",
+          activatedAt,
+        });
+      }
 
       for (const [index, candidate] of seedQuestions.entries()) {
         const templateId = `17000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`;
