@@ -1,0 +1,2 @@
+ALTER TABLE "review_decisions" ADD COLUMN "synthetic" boolean GENERATED ALWAYS AS ("reviewer_id" = 'e2e-fixture-reviewer' OR "notes" ILIKE 'E2E%') STORED;--> statement-breakpoint
+ALTER TABLE "validation_runs" ADD COLUMN "synthetic" boolean GENERATED ALWAYS AS (coalesce("evidence"->>'context', '') = 'SYNTHETIC_TEST' OR coalesce("evidence"->>'method', '') LIKE 'e2e-%' OR coalesce("evidence"->>'notes', '') ILIKE 'E2E%') STORED;

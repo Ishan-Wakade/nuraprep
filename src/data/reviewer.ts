@@ -27,6 +27,7 @@ import {
   validatorRules,
 } from "@/db/schema";
 import { requireReviewer } from "@/lib/auth/reviewer";
+import { getServerEnvironment } from "@/lib/env/server";
 import {
   evaluatePublicationGate,
   REQUIRED_PUBLICATION_VALIDATORS,
@@ -55,6 +56,7 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
   await connection();
   await requireReviewer();
   const database = getDatabase();
+  const includeSyntheticEvidence = getServerEnvironment().APP_ENV === "test";
 
   const rows = await database
     .select({
@@ -120,7 +122,14 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
             decidedAt: reviewDecisions.decidedAt,
           })
           .from(reviewDecisions)
-          .where(inArray(reviewDecisions.questionVersionId, versionIds))
+          .where(
+            and(
+              inArray(reviewDecisions.questionVersionId, versionIds),
+              includeSyntheticEvidence
+                ? undefined
+                : eq(reviewDecisions.synthetic, false),
+            ),
+          )
           .orderBy(desc(reviewDecisions.decidedAt))
       : [],
     versionIds.length
@@ -140,6 +149,9 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
             and(
               inArray(validationRuns.questionVersionId, versionIds),
               eq(validatorRules.active, true),
+              includeSyntheticEvidence
+                ? undefined
+                : eq(validationRuns.synthetic, false),
             ),
           )
           .orderBy(desc(validationRuns.executedAt))
@@ -202,6 +214,14 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
         INNER JOIN questions AS question ON question.id = publication.question_id
         WHERE publication.retired_at IS NULL
           AND publication.published_by <> 'e2e-fixture-reviewer'
+          AND (
+            SELECT genuine_decision.decision
+            FROM review_decisions AS genuine_decision
+            WHERE genuine_decision.question_version_id = publication.question_version_id
+              AND genuine_decision.synthetic = false
+            ORDER BY genuine_decision.decided_at DESC, genuine_decision.id DESC
+            LIMIT 1
+          ) = 'APPROVED'::review_decision
           AND question.internal_slug NOT LIKE 'e2e-%'
         GROUP BY version.primary_skill_id
       )
@@ -341,6 +361,7 @@ export async function getQuestionReviewDetail(versionId: string) {
   await connection();
   await requireReviewer();
   const database = getDatabase();
+  const includeSyntheticEvidence = getServerEnvironment().APP_ENV === "test";
 
   const [question] = await database
     .select({
@@ -435,6 +456,7 @@ export async function getQuestionReviewDetail(versionId: string) {
         outcome: validationRuns.outcome,
         failureCode: validationRuns.failureCode,
         evidence: validationRuns.evidence,
+        synthetic: validationRuns.synthetic,
         executedAt: validationRuns.executedAt,
       })
       .from(validationRuns)
@@ -552,7 +574,8 @@ export async function getQuestionReviewDetail(versionId: string) {
         SELECT DISTINCT ON (decision.question_version_id)
                decision.question_version_id,
                decision.decision
-          FROM review_decisions AS decision
+         FROM review_decisions AS decision
+         WHERE ${includeSyntheticEvidence} OR decision.synthetic = false
          ORDER BY decision.question_version_id, decision.decided_at DESC, decision.id DESC
       ), latest_reviewer_runs AS (
         SELECT DISTINCT ON (run.question_version_id, rule.key)
@@ -562,6 +585,7 @@ export async function getQuestionReviewDetail(versionId: string) {
           FROM validation_runs AS run
           INNER JOIN validator_rules AS rule ON rule.id = run.validator_rule_id
          WHERE rule.active = true
+           AND (${includeSyntheticEvidence} OR run.synthetic = false)
            AND rule.key IN (
              'difficulty-calibration',
              'reading-level',
@@ -649,7 +673,13 @@ export async function getQuestionReviewDetail(versionId: string) {
     string,
     "PASS" | "FAIL" | "WARNING" | "ERROR"
   > = {};
-  for (const validation of validations) {
+  const publicationValidations = includeSyntheticEvidence
+    ? validations
+    : validations.filter((validation) => !validation.synthetic);
+  const publicationDecisions = includeSyntheticEvidence
+    ? decisions
+    : decisions.filter((decision) => !decision.synthetic);
+  for (const validation of publicationValidations) {
     if (validation.active && !(validation.key in latestValidationByKey)) {
       latestValidationByKey[validation.key] = validation.outcome;
     }
@@ -658,13 +688,13 @@ export async function getQuestionReviewDetail(versionId: string) {
   const publicationGate = evaluatePublicationGate({
     lifecycle: question.lifecycle,
     provenanceCount: sources.length,
-    latestReviewDecision: decisions[0]?.decision,
+    latestReviewDecision: publicationDecisions[0]?.decision,
     latestValidationByKey,
   });
   const publicationReadiness = evaluatePublicationGate({
     lifecycle: "ACTIVE",
     provenanceCount: sources.length,
-    latestReviewDecision: decisions[0]?.decision,
+    latestReviewDecision: publicationDecisions[0]?.decision,
     latestValidationByKey,
   });
   const serializedPublications = publications.map((item) => ({

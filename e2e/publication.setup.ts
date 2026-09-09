@@ -114,7 +114,7 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
       page
         .getByRole("heading", { name: "Validation evidence" })
         .locator("..")
-        .getByText(new RegExp(`^${validatorKey} v\\d+$`)),
+        .getByText(new RegExp(`^${validatorKey} v\\d+`)),
     ).toBeVisible();
   }
 
@@ -137,6 +137,14 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
   ).toBeVisible();
 
   await page.goto(`${publicationCandidateUrl}?validation=complete`);
+  await expect(page.getByText("Synthetic test evidence").first()).toBeVisible();
+  await expect(
+    page
+      .getByRole("heading", { name: "Validation evidence" })
+      .locator("..")
+      .getByText(/synthetic test evidence/i)
+      .first(),
+  ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Publish approved version" }),
   ).toBeEnabled();

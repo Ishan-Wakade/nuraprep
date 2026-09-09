@@ -20,6 +20,7 @@ import {
   validatorRules,
 } from "@/db/schema";
 import { requireReviewer } from "@/lib/auth/reviewer";
+import { getServerEnvironment } from "@/lib/env/server";
 import {
   mathVerificationSpecSchema,
   misconceptionCodesSchema,
@@ -52,6 +53,7 @@ export async function runDeterministicValidation(
   formData: FormData,
 ): Promise<ReviewerActionState> {
   const reviewer = await requireReviewer();
+  const synthetic = getServerEnvironment().APP_ENV === "test";
   const parsed = versionIdSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { status: "error", message: "Invalid question version." };
@@ -164,6 +166,7 @@ export async function runDeterministicValidation(
           originalityIssues[0]?.code ??
           "CONTENT_INVALID"),
       evidence: {
+        context: synthetic ? "SYNTHETIC_TEST" : "AUTOMATED_REVIEW",
         method: "deterministic-answer-contract-and-internal-similarity",
         executedBy: reviewer.id,
         issues: [
@@ -183,6 +186,7 @@ export async function runDeterministicValidation(
       outcome: mathResult.valid ? "PASS" : "FAIL",
       failureCode: mathResult.valid ? null : mathResult.failureCode,
       evidence: {
+        context: synthetic ? "SYNTHETIC_TEST" : "AUTOMATED_REVIEW",
         ...mathResult.evidence,
         executedBy: reviewer.id,
       },
@@ -201,6 +205,7 @@ export async function submitReviewerValidationBatch(
   formData: FormData,
 ): Promise<ReviewerActionState> {
   const reviewer = await requireReviewer();
+  const synthetic = getServerEnvironment().APP_ENV === "test";
   const raw = Object.fromEntries(formData);
   const base = reviewerValidationBatchBaseSchema.safeParse(raw);
   if (!base.success) {
@@ -273,6 +278,7 @@ export async function submitReviewerValidationBatch(
         outcome: evidence.outcome,
         failureCode: evidence.outcome === "FAIL" ? evidence.failureCode : null,
         evidence: {
+          context: synthetic ? "SYNTHETIC_TEST" : "HUMAN_REVIEW",
           method: "reviewer-attestation-batch",
           reviewerId: reviewer.id,
           notes: evidence.evidence,
@@ -310,6 +316,7 @@ export async function submitReviewDecision(
   formData: FormData,
 ): Promise<ReviewerActionState> {
   const reviewer = await requireReviewer();
+  const synthetic = getServerEnvironment().APP_ENV === "test";
   const parsed = decisionSchema.safeParse(Object.fromEntries(formData));
 
   if (!parsed.success) {
@@ -333,7 +340,7 @@ export async function submitReviewDecision(
     questionVersionId: versionId,
     reviewerId: reviewer.id,
     decision,
-    notes,
+    notes: synthetic ? `E2E synthetic test decision. ${notes}` : notes,
     rubricScores,
   });
 
@@ -766,6 +773,7 @@ async function lockQuestionFamily(
 
 async function getPublicationReadiness(versionId: string) {
   const database = getDatabase();
+  const includeSyntheticEvidence = getServerEnvironment().APP_ENV === "test";
   const [version] = await database
     .select({
       questionId: questionVersions.questionId,
@@ -786,7 +794,14 @@ async function getPublicationReadiness(versionId: string) {
     database
       .select({ decision: reviewDecisions.decision })
       .from(reviewDecisions)
-      .where(eq(reviewDecisions.questionVersionId, versionId))
+      .where(
+        and(
+          eq(reviewDecisions.questionVersionId, versionId),
+          includeSyntheticEvidence
+            ? undefined
+            : eq(reviewDecisions.synthetic, false),
+        ),
+      )
       .orderBy(desc(reviewDecisions.decidedAt))
       .limit(1),
     database
@@ -804,6 +819,9 @@ async function getPublicationReadiness(versionId: string) {
         and(
           eq(validationRuns.questionVersionId, versionId),
           eq(validatorRules.active, true),
+          includeSyntheticEvidence
+            ? undefined
+            : eq(validationRuns.synthetic, false),
         ),
       )
       .orderBy(desc(validationRuns.executedAt)),

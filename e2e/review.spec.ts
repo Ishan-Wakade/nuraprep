@@ -234,7 +234,7 @@ test("records every human validator in one exact-version submission", async ({
     "originality",
   ]) {
     await expect(
-      validationEvidence.getByText(new RegExp(`^${validatorKey} v\\d+$`)),
+      validationEvidence.getByText(new RegExp(`^${validatorKey} v\\d+`)),
     ).toBeVisible();
   }
 });

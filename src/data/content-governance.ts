@@ -1,6 +1,6 @@
 import "server-only";
 
-import { asc, count, desc, eq, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql } from "drizzle-orm";
 import { connection } from "next/server";
 
 import { getDatabase } from "@/db/client";
@@ -19,6 +19,7 @@ import {
   validatorRules,
 } from "@/db/schema";
 import { requireReviewer } from "@/lib/auth/reviewer";
+import { getServerEnvironment } from "@/lib/env/server";
 
 export async function getSourceRegistry() {
   await connection();
@@ -132,6 +133,7 @@ export async function getSourceRegistry() {
 export async function getValidatorRuleRegistry() {
   await connection();
   await requireReviewer();
+  const includeSyntheticEvidence = getServerEnvironment().APP_ENV === "test";
   const rows = await getDatabase()
     .select({
       id: validatorRules.id,
@@ -151,7 +153,12 @@ export async function getValidatorRuleRegistry() {
     .from(validatorRules)
     .leftJoin(
       validationRuns,
-      eq(validationRuns.validatorRuleId, validatorRules.id),
+      and(
+        eq(validationRuns.validatorRuleId, validatorRules.id),
+        includeSyntheticEvidence
+          ? undefined
+          : eq(validationRuns.synthetic, false),
+      ),
     )
     .groupBy(validatorRules.id)
     .orderBy(validatorRules.key, desc(validatorRules.version));

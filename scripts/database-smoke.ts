@@ -244,6 +244,94 @@ async function main() {
         "Temporary smoke-test revision verifies retirement and uniqueness constraints.",
       ],
     );
+    const syntheticValidationId = randomUUID();
+    const humanValidationId = randomUUID();
+    await client.query(
+      `INSERT INTO validation_runs
+       (id, question_version_id, validator_rule_id, outcome, evidence)
+       VALUES ($1, $2, $3, 'PASS', $4::jsonb),
+              ($5, $2, $3, 'PASS', $6::jsonb)`,
+      [
+        syntheticValidationId,
+        versionId,
+        replacementValidatorId,
+        JSON.stringify({
+          context: "SYNTHETIC_TEST",
+          method: "reviewer-attestation-batch",
+          notes: "Synthetic validation evidence for database smoke testing.",
+        }),
+        humanValidationId,
+        JSON.stringify({
+          context: "HUMAN_REVIEW",
+          method: "reviewer-attestation-batch",
+          notes: "Human review evidence classification control record.",
+        }),
+      ],
+    );
+    const validationClasses = await client.query<{
+      id: string;
+      synthetic: boolean;
+    }>(
+      `SELECT id, synthetic
+       FROM validation_runs
+       WHERE id IN ($1, $2)`,
+      [syntheticValidationId, humanValidationId],
+    );
+    const validationClassById = new Map(
+      validationClasses.rows.map((row) => [row.id, row.synthetic]),
+    );
+    if (
+      validationClassById.get(syntheticValidationId) !== true ||
+      validationClassById.get(humanValidationId) !== false
+    ) {
+      throw new Error(
+        "Validation evidence was not classified by immutable provenance.",
+      );
+    }
+
+    const syntheticDecisionId = randomUUID();
+    const humanDecisionId = randomUUID();
+    await client.query(
+      `INSERT INTO review_decisions
+       (id, question_version_id, reviewer_id, decision, rubric_scores, notes)
+       VALUES ($1, $2, 'e2e-fixture-reviewer', 'APPROVED', $3::jsonb, $4),
+              ($5, $2, 'ci-smoke-reviewer', 'APPROVED', $3::jsonb, $6)`,
+      [
+        syntheticDecisionId,
+        versionId,
+        JSON.stringify({
+          mathematicalCorrectness: 4,
+          clarity: 4,
+          alignment: 4,
+          accessibility: 4,
+          originality: 4,
+        }),
+        "E2E-only decision used to verify synthetic evidence classification.",
+        humanDecisionId,
+        "Human decision classification control record.",
+      ],
+    );
+    const decisionClasses = await client.query<{
+      id: string;
+      synthetic: boolean;
+    }>(
+      `SELECT id, synthetic
+       FROM review_decisions
+       WHERE id IN ($1, $2)`,
+      [syntheticDecisionId, humanDecisionId],
+    );
+    const decisionClassById = new Map(
+      decisionClasses.rows.map((row) => [row.id, row.synthetic]),
+    );
+    if (
+      decisionClassById.get(syntheticDecisionId) !== true ||
+      decisionClassById.get(humanDecisionId) !== false
+    ) {
+      throw new Error(
+        "Review decisions were not classified by immutable provenance.",
+      );
+    }
+
     await client.query("SAVEPOINT retired_validator_guard_check");
     let retiredValidatorMutationWasBlocked = false;
     try {
@@ -656,6 +744,65 @@ async function main() {
        VALUES ($1, $2, $3, 'ci-smoke-test')`,
       [publicationId, questionId, versionId],
     );
+
+    const countLearnerSafePublications = async () => {
+      const result = await client.query<{ count: number }>(
+        `SELECT count(*)::int AS count
+         FROM question_publications AS publication
+         WHERE publication.question_version_id = $1
+           AND publication.retired_at IS NULL
+           AND publication.published_by <> 'e2e-fixture-reviewer'
+           AND (
+             SELECT genuine_decision.decision
+             FROM review_decisions AS genuine_decision
+             WHERE genuine_decision.question_version_id = publication.question_version_id
+               AND genuine_decision.synthetic = false
+             ORDER BY genuine_decision.decided_at DESC, genuine_decision.id DESC
+             LIMIT 1
+           ) = 'APPROVED'::review_decision`,
+        [versionId],
+      );
+      return result.rows[0]?.count;
+    };
+    if ((await countLearnerSafePublications()) !== 1) {
+      throw new Error(
+        "A genuinely approved publication was excluded from learner-safe selection.",
+      );
+    }
+
+    await client.query(
+      `INSERT INTO review_decisions
+       (question_version_id, reviewer_id, decision, rubric_scores, notes, decided_at)
+       VALUES ($1, 'e2e-fixture-reviewer', 'NEEDS_REVISION', $2::jsonb, $3,
+               now() + interval '1 second')`,
+      [
+        versionId,
+        JSON.stringify({ mathematicalCorrectness: 1 }),
+        "E2E synthetic reversal must not override the latest genuine decision.",
+      ],
+    );
+    if ((await countLearnerSafePublications()) !== 1) {
+      throw new Error(
+        "Synthetic review evidence changed learner-safe publication selection.",
+      );
+    }
+
+    await client.query(
+      `INSERT INTO review_decisions
+       (question_version_id, reviewer_id, decision, rubric_scores, notes, decided_at)
+       VALUES ($1, 'ci-smoke-reviewer', 'NEEDS_REVISION', $2::jsonb, $3,
+               now() + interval '2 seconds')`,
+      [
+        versionId,
+        JSON.stringify({ mathematicalCorrectness: 1 }),
+        "A genuine reviewer revoked approval for this smoke-test publication.",
+      ],
+    );
+    if ((await countLearnerSafePublications()) !== 0) {
+      throw new Error(
+        "A publication remained learner-safe after its latest genuine decision revoked approval.",
+      );
+    }
 
     await client.query("SAVEPOINT publication_identity_check");
     let publicationMutationWasBlocked = false;

@@ -1013,6 +1013,9 @@ export const validationRuns = pgTable(
     outcome: validationOutcomeEnum("outcome").notNull(),
     failureCode: varchar("failure_code", { length: 120 }),
     evidence: jsonb("evidence").$type<Record<string, unknown>>().notNull(),
+    synthetic: boolean("synthetic").generatedAlwaysAs(
+      sql`coalesce("evidence"->>'context', '') = 'SYNTHETIC_TEST' OR coalesce("evidence"->>'method', '') LIKE 'e2e-%' OR coalesce("evidence"->>'notes', '') ILIKE 'E2E%'`,
+    ),
     executedAt: timestamp("executed_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -1039,6 +1042,9 @@ export const reviewDecisions = pgTable(
       .$type<Record<string, number>>()
       .notNull(),
     notes: text("notes").notNull(),
+    synthetic: boolean("synthetic").generatedAlwaysAs(
+      sql`"reviewer_id" = 'e2e-fixture-reviewer' OR "notes" ILIKE 'E2E%'`,
+    ),
     decidedAt: timestamp("decided_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

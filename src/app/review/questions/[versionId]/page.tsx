@@ -430,6 +430,7 @@ export default async function QuestionReviewPage({
                     <span>
                       {run.key} v{run.version}
                       {!run.active && " · retired rubric"}
+                      {run.synthetic && " · synthetic test evidence"}
                     </span>
                     <strong
                       className={
@@ -523,6 +524,11 @@ export default async function QuestionReviewPage({
                 className="mt-3 border-t border-[#e2e6e2] pt-3 text-xs"
               >
                 <strong>{label(decision.decision)}</strong>
+                {decision.synthetic && (
+                  <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-700 uppercase">
+                    Synthetic test evidence
+                  </span>
+                )}
                 <p className="mt-1 leading-5">{decision.notes}</p>
               </div>
             ))}

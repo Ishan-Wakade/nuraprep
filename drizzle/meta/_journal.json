@@ -204,6 +204,20 @@
       "when": 1788842983745,
       "tag": "20260908044943_privileged_account_pseudonymization",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1788933900435,
+      "tag": "20260909060500_melted_puff_adder",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1788934641599,
+      "tag": "20260909061721_quarantine_synthetic_publications",
+      "breakpoints": true
     }
   ]
 }
