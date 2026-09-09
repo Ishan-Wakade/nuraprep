@@ -17,7 +17,7 @@ Tutor guidance uses a bounded, versioned sequence of reviewer-authored Socratic 
 
 The internal similarity pass compares different NuraPrep question families using exact normalized text, a number-invariant fingerprint, and five-token phrase containment. A blocking match fails the automated evidence, but a low score is not treated as proof of legal originality. Prior versions in the same family are excluded so legitimate revision history remains possible.
 
-Seven checks require explicit reviewer evidence:
+Seven additional checks can record explicit reviewer evidence:
 
 - `difficulty-calibration`
 - `reading-level`
@@ -29,19 +29,19 @@ Seven checks require explicit reviewer evidence:
 
 The difficulty check uses NuraPrep's internal reasoning-step and prerequisite rubric; it is not presented as an official ATI difficulty label. Reading-level review separates necessary mathematical vocabulary from avoidable language complexity. Calculator-policy review checks the stored designation against the arithmetic load and documented exam-mode assumptions.
 
-The reviewer records a pass or failure with at least 40 characters of written evidence per rubric and must attest that they inspected the exact version, applied every displayed current rubric, and made an independent judgment rather than accepting automation or model output alone. The consolidated form displays all seven exact active validator versions and database-backed rubric descriptions, requires an explicit outcome for each one, and fails closed unless the complete rule set is configured. One submission inserts seven separate audit records in a database transaction, so convenience does not collapse evidence or leave a partial batch. A failure requires a stable error code, while a pass rejects contradictory failure metadata. Every run is append-only, and the newest run for each validator determines publication readiness.
+For the MVP release policy, the final owner decision is the required human judgment. These seven detailed rubric checks are advisory and can be added when a second reviewer, educator, or targeted QA pass is available; they do not block release. When submitted, the reviewer records a pass or failure with at least 40 characters of written evidence per rubric and attests that they inspected the exact version, applied every displayed current rubric, and made an independent judgment. One submission inserts seven separate append-only audit records in a transaction. A failure requires a stable error code, while a pass rejects contradictory failure metadata.
 
-Reviewer rubrics are themselves immutable versioned records. Activating a changed rubric atomically retires the previous version, requires change rationale and an explicit evidence-invalidation attestation, and leaves only one active version per key. Publication readiness joins validation evidence to the active rule version, so a pass under a retired rubric cannot satisfy the new rule. Automated-rule changes remain code-managed because their descriptions must stay synchronized with deterministic implementations and tests.
+Reviewer rubrics are themselves immutable versioned records. Activating a changed rubric atomically retires the previous version, requires change rationale and an explicit evidence-invalidation attestation, and leaves only one active version per key. A pass under a retired rubric is stale advisory evidence. Automated-rule changes remain code-managed because their descriptions must stay synchronized with deterministic implementations and tests.
 
 ## Publication sequence
 
 1. Create or revise an immutable question version.
 2. Run deterministic checks against that exact version.
-3. Complete the consolidated reviewer form, which records the seven reviewer-only checks separately.
-4. Record an approval decision with rubric scores and notes.
+3. Record an explicit owner approval decision with rubric scores and notes.
+4. Optionally complete the consolidated reviewer form to add seven more granular QA records.
 5. Publish the exact eligible version as a separate owner action.
 
-The current-version queue can be filtered to `Human needed`, and every detail page links directly to the next candidate lacking a complete set of passing human checks. This navigation is derived from the latest run under each active reviewer rubric; stale, failed, or missing evidence remains in the queue.
+The current-version queue can be filtered to `Human needed` as an optional follow-up worklist, and every detail page links to the next candidate lacking a complete set of detailed checks. This navigation is derived from the latest run under each active reviewer rubric; stale, failed, or missing evidence remains visible without blocking an owner-approved MVP release.
 
 Review decisions and validator runs expose an immutable generated `synthetic` classification derived from their original actor, notes, and structured evidence context. Development and production readiness queries exclude synthetic records; the isolated browser-test environment may include them so CI can exercise the complete publication flow. Because the classification is generated by PostgreSQL from append-only evidence, the migration labels historical test records without rewriting their audit history.
 
@@ -53,7 +53,7 @@ Learner selection will join only the single current publication record. Drafts, 
 
 - Verification recipes establish that a stored answer matches a declared calculation; a reviewer must still confirm that the recipe faithfully represents the written prompt.
 - A non-matching wrong answer receives no misconception label. Missing evidence is preferable to an unsupported diagnosis.
-- Internal originality signals are intentionally conservative and uncalibrated. Human originality review remains required, and no external source text is retained merely to create a comparison corpus.
+- Internal originality signals are intentionally conservative and uncalibrated. Targeted human originality review remains recommended, and no external source text is retained merely to create a comparison corpus.
 - Reading-level and broader accessibility automation will supplement, not replace, reviewer evidence in a later validation milestone.
-- Seed candidates are development fixtures. They are not human-reviewed or production-approved.
+- Seed candidates begin as development fixtures and remain unpublished until an owner records an explicit decision.
 - The 12-case Math gold set spans every current leaf skill and executes in CI, but remains labeled `ENGINEERING_DRAFT` until independent owner or educator review.

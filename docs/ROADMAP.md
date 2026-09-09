@@ -27,7 +27,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Require structured exact-version, current-rubric, and independent-judgment attestations for reviewer validator evidence.
 - [x] Show the exact active validator version and rubric description before reviewer evidence is submitted.
 - [x] Version reviewer rubrics and invalidate evidence recorded under retired rule versions.
-- [x] Make difficulty calibration, reading level, and calculator policy explicit publication-blocking reviewer checks.
+- [x] Make difficulty calibration, reading level, and calculator policy explicit, versioned advisory reviewer checks.
 - [x] Add safe regeneration controls after the provider-neutral generation boundary exists.
 - [x] Add reviewer search over learner/reviewer feedback with recurring error summaries.
 - [x] Hand-author an engineering-draft gold evaluation case for every current Math leaf skill and execute it against deterministic contracts.
@@ -36,7 +36,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Surface per-leaf candidate, current-publication, and learner-safe format coverage in the reviewer queue.
 - [ ] Obtain independent owner/educator review before treating the engineering-draft gold set as benchmark truth.
 
-**Exit:** a reviewer can trace, validate, revise, compare, and approve a question; learner APIs cannot read drafts. Seed candidates are intentionally unapproved and remain blocked from publication until every validator and human-review requirement passes.
+**Exit:** a reviewer can trace, validate, revise, compare, and approve a question; learner APIs cannot read drafts. Publication requires provenance, an explicit owner approval, and passing deterministic answer-contract and mathematical-correctness checks. More granular reviewer evidence remains available as optional QA.
 
 ## 2. Topic-practice vertical slice
 

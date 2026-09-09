@@ -26,6 +26,7 @@ import {
   type TutorGuidance,
 } from "../src/lib/questions/contracts";
 import {
+  ALL_QUESTION_VALIDATORS,
   REQUIRED_PUBLICATION_VALIDATORS,
   validateMathVerification,
   validateMisconceptionRules,
@@ -2639,12 +2640,14 @@ async function main() {
         ])
         .onConflictDoNothing();
 
-      const ruleRows = REQUIRED_PUBLICATION_VALIDATORS.map((key, index) => ({
+      const ruleRows = ALL_QUESTION_VALIDATORS.map((key, index) => ({
         id: `15000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
         key,
         version: 1,
         description: validatorDescription(key),
-        blocksPublication: true,
+        blocksPublication: (
+          REQUIRED_PUBLICATION_VALIDATORS as readonly string[]
+        ).includes(key),
         active: true,
         changeNotes:
           "Initial reviewed publication rule established by the bootstrap dataset.",
@@ -2709,7 +2712,7 @@ async function main() {
           );
         await transaction.insert(validatorRules).values({
           ...revision,
-          blocksPublication: true,
+          blocksPublication: false,
           active: true,
           createdBy: "owner-feedback-implementation",
           activatedAt,
@@ -2926,9 +2929,7 @@ function prerequisite(
   return { skillId, prerequisiteSkillId, strength, rationale };
 }
 
-function validatorDescription(
-  key: (typeof REQUIRED_PUBLICATION_VALIDATORS)[number],
-) {
+function validatorDescription(key: (typeof ALL_QUESTION_VALIDATORS)[number]) {
   const descriptions = {
     "answer-contract":
       "Stored response shape, choice identifiers, and distractor mappings are internally valid.",
@@ -2948,7 +2949,7 @@ function validatorDescription(
       "A reviewer confirms the intended skill and public-outline alignment.",
     originality:
       "Similarity checks and human review find no accidental copying or distinctive imitation.",
-  } satisfies Record<(typeof REQUIRED_PUBLICATION_VALIDATORS)[number], string>;
+  } satisfies Record<(typeof ALL_QUESTION_VALIDATORS)[number], string>;
 
   return descriptions[key];
 }

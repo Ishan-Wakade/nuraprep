@@ -87,9 +87,11 @@ The pass produced four actionable content findings:
 
 The pass also revealed two workflow defects. A preselected `NEEDS_REVISION` value caused accidental audit events, and the static preview did not let the reviewer exercise response controls. The remediation requires explicit decision and score selection, displays the internal difficulty and explanation rubrics, adds a no-write interactive learner sandbox, and defaults the queue to one latest non-test candidate per family.
 
-No owner decision from this pass is converted into validator evidence or publication automatically. Revised versions begin unreviewed and must pass the current deterministic and human gates independently.
+No owner decision from this pass is converted into validator evidence automatically. Revised versions begin unreviewed and must receive a new exact-version decision plus passing deterministic checks before publication.
 
-To reduce repetitive data entry without weakening this separation, the reviewer interface presents the seven human rubrics together. The owner still chooses an explicit outcome and writes rubric-specific evidence for each check. The server validates the complete submission and appends seven distinct exact-version records atomically; it never derives those outcomes from the broader approval decision.
+The reviewer interface also presents seven detailed human rubrics together. These are optional follow-up QA under the MVP release policy. If used, the owner chooses an explicit outcome and writes rubric-specific evidence for each check; the server appends seven distinct exact-version records atomically and never fabricates them from the broader decision.
+
+On 2026-09-09, the owner explicitly accepted the current Math candidates for MVP use and chose the final owner decision as the required human release judgment. The release gate therefore requires exact-version provenance, a genuine latest approval, and passing deterministic answer-contract and mathematical-correctness checks. Difficulty, reading level, calculator policy, explanation, accessibility, alignment, and originality rubrics remain visible, versioned, and advisory so a later educator or second-reviewer pass can add stronger evidence without misrepresenting who performed it.
 
 ## Full owner-decision pass — 2026-09-08
 

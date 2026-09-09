@@ -31,7 +31,7 @@ import { getServerEnvironment } from "@/lib/env/server";
 import {
   evaluatePublicationGate,
   REQUIRED_PUBLICATION_VALIDATORS,
-  REVIEWER_PUBLICATION_VALIDATORS,
+  REVIEWER_QUALITY_VALIDATORS,
 } from "@/lib/questions/validation";
 
 export type ReviewQueueFilters = {
@@ -289,11 +289,10 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
       const passingValidatorCount = [
         ...(latestValidationByVersion.get(row.versionId)?.values() ?? []),
       ].filter((outcome) => outcome === "PASS").length;
-      const passingReviewerValidatorCount =
-        REVIEWER_PUBLICATION_VALIDATORS.filter(
-          (key) =>
-            latestValidationByVersion.get(row.versionId)?.get(key) === "PASS",
-        ).length;
+      const passingReviewerValidatorCount = REVIEWER_QUALITY_VALIDATORS.filter(
+        (key) =>
+          latestValidationByVersion.get(row.versionId)?.get(key) === "PASS",
+      ).length;
 
       return {
         ...row,
@@ -302,7 +301,7 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
         passingValidatorCount,
         requiredValidatorCount: REQUIRED_PUBLICATION_VALIDATORS.length,
         passingReviewerValidatorCount,
-        reviewerValidatorCount: REVIEWER_PUBLICATION_VALIDATORS.length,
+        reviewerValidatorCount: REVIEWER_QUALITY_VALIDATORS.length,
         provenanceCount: provenanceCount.get(row.versionId) ?? 0,
         learnerReportCount: learnerReportCount.get(row.versionId) ?? 0,
       };
@@ -549,7 +548,7 @@ export async function getQuestionReviewDetail(versionId: string) {
       .where(
         and(
           eq(validatorRules.active, true),
-          inArray(validatorRules.key, [...REVIEWER_PUBLICATION_VALIDATORS]),
+          inArray(validatorRules.key, [...REVIEWER_QUALITY_VALIDATORS]),
         ),
       )
       .orderBy(validatorRules.key, desc(validatorRules.version)),
@@ -637,7 +636,7 @@ export async function getQuestionReviewDetail(versionId: string) {
       latestActiveRuleByKey.set(rule.key, rule);
     }
   }
-  const activeReviewerValidators = REVIEWER_PUBLICATION_VALIDATORS.flatMap(
+  const activeReviewerValidators = REVIEWER_QUALITY_VALIDATORS.flatMap(
     (key) => {
       const rule = latestActiveRuleByKey.get(key);
       return rule ? [rule] : [];
@@ -721,7 +720,7 @@ export async function getQuestionReviewDetail(versionId: string) {
   const nextReviewerValidation = navigationItems.find(
     (item) =>
       item.versionId !== versionId &&
-      item.passingReviewerValidators < REVIEWER_PUBLICATION_VALIDATORS.length,
+      item.passingReviewerValidators < REVIEWER_QUALITY_VALIDATORS.length,
   );
 
   return {
@@ -783,8 +782,7 @@ export async function getQuestionReviewDetail(versionId: string) {
       ).length,
       humanValidationComplete: navigationItems.filter(
         (item) =>
-          item.passingReviewerValidators ===
-          REVIEWER_PUBLICATION_VALIDATORS.length,
+          item.passingReviewerValidators === REVIEWER_QUALITY_VALIDATORS.length,
       ).length,
       currentIsLatest: versions[0]?.id === versionId,
       latestFamilyVersion: versions[0] ?? null,

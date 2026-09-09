@@ -1,5 +1,5 @@
 import { getValidatorRuleRegistry } from "@/data/content-governance";
-import { REVIEWER_PUBLICATION_VALIDATORS } from "@/lib/questions/validation";
+import { REVIEWER_QUALITY_VALIDATORS } from "@/lib/questions/validation";
 
 import { ValidatorRuleRevisionForm } from "./validator-rule-form";
 
@@ -21,16 +21,15 @@ export default async function ValidatorRuleRegistryPage() {
         Validator rule registry
       </h1>
       <p className="mt-3 max-w-3xl text-sm leading-6 text-[#5b7073]">
-        Only the active version of each rule can satisfy publication. Activating
-        a revised reviewer rubric retires its predecessor and makes every prior
-        pass for that rule stale until the exact question version is reviewed
-        again.
+        Automated rules block release; detailed reviewer rubrics provide
+        optional, version-linked quality evidence. Activating a revised rubric
+        retires its predecessor and makes prior evidence for that rule stale.
       </p>
 
       <section className="mt-7 grid gap-4" aria-label="Active validator rules">
         {activeRules.map((rule) => {
-          const reviewerManaged = REVIEWER_PUBLICATION_VALIDATORS.includes(
-            rule.key as (typeof REVIEWER_PUBLICATION_VALIDATORS)[number],
+          const reviewerManaged = REVIEWER_QUALITY_VALIDATORS.includes(
+            rule.key as (typeof REVIEWER_QUALITY_VALIDATORS)[number],
           );
           const history = rules.filter(
             (candidate) => candidate.key === rule.key && !candidate.active,
@@ -51,9 +50,14 @@ export default async function ValidatorRuleRegistryPage() {
                     {rule.evidenceCount} evidence runs
                   </p>
                 </div>
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-800 uppercase">
-                  Active
-                </span>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-800 uppercase">
+                    Active
+                  </span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-700 uppercase">
+                    {rule.blocksPublication ? "Blocks release" : "Advisory"}
+                  </span>
+                </div>
               </div>
               <p className="mt-4 text-sm leading-6">{rule.description}</p>
               {reviewerManaged ? (

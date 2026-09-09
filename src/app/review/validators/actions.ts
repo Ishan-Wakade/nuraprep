@@ -7,7 +7,7 @@ import { z } from "zod";
 import { getDatabase } from "@/db/client";
 import { validatorRules } from "@/db/schema";
 import { requireReviewer } from "@/lib/auth/reviewer";
-import { REVIEWER_PUBLICATION_VALIDATORS } from "@/lib/questions/validation";
+import { REVIEWER_QUALITY_VALIDATORS } from "@/lib/questions/validation";
 
 export type ValidatorRuleActionState = {
   status: "idle" | "error" | "success";
@@ -15,7 +15,7 @@ export type ValidatorRuleActionState = {
 };
 
 const revisionSchema = z.object({
-  key: z.enum(REVIEWER_PUBLICATION_VALIDATORS),
+  key: z.enum(REVIEWER_QUALITY_VALIDATORS),
   description: z.string().trim().min(40).max(5_000),
   changeNotes: z.string().trim().min(40).max(5_000),
   invalidateEvidenceAttestation: z.literal("on"),
@@ -73,7 +73,7 @@ export async function createValidatorRuleRevision(
         key: parsed.data.key,
         version: latest.version + 1,
         description: parsed.data.description,
-        blocksPublication: true,
+        blocksPublication: false,
         active: true,
         implementationHash: null,
         changeNotes: parsed.data.changeNotes,

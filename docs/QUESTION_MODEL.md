@@ -119,7 +119,7 @@ The learner slice now implements `learner_profiles`, `practice_sessions`, immuta
 
 ## Publication invariants
 
-1. A learner receives only the current explicitly published version of an active question family. Publication requires an approved review and the latest run of every required validator to pass.
+1. A learner receives only the current explicitly published version of an active question family. MVP publication requires provenance, a latest genuine owner approval, and passing latest runs of the deterministic answer-contract and mathematical-correctness validators. Detailed reviewer rubrics remain optional QA evidence.
 2. Every published question has provenance records even when it was authored entirely in-house.
 3. Attempts always reference the exact presented version; later corrections do not rewrite history.
 4. Retraction removes an item from future selection but preserves audit records and affected-attempt analysis.

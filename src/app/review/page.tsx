@@ -88,7 +88,7 @@ export default async function ReviewQueuePage({
         />
         <SummaryCard label="Approved" value={queue.summary.approved} />
         <SummaryCard
-          label="Human checks needed"
+          label="Optional checks pending"
           value={queue.summary.humanChecksNeeded}
         />
         <SummaryCard
@@ -196,7 +196,7 @@ export default async function ReviewQueuePage({
           options={reviewStatuses}
         />
         <FilterSelect
-          label="Publication review"
+          label="Detailed review"
           name="validation"
           value={filters.validationStatus}
           options={validationStatuses}
@@ -284,7 +284,7 @@ export default async function ReviewQueuePage({
                     {item.passingReviewerValidatorCount}/
                     {item.reviewerValidatorCount}
                   </strong>
-                  human checks passing
+                  optional checks passing
                 </div>
                 <div>
                   <strong className="block text-lg text-[#123136]">

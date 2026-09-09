@@ -85,9 +85,9 @@ flowchart LR
     Human -->|reject| Rejected
 ```
 
-No generated item bypasses the human gate in the first release. Failed checks are retained as structured validation results, not overwritten.
+No generated item bypasses the explicit owner-decision gate in the first release. Detailed reviewer rubrics remain available as advisory QA, and failed checks are retained as structured validation results rather than overwritten.
 
-PostgreSQL triggers reject updates and deletes on question versions, validation runs, and review decisions. A revision copies the source and skill links into a new version but intentionally carries over neither validation evidence nor approval. Publication is a separate attributed ledger record; its trigger permits one controlled retirement and rejects identity changes or later history rewrites. The publication evaluator requires provenance, a latest approval, and a passing latest run for every required validator.
+PostgreSQL triggers reject updates and deletes on question versions, validation runs, and review decisions. A revision copies the source and skill links into a new version but intentionally carries over neither validation evidence nor approval. Publication is a separate attributed ledger record; its trigger permits one controlled retirement and rejects identity changes or later history rewrites. The MVP publication evaluator requires provenance, the latest genuine owner decision to be approved, and passing deterministic answer-contract and mathematical-correctness checks. Seven granular reviewer rubrics remain versioned but advisory.
 
 The source registry derives permissions from reviewed decisions and fails closed for paid, gated, and user-submitted material. Generation requests use approved versioned templates, stable idempotency keys, and cost ceilings. Workers atomically claim eligible jobs with expiring leases and unique claim tokens; PostgreSQL fences stale workers, rejects active-lease theft, preserves terminal history, and requires a linked candidate version for `SUCCEEDED`. The provider interface exists, but no external provider is configured yet; see [Controlled question-generation pipeline](GENERATION_PIPELINE.md).
 

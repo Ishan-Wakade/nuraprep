@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { config } from "dotenv";
 import { Pool } from "pg";
 
@@ -9,6 +9,35 @@ config({ path: ".env.local", quiet: true });
 const firstVersionId = "14000000-0000-4000-8000-000000000001";
 const numericVersionId = "14000000-0000-4000-8000-000000000002";
 const promptSpecifiedUnitVersionId = "14000000-0000-4000-8000-000000000025";
+
+const optionalReviewerKeys = [
+  "difficulty-calibration",
+  "reading-level",
+  "calculator-policy",
+  "explanation-consistency",
+  "accessibility",
+  "topic-alignment",
+  "originality",
+] as const;
+
+async function appendOptionalReviewerEvidence(page: Page, evidence: string) {
+  for (const validatorKey of optionalReviewerKeys) {
+    const validatorLabel = validatorKey
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+    await page.getByLabel(`Outcome for ${validatorLabel}`).selectOption("PASS");
+    await page
+      .getByLabel(`Evidence for ${validatorLabel}`)
+      .fill(`${evidence} ${validatorKey}.`);
+  }
+  await page.getByLabel(/I inspected the prompt/).check();
+  await page.getByLabel(/I applied each validator/).check();
+  await page.getByLabel(/This is my review judgment/).check();
+  await page
+    .getByRole("button", { name: "Append optional review evidence" })
+    .click();
+}
 
 test.describe.configure({ mode: "serial" });
 
@@ -25,12 +54,14 @@ test("filters the review queue and opens full provenance", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("No published item").first()).toBeVisible();
 
-  await page.getByLabel("Publication review").selectOption("HUMAN_NEEDED");
+  await page.getByLabel("Detailed review").selectOption("HUMAN_NEEDED");
   await page.getByRole("button", { name: "Apply filters" }).click();
   await expect(page).toHaveURL(/validation=HUMAN_NEEDED/);
-  await expect(page.getByText(/human checks needed/i).first()).toBeVisible();
+  await expect(
+    page.getByText(/optional checks pending/i).first(),
+  ).toBeVisible();
 
-  await page.getByLabel("Publication review").selectOption("");
+  await page.getByLabel("Detailed review").selectOption("");
   await page.getByLabel("Type").selectOption("NUMERIC");
   await page.getByRole("button", { name: "Apply filters" }).click();
   await expect(page).toHaveURL(/questionType=NUMERIC/);
@@ -51,7 +82,7 @@ test("filters the review queue and opens full provenance", async ({ page }) => {
     `/review/questions/${firstVersionId}`,
   );
   await expect(
-    page.getByRole("link", { name: "Next human checks" }),
+    page.getByRole("link", { name: "Next optional checks" }),
   ).toBeVisible();
   await expect(
     page
@@ -184,37 +215,14 @@ test("uses numeric-only input when the prompt already specifies the unit", async
   ).toBeVisible();
 });
 
-test("records every human validator in one exact-version submission", async ({
+test("records every optional reviewer check in one exact-version submission", async ({
   page,
 }) => {
   await page.goto(`/review/questions/${promptSpecifiedUnitVersionId}`);
-
-  for (const validatorKey of [
-    "difficulty-calibration",
-    "reading-level",
-    "calculator-policy",
-    "explanation-consistency",
-    "accessibility",
-    "topic-alignment",
-    "originality",
-  ]) {
-    const validatorLabel = validatorKey
-      .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-    await page.getByLabel(`Outcome for ${validatorLabel}`).selectOption("PASS");
-    await page
-      .getByLabel(`Evidence for ${validatorLabel}`)
-      .fill(
-        `E2E reviewer inspected ${validatorKey} for this exact immutable question version.`,
-      );
-  }
-  await page.getByLabel(/I inspected the prompt/).check();
-  await page.getByLabel(/I applied each validator/).check();
-  await page.getByLabel(/This is my review judgment/).check();
-  await page
-    .getByRole("button", { name: "Append all human-review evidence" })
-    .click();
+  await appendOptionalReviewerEvidence(
+    page,
+    "E2E reviewer inspected this exact immutable question version for",
+  );
 
   await expect(
     page.getByText(
@@ -224,15 +232,7 @@ test("records every human validator in one exact-version submission", async ({
   const validationEvidence = page
     .getByRole("heading", { name: "Validation evidence" })
     .locator("..");
-  for (const validatorKey of [
-    "difficulty-calibration",
-    "reading-level",
-    "calculator-policy",
-    "explanation-consistency",
-    "accessibility",
-    "topic-alignment",
-    "originality",
-  ]) {
+  for (const validatorKey of optionalReviewerKeys) {
     await expect(
       validationEvidence.getByText(new RegExp(`^${validatorKey} v\\d+`)),
     ).toBeVisible();
@@ -311,19 +311,35 @@ test("turns recurring feedback into a separately approved improvement plan", asy
 }) => {
   const issueCode = `CI_PATTERN_${Date.now()}`;
   const proposalTitle = `Improve originality regression ${Date.now()}`;
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error("DATABASE_URL is required for E2E tests.");
+  const pool = new Pool({ connectionString: databaseUrl });
   await page.goto(`/review/questions/${firstVersionId}`);
 
-  for (const feedback of [
-    "The scenario structure is too close to a previously reviewed pattern.",
-    "The distractor arrangement repeats a distinctive structure seen before.",
-  ]) {
-    await page.getByLabel("Category").selectOption("ORIGINALITY");
-    await page.getByLabel(/Recurring issue code/).fill(issueCode);
-    await page.getByLabel("Feedback").fill(feedback);
-    await page.getByRole("button", { name: "Save feedback" }).click();
-    await expect(
-      page.getByText("Feedback saved for controlled batch analysis."),
-    ).toBeVisible();
+  try {
+    for (const [index, feedback] of [
+      "The scenario structure is too close to a previously reviewed pattern.",
+      "The distractor arrangement repeats a distinctive structure seen before.",
+    ].entries()) {
+      await page.getByLabel("Category").selectOption("ORIGINALITY");
+      await page.getByLabel(/Recurring issue code/).fill(issueCode);
+      await page.getByLabel("Feedback").fill(feedback);
+      await page.getByRole("button", { name: "Save feedback" }).click();
+      await expect(
+        page.getByText("Feedback saved for controlled batch analysis."),
+      ).toBeVisible();
+      await expect
+        .poll(async () => {
+          const result = await pool.query<{ count: number }>(
+            "SELECT count(*)::int AS count FROM reviewer_feedback WHERE recurring_issue_code = $1",
+            [issueCode],
+          );
+          return result.rows[0]?.count ?? 0;
+        })
+        .toBe(index + 1);
+    }
+  } finally {
+    await pool.end();
   }
 
   await page.goto(`/review/feedback?q=${issueCode}`);
@@ -582,6 +598,15 @@ test("versions reviewer rubrics and invalidates prior evidence", async ({
 
   await page.goto(`/review/questions/${publishedVersionId}`);
   await expect(page.getByText("Eligible for publication")).toBeVisible();
+  await appendOptionalReviewerEvidence(
+    page,
+    "E2E reviewer established pre-revision evidence for",
+  );
+  await expect(
+    page.getByText(
+      "All seven human-review checks were appended as separate audit records.",
+    ),
+  ).toBeVisible();
 
   await page.goto("/review/validators");
   await expect(
@@ -618,9 +643,7 @@ test("versions reviewer rubrics and invalidates prior evidence", async ({
   ).toBeVisible();
 
   await page.goto(`/review/questions/${publishedVersionId}`);
-  await expect(
-    page.getByText(/validator not passing · accessibility/i),
-  ).toBeVisible();
+  await expect(page.getByText("Eligible for publication")).toBeVisible();
   await expect(
     page.getByText(/accessibility v\d+ · retired rubric/i).first(),
   ).toBeVisible();

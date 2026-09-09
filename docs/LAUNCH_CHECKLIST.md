@@ -4,7 +4,7 @@
 
 This is a go/no-go record for a future staging or public launch. Repository implementation and local tests satisfy only part of it. Mark an item complete only with a dated evidence link or artifact and a named owner. Any unresolved stop condition keeps the launch at **NO-GO**.
 
-Current status: **NO-GO for public launch.** The local Math product and production-shaped foundations work, but the complete Math bank is not human-approved and the real Google, Stripe, AWS, legal, manual-accessibility, restore, load, monitoring, and support gates have not been completed.
+Current status: **NO-GO for public launch.** The local 38-family Math bank has owner decisions and passing deterministic checks, but the larger production bank and the real Google, Stripe, AWS, legal, manual-accessibility, restore, load, monitoring, and support gates have not been completed.
 
 ## Release identity and ownership
 
@@ -18,7 +18,7 @@ Current status: **NO-GO for public launch.** The local Math product and producti
 
 - [ ] Map every published family to the reviewed Math outline and leaf skill.
 - [ ] Approve enough distinct, learner-safe families to assemble the diagnostic, topic, adaptive, and 38-item test without E2E fixtures or accidental repetition.
-- [ ] Complete exact-version human checks for mathematics, ambiguity, alignment, difficulty, calculator policy, reading level, accessibility, and originality.
+- [ ] Confirm every exact release version has an explicit owner approval with useful notes; sample the optional detailed rubrics during final QA.
 - [ ] Verify every source/provenance decision, license field, recheck date, and coverage abstraction; store no restricted source question bodies.
 - [ ] Run deterministic validators and gold evaluations on the exact release bank.
 - [ ] Sample explanations, distractor rationales, hints, numeric formatting, tables/graphs, and mobile math rendering.

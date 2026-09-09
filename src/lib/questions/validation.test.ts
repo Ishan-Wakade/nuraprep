@@ -499,11 +499,11 @@ describe("validateMathVerification", () => {
 });
 
 describe("evaluatePublicationGate", () => {
-  it("blocks an approved active question when one required validator is missing", () => {
+  it("blocks an approved active question when an automated validator is missing", () => {
     const latestValidationByKey: Record<string, "PASS"> = Object.fromEntries(
       REQUIRED_PUBLICATION_VALIDATORS.map((key) => [key, "PASS"]),
     );
-    delete latestValidationByKey.originality;
+    delete latestValidationByKey["mathematical-correctness"];
 
     expect(
       evaluatePublicationGate({
@@ -514,8 +514,22 @@ describe("evaluatePublicationGate", () => {
       }),
     ).toEqual({
       publishable: false,
-      blockers: ["VALIDATOR_NOT_PASSING:originality"],
+      blockers: ["VALIDATOR_NOT_PASSING:mathematical-correctness"],
     });
+  });
+
+  it("treats detailed reviewer validators as advisory after owner approval", () => {
+    expect(
+      evaluatePublicationGate({
+        lifecycle: "ACTIVE",
+        provenanceCount: 1,
+        latestReviewDecision: "APPROVED",
+        latestValidationByKey: {
+          "answer-contract": "PASS",
+          "mathematical-correctness": "PASS",
+        },
+      }),
+    ).toEqual({ publishable: true, blockers: [] });
   });
 
   it("allows publication only when every gate is satisfied", () => {

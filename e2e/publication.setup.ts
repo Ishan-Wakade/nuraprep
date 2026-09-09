@@ -6,7 +6,7 @@ config({ path: ".env.local", quiet: true });
 
 const firstVersionId = "14000000-0000-4000-8000-000000000001";
 
-setup("publishes one fully gated practice fixture", async ({ page }) => {
+setup("publishes an owner-approved deterministic fixture", async ({ page }) => {
   await page.goto(`/review/questions/${firstVersionId}`);
   await page
     .locator('textarea[name="prompt"]')
@@ -67,56 +67,9 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
   await expect(
     page.getByText("mathematical-correctness v1").first(),
   ).toBeVisible();
-
-  for (const validatorKey of [
-    "difficulty-calibration",
-    "reading-level",
-    "calculator-policy",
-    "explanation-consistency",
-    "accessibility",
-    "topic-alignment",
-    "originality",
-  ]) {
-    const validatorLabel = validatorKey
-      .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-    await page.getByLabel(`Outcome for ${validatorLabel}`).selectOption("PASS");
-    await page
-      .getByLabel(`Evidence for ${validatorLabel}`)
-      .fill(
-        `E2E reviewer inspected ${validatorKey} against its documented rubric.`,
-      );
-  }
-  await page.getByLabel(/I inspected the prompt/).check();
-  await page.getByLabel(/I applied each validator/).check();
-  await page.getByLabel(/This is my review judgment/).check();
-  await page
-    .getByRole("button", { name: "Append all human-review evidence" })
-    .click();
   await expect(
-    page.getByText(
-      "All seven human-review checks were appended as separate audit records.",
-    ),
-  ).toBeVisible();
-
-  await page.goto(`${publicationCandidateUrl}?validation=reviewer-batch`);
-  for (const validatorKey of [
-    "difficulty-calibration",
-    "reading-level",
-    "calculator-policy",
-    "explanation-consistency",
-    "accessibility",
-    "topic-alignment",
-    "originality",
-  ]) {
-    await expect(
-      page
-        .getByRole("heading", { name: "Validation evidence" })
-        .locator("..")
-        .getByText(new RegExp(`^${validatorKey} v\\d+`)),
-    ).toBeVisible();
-  }
+    page.getByRole("button", { name: "Publish approved version" }),
+  ).toBeDisabled();
 
   await page.getByLabel("Decision").selectOption("APPROVED");
   for (const scoreLabel of [
@@ -130,7 +83,9 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
   }
   await page
     .getByLabel("Review notes")
-    .fill("E2E review confirms all required evidence is present.");
+    .fill(
+      "E2E owner decision confirms the content is accepted after deterministic checks passed.",
+    );
   await page.getByRole("button", { name: "Record decision" }).click();
   await expect(
     page.getByText("Review decision recorded as immutable history."),
@@ -138,13 +93,6 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
 
   await page.goto(`${publicationCandidateUrl}?validation=complete`);
   await expect(page.getByText("Synthetic test evidence").first()).toBeVisible();
-  await expect(
-    page
-      .getByRole("heading", { name: "Validation evidence" })
-      .locator("..")
-      .getByText(/synthetic test evidence/i)
-      .first(),
-  ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Publish approved version" }),
   ).toBeEnabled();

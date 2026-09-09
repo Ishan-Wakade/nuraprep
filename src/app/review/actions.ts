@@ -35,7 +35,7 @@ import {
 import {
   AUTOMATED_PUBLICATION_VALIDATORS,
   evaluatePublicationGate,
-  REVIEWER_PUBLICATION_VALIDATORS,
+  REVIEWER_QUALITY_VALIDATORS,
   validateMathVerification,
   validateMisconceptionRules,
   validateQuestionContent,
@@ -219,10 +219,10 @@ export async function submitReviewerValidationBatch(
 
   const evidenceByKey: Array<
     z.infer<typeof reviewerValidationEvidenceSchema> & {
-      validatorKey: (typeof REVIEWER_PUBLICATION_VALIDATORS)[number];
+      validatorKey: (typeof REVIEWER_QUALITY_VALIDATORS)[number];
     }
   > = [];
-  for (const validatorKey of REVIEWER_PUBLICATION_VALIDATORS) {
+  for (const validatorKey of REVIEWER_QUALITY_VALIDATORS) {
     const parsed = reviewerValidationEvidenceSchema.safeParse({
       outcome: raw[`outcome-${validatorKey}`],
       evidence: raw[`evidence-${validatorKey}`],
@@ -250,7 +250,7 @@ export async function submitReviewerValidationBatch(
       .where(
         and(
           eq(validatorRules.active, true),
-          inArray(validatorRules.key, REVIEWER_PUBLICATION_VALIDATORS),
+          inArray(validatorRules.key, REVIEWER_QUALITY_VALIDATORS),
         ),
       ),
   ]);
@@ -260,8 +260,8 @@ export async function submitReviewerValidationBatch(
 
   const ruleByKey = new Map(rules.map((rule) => [rule.key, rule]));
   if (
-    rules.length !== REVIEWER_PUBLICATION_VALIDATORS.length ||
-    REVIEWER_PUBLICATION_VALIDATORS.some((key) => !ruleByKey.has(key))
+    rules.length !== REVIEWER_QUALITY_VALIDATORS.length ||
+    REVIEWER_QUALITY_VALIDATORS.some((key) => !ruleByKey.has(key))
   ) {
     return {
       status: "error",

@@ -12,9 +12,12 @@ import {
   type RpnExpression,
 } from "./contracts";
 
-export const REQUIRED_PUBLICATION_VALIDATORS = [
+export const AUTOMATED_PUBLICATION_VALIDATORS = [
   "answer-contract",
   "mathematical-correctness",
+] as const;
+
+export const REVIEWER_QUALITY_VALIDATORS = [
   "explanation-consistency",
   "accessibility",
   "topic-alignment",
@@ -24,20 +27,15 @@ export const REQUIRED_PUBLICATION_VALIDATORS = [
   "calculator-policy",
 ] as const;
 
-export const AUTOMATED_PUBLICATION_VALIDATORS = [
-  "answer-contract",
-  "mathematical-correctness",
-] as const satisfies readonly (typeof REQUIRED_PUBLICATION_VALIDATORS)[number][];
+export const ALL_QUESTION_VALIDATORS = [
+  ...AUTOMATED_PUBLICATION_VALIDATORS,
+  ...REVIEWER_QUALITY_VALIDATORS,
+] as const;
 
-export const REVIEWER_PUBLICATION_VALIDATORS = [
-  "difficulty-calibration",
-  "reading-level",
-  "calculator-policy",
-  "explanation-consistency",
-  "accessibility",
-  "topic-alignment",
-  "originality",
-] as const satisfies readonly (typeof REQUIRED_PUBLICATION_VALIDATORS)[number][];
+// For the MVP, an explicit owner approval plus deterministic answer and math
+// checks is the release gate. The richer reviewer rubrics remain available as
+// advisory QA evidence but do not block publication.
+export const REQUIRED_PUBLICATION_VALIDATORS = AUTOMATED_PUBLICATION_VALIDATORS;
 
 export type ValidationIssue = {
   code: string;

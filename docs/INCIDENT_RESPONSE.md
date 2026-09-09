@@ -62,7 +62,7 @@ Immediately stop a release or disable the affected capability if correctness, au
 - Retract the affected publication immediately while retaining immutable history.
 - Locate all learner sessions, reports, and generation/template versions associated with the question family.
 - Categorize the failure: mathematics, ambiguity, alignment, distractor, explanation, accessibility, originality, difficulty, or formatting.
-- Revise through a new version, rerun deterministic and human gates, and publish only after approval. Never edit a published version in place.
+- Revise through a new version, rerun deterministic checks, and publish only after a new exact-version owner approval. Add the detailed reviewer rubrics when the incident warrants an educator or second-reviewer pass. Never edit a published version in place.
 - If score estimates or plans depended materially on the item, document the affected cohort and recalculation decision.
 
 ### Availability, latency, or connection exhaustion

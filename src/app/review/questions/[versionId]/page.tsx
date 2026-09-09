@@ -50,7 +50,8 @@ export default async function QuestionReviewPage({
                 {question.reviewNavigation.reviewed}/
                 {question.reviewNavigation.total} latest candidates have a
                 decision · {question.reviewNavigation.humanValidationComplete}/
-                {question.reviewNavigation.total} have all human checks passing
+                {question.reviewNavigation.total} have all optional checks
+                passing
               </p>
             </div>
             <div
@@ -84,7 +85,7 @@ export default async function QuestionReviewPage({
               href="/review?validation=HUMAN_NEEDED"
               className="rounded-lg border border-[#9fc9bd] bg-white px-3 py-2 text-xs font-bold text-[#116b65]"
             >
-              View human checks
+              View optional checks
             </Link>
             {question.reviewNavigation.nextNeedsRevision && (
               <Link
@@ -110,7 +111,7 @@ export default async function QuestionReviewPage({
                 className="rounded-lg bg-[#116b65] px-3 py-2 text-xs font-bold text-white"
                 title={`${question.reviewNavigation.nextReviewerValidation.skillTitle}: ${question.reviewNavigation.nextReviewerValidation.slug}`}
               >
-                Next human checks →
+                Next optional checks →
               </Link>
             )}
           </div>
@@ -245,7 +246,10 @@ export default async function QuestionReviewPage({
           <Panel title="Automated validation" eyebrow="Reproducible evidence">
             <AutomatedValidationForm versionId={question.versionId} />
           </Panel>
-          <Panel title="Reviewer validation" eyebrow="Human-only checks">
+          <Panel
+            title="Detailed reviewer validation"
+            eyebrow="Optional quality evidence"
+          >
             <ReviewerValidationForm
               versionId={question.versionId}
               validators={question.activeReviewerValidators}

@@ -204,8 +204,9 @@ export function ReviewerValidationForm({
     <form action={action} className="space-y-4">
       <input type="hidden" name="versionId" value={versionId} />
       <p className="text-sm leading-6 text-[#52676a]">
-        Complete each rubric below, then submit once. NuraPrep will preserve one
-        immutable validation record per check for this exact question version.
+        These detailed checks are optional for the MVP release and do not
+        replace the owner decision. If completed, NuraPrep preserves one
+        immutable validation record per rubric for this exact question version.
       </p>
       {!hasCompleteRubricSet ? (
         <p
@@ -274,7 +275,7 @@ export function ReviewerValidationForm({
       </div>
       <fieldset className="space-y-2 rounded-xl border border-[#d8ded9] bg-[#faf9f4] p-3">
         <legend className="px-1 text-xs font-bold text-[#52676a]">
-          Required attestations
+          Submission attestations
         </legend>
         <Attestation
           name="inspectedExactVersion"
@@ -293,7 +294,7 @@ export function ReviewerValidationForm({
         state={state}
         pending={pending}
         disabled={!hasCompleteRubricSet}
-        label="Append all human-review evidence"
+        label="Append optional review evidence"
       />
     </form>
   );
@@ -570,7 +571,9 @@ export function RegenerationRequestForm({
       <input type="hidden" name="sourceQuestionVersionId" value={versionId} />
       <p className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-900">
         This queues an auditable request. Any future result must create a new
-        complete DRAFT version and pass every validator and human review gate.
+        complete DRAFT version, pass both deterministic validators, and receive
+        a new exact-version owner approval. Detailed reviewer rubrics remain
+        available as optional QA.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-xs font-bold text-[#52676a]">
