@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, isNull, max, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, max, ne, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -27,10 +27,14 @@ import {
   tutorGuidanceSchema,
 } from "@/lib/questions/contracts";
 import { findInternalSimilaritySignals } from "@/lib/questions/originality";
-import { reviewerValidationSubmissionSchema } from "@/lib/questions/reviewer-validation";
+import {
+  reviewerValidationBatchBaseSchema,
+  reviewerValidationEvidenceSchema,
+} from "@/lib/questions/reviewer-validation";
 import {
   AUTOMATED_PUBLICATION_VALIDATORS,
   evaluatePublicationGate,
+  REVIEWER_PUBLICATION_VALIDATORS,
   validateMathVerification,
   validateMisconceptionRules,
   validateQuestionContent,
@@ -192,69 +196,101 @@ export async function runDeterministicValidation(
   };
 }
 
-export async function submitReviewerValidation(
+export async function submitReviewerValidationBatch(
   _previousState: ReviewerActionState,
   formData: FormData,
 ): Promise<ReviewerActionState> {
   const reviewer = await requireReviewer();
-  const parsed = reviewerValidationSubmissionSchema.safeParse(
-    Object.fromEntries(formData),
-  );
-  if (!parsed.success) {
+  const raw = Object.fromEntries(formData);
+  const base = reviewerValidationBatchBaseSchema.safeParse(raw);
+  if (!base.success) {
     return {
       status: "error",
-      message: parsed.error.issues[0]?.message ?? "Invalid validation.",
+      message:
+        base.error.issues[0]?.message ??
+        "Complete all attestations before submitting.",
     };
   }
 
+  const evidenceByKey: Array<
+    z.infer<typeof reviewerValidationEvidenceSchema> & {
+      validatorKey: (typeof REVIEWER_PUBLICATION_VALIDATORS)[number];
+    }
+  > = [];
+  for (const validatorKey of REVIEWER_PUBLICATION_VALIDATORS) {
+    const parsed = reviewerValidationEvidenceSchema.safeParse({
+      outcome: raw[`outcome-${validatorKey}`],
+      evidence: raw[`evidence-${validatorKey}`],
+      failureCode: raw[`failureCode-${validatorKey}`] ?? "",
+    });
+    if (!parsed.success) {
+      return {
+        status: "error",
+        message: `${validatorKey}: ${parsed.error.issues[0]?.message ?? "Invalid evidence."}`,
+      };
+    }
+    evidenceByKey.push({ validatorKey, ...parsed.data });
+  }
+
   const database = getDatabase();
-  const [version, rule] = await Promise.all([
+  const [version, rules] = await Promise.all([
     database
       .select({ id: questionVersions.id })
       .from(questionVersions)
-      .where(eq(questionVersions.id, parsed.data.versionId))
+      .where(eq(questionVersions.id, base.data.versionId))
       .limit(1),
     database
       .select()
       .from(validatorRules)
       .where(
         and(
-          eq(validatorRules.key, parsed.data.validatorKey),
           eq(validatorRules.active, true),
+          inArray(validatorRules.key, REVIEWER_PUBLICATION_VALIDATORS),
         ),
-      )
-      .orderBy(desc(validatorRules.version))
-      .limit(1),
+      ),
   ]);
-  if (!version[0] || !rule[0]) {
+  if (!version[0]) {
+    return { status: "error", message: "Question version not found." };
+  }
+
+  const ruleByKey = new Map(rules.map((rule) => [rule.key, rule]));
+  if (
+    rules.length !== REVIEWER_PUBLICATION_VALIDATORS.length ||
+    REVIEWER_PUBLICATION_VALIDATORS.some((key) => !ruleByKey.has(key))
+  ) {
     return {
       status: "error",
-      message: "Question version or validator rule not found.",
+      message:
+        "Every required reviewer rubric must have exactly one active version.",
     };
   }
 
-  await database.insert(validationRuns).values({
-    questionVersionId: parsed.data.versionId,
-    validatorRuleId: rule[0].id,
-    outcome: parsed.data.outcome,
-    failureCode:
-      parsed.data.outcome === "FAIL" ? parsed.data.failureCode : null,
-    evidence: {
-      method: "reviewer-attestation",
-      reviewerId: reviewer.id,
-      notes: parsed.data.evidence,
-      attestations: {
-        inspectedExactVersion: true,
-        appliedCurrentRubric: true,
-        independentJudgment: true,
-      },
-    },
+  await database.transaction(async (transaction) => {
+    await transaction.insert(validationRuns).values(
+      evidenceByKey.map((evidence) => ({
+        questionVersionId: base.data.versionId,
+        validatorRuleId: ruleByKey.get(evidence.validatorKey)!.id,
+        outcome: evidence.outcome,
+        failureCode: evidence.outcome === "FAIL" ? evidence.failureCode : null,
+        evidence: {
+          method: "reviewer-attestation-batch",
+          reviewerId: reviewer.id,
+          notes: evidence.evidence,
+          attestations: {
+            inspectedExactVersion: true,
+            appliedCurrentRubric: true,
+            independentJudgment: true,
+          },
+        },
+      })),
+    );
   });
 
-  revalidateReview(parsed.data.versionId);
+  revalidateReview(base.data.versionId);
   return {
     status: "success",
-    message: `${parsed.data.validatorKey} evidence appended as ${parsed.data.outcome.toLocaleLowerCase("en-US")}.`,
+    message:
+      "All seven human-review checks were appended as separate audit records.",
   };
 }
 

@@ -89,6 +89,8 @@ The pass also revealed two workflow defects. A preselected `NEEDS_REVISION` valu
 
 No owner decision from this pass is converted into validator evidence or publication automatically. Revised versions begin unreviewed and must pass the current deterministic and human gates independently.
 
+To reduce repetitive data entry without weakening this separation, the reviewer interface presents the seven human rubrics together. The owner still chooses an explicit outcome and writes rubric-specific evidence for each check. The server validates the complete submission and appends seven distinct exact-version records atomically; it never derives those outcomes from the broader approval decision.
+
 ## Full owner-decision pass — 2026-09-08
 
 The owner added decisions for the 27 candidates that remained unreviewed after the representative pass. Seven were explicitly marked `NEEDS_REVISION`. Two approved decisions also contained narrower wording or difficulty corrections, which the implementation treats as revision evidence rather than silently discarding the notes. The recurring findings were:

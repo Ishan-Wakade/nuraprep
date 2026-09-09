@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 
 import type {
   QuestionChoice,
@@ -18,7 +18,7 @@ import {
   runDeterministicValidation,
   submitReviewDecision,
   submitReviewerFeedback,
-  submitReviewerValidation,
+  submitReviewerValidationBatch,
   triageLearnerQuestionReport,
 } from "../../actions";
 import { requestQuestionRegeneration } from "../../generation/actions";
@@ -195,73 +195,83 @@ export function ReviewerValidationForm({
   validators: { key: string; version: number; description: string }[];
 }) {
   const [state, action, pending] = useActionState(
-    submitReviewerValidation,
+    submitReviewerValidationBatch,
     initialReviewerActionState,
   );
-  const [selectedValidatorKey, setSelectedValidatorKey] = useState(
-    validators[0]?.key ?? "",
-  );
-  const selectedValidator = validators.find(
-    (validator) => validator.key === selectedValidatorKey,
-  );
+  const hasCompleteRubricSet = validators.length === 7;
 
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="versionId" value={versionId} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="text-xs font-bold text-[#52676a]">
-          Review check
-          <select
-            name="validatorKey"
-            value={selectedValidatorKey}
-            disabled={!validators.length}
-            onChange={(event) => setSelectedValidatorKey(event.target.value)}
-            className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
-          >
-            {validators.map((validator) => (
-              <option key={validator.key} value={validator.key}>
-                {formatValidatorLabel(validator.key)} v{validator.version}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-xs font-bold text-[#52676a]">
-          Outcome
-          <select
-            name="outcome"
-            className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
-          >
-            <option value="PASS">Pass</option>
-            <option value="FAIL">Fail</option>
-          </select>
-        </label>
-      </div>
-      {selectedValidator ? (
-        <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs leading-5 text-blue-950">
-          <strong>Current rubric:</strong>{" "}
-          {formatValidatorLabel(selectedValidator.key)} v
-          {selectedValidator.version}. {selectedValidator.description}
-        </p>
-      ) : (
+      <p className="text-sm leading-6 text-[#52676a]">
+        Complete each rubric below, then submit once. NuraPrep will preserve one
+        immutable validation record per check for this exact question version.
+      </p>
+      {!hasCompleteRubricSet ? (
         <p
           role="alert"
           className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs leading-5 text-red-900"
         >
-          No active reviewer rubric is available. Evidence submission is
-          disabled until the rule configuration is restored.
+          The complete set of seven active reviewer rubrics is unavailable.
+          Evidence submission is disabled until the rule configuration is
+          restored.
         </p>
-      )}
-      <label className="block text-xs font-bold text-[#52676a]">
-        Evidence
-        <textarea
-          name="evidence"
-          required
-          minLength={40}
-          rows={4}
-          className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
-          placeholder="Describe exactly what you inspected and why this check passes or fails."
-        />
-      </label>
+      ) : null}
+      <div className="space-y-4">
+        {validators.map((validator) => {
+          const label = formatValidatorLabel(validator.key);
+          return (
+            <fieldset
+              key={validator.key}
+              className="space-y-3 rounded-xl border border-[#d8ded9] p-4"
+            >
+              <legend className="px-1 text-sm font-bold text-[#123136]">
+                {label} v{validator.version}
+              </legend>
+              <p className="text-xs leading-5 text-[#52676a]">
+                {validator.description}
+              </p>
+              <div className="grid gap-3 sm:grid-cols-[11rem_1fr]">
+                <label className="text-xs font-bold text-[#52676a]">
+                  Outcome for {label}
+                  <select
+                    name={`outcome-${validator.key}`}
+                    required
+                    defaultValue=""
+                    className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
+                  >
+                    <option value="" disabled>
+                      Select outcome
+                    </option>
+                    <option value="PASS">Pass</option>
+                    <option value="FAIL">Fail</option>
+                  </select>
+                </label>
+                <label className="text-xs font-bold text-[#52676a]">
+                  Evidence for {label}
+                  <textarea
+                    name={`evidence-${validator.key}`}
+                    required
+                    minLength={40}
+                    rows={3}
+                    className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm font-normal"
+                    placeholder="Describe what you inspected and why this check passes or fails."
+                  />
+                </label>
+              </div>
+              <label className="block text-xs font-bold text-[#52676a] sm:max-w-md">
+                Failure code for {label}{" "}
+                <span className="font-normal">(required only on failure)</span>
+                <input
+                  name={`failureCode-${validator.key}`}
+                  className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm uppercase"
+                  placeholder="E.G. EXPLANATION_SKIPS_STEP"
+                />
+              </label>
+            </fieldset>
+          );
+        })}
+      </div>
       <fieldset className="space-y-2 rounded-xl border border-[#d8ded9] bg-[#faf9f4] p-3">
         <legend className="px-1 text-xs font-bold text-[#52676a]">
           Required attestations
@@ -272,26 +282,18 @@ export function ReviewerValidationForm({
         />
         <Attestation
           name="appliedCurrentRubric"
-          label="I applied the selected validator's current rubric rather than inferring this result from another check."
+          label="I applied each validator's displayed current rubric rather than inferring one result from another check."
         />
         <Attestation
           name="independentJudgment"
           label="This is my review judgment; automated signals or model output alone did not determine it."
         />
       </fieldset>
-      <label className="block text-xs font-bold text-[#52676a]">
-        Failure code <span className="font-normal">(required on failure)</span>
-        <input
-          name="failureCode"
-          className="mt-1.5 w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm uppercase"
-          placeholder="E.G. EXPLANATION_SKIPS_STEP"
-        />
-      </label>
       <ActionFooter
         state={state}
         pending={pending}
-        disabled={!selectedValidator}
-        label="Append review evidence"
+        disabled={!hasCompleteRubricSet}
+        label="Append all human-review evidence"
       />
     </form>
   );

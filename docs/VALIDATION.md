@@ -29,7 +29,7 @@ Seven checks require explicit reviewer evidence:
 
 The difficulty check uses NuraPrep's internal reasoning-step and prerequisite rubric; it is not presented as an official ATI difficulty label. Reading-level review separates necessary mathematical vocabulary from avoidable language complexity. Calculator-policy review checks the stored designation against the arithmetic load and documented exam-mode assumptions.
 
-The reviewer records a pass or failure with at least 40 characters of written evidence and must attest that they inspected the exact version, applied the current selected rubric, and made an independent judgment rather than accepting automation or model output alone. The form displays the exact active validator version and database-backed rubric description before evidence can be submitted, and fails closed if no active rubric is configured. A failure requires a stable error code, while a pass rejects contradictory failure metadata. Every run is append-only, and the newest run for each validator determines publication readiness.
+The reviewer records a pass or failure with at least 40 characters of written evidence per rubric and must attest that they inspected the exact version, applied every displayed current rubric, and made an independent judgment rather than accepting automation or model output alone. The consolidated form displays all seven exact active validator versions and database-backed rubric descriptions, requires an explicit outcome for each one, and fails closed unless the complete rule set is configured. One submission inserts seven separate audit records in a database transaction, so convenience does not collapse evidence or leave a partial batch. A failure requires a stable error code, while a pass rejects contradictory failure metadata. Every run is append-only, and the newest run for each validator determines publication readiness.
 
 Reviewer rubrics are themselves immutable versioned records. Activating a changed rubric atomically retires the previous version, requires change rationale and an explicit evidence-invalidation attestation, and leaves only one active version per key. Publication readiness joins validation evidence to the active rule version, so a pass under a retired rubric cannot satisfy the new rule. Automated-rule changes remain code-managed because their descriptions must stay synchronized with deterministic implementations and tests.
 
@@ -37,7 +37,7 @@ Reviewer rubrics are themselves immutable versioned records. Activating a change
 
 1. Create or revise an immutable question version.
 2. Run deterministic checks against that exact version.
-3. Record the seven reviewer-only checks.
+3. Complete the consolidated reviewer form, which records the seven reviewer-only checks separately.
 4. Record an approval decision with rubric scores and notes.
 5. Publish the exact eligible version as a separate owner action.
 

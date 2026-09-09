@@ -1,11 +1,14 @@
 import { z } from "zod";
 
-import { REVIEWER_PUBLICATION_VALIDATORS } from "./validation";
+export const reviewerValidationBatchBaseSchema = z.object({
+  versionId: z.uuid(),
+  inspectedExactVersion: z.literal("on"),
+  appliedCurrentRubric: z.literal("on"),
+  independentJudgment: z.literal("on"),
+});
 
-export const reviewerValidationSubmissionSchema = z
+export const reviewerValidationEvidenceSchema = z
   .object({
-    versionId: z.uuid(),
-    validatorKey: z.enum(REVIEWER_PUBLICATION_VALIDATORS),
     outcome: z.enum(["PASS", "FAIL"]),
     evidence: z.string().trim().min(40).max(5_000),
     failureCode: z
@@ -13,9 +16,6 @@ export const reviewerValidationSubmissionSchema = z
       .trim()
       .max(120)
       .regex(/^[A-Z0-9_-]*$/),
-    inspectedExactVersion: z.literal("on"),
-    appliedCurrentRubric: z.literal("on"),
-    independentJudgment: z.literal("on"),
   })
   .superRefine((value, context) => {
     if (value.outcome === "FAIL" && !value.failureCode) {

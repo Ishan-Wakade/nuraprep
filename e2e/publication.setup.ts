@@ -77,39 +77,44 @@ setup("publishes one fully gated practice fixture", async ({ page }) => {
     "topic-alignment",
     "originality",
   ]) {
-    const validatorSelect = page.getByLabel("Review check");
-    await validatorSelect.selectOption(validatorKey);
-    const selectedLabel = await validatorSelect
-      .locator("option:checked")
-      .textContent();
-    const activeVersion = selectedLabel?.match(/v(\d+)$/)?.[1];
-    expect(activeVersion).toBeTruthy();
-    await expect(
-      page.getByText(
-        new RegExp(
-          `Current rubric:.*${validatorKey.replaceAll("-", " ")} v${activeVersion}`,
-          "i",
-        ),
-      ),
-    ).toBeVisible();
+    const validatorLabel = validatorKey
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+    await page.getByLabel(`Outcome for ${validatorLabel}`).selectOption("PASS");
     await page
-      .getByLabel("Evidence")
+      .getByLabel(`Evidence for ${validatorLabel}`)
       .fill(
         `E2E reviewer inspected ${validatorKey} against its documented rubric.`,
       );
-    await page.getByLabel(/I inspected the prompt/).check();
-    await page.getByLabel(/I applied the selected validator/).check();
-    await page.getByLabel(/This is my review judgment/).check();
-    await page.getByRole("button", { name: "Append review evidence" }).click();
-    await expect(
-      page.getByText(`${validatorKey} evidence appended as pass.`),
-    ).toBeVisible();
-    await page.goto(`${publicationCandidateUrl}?validation=${validatorKey}`);
+  }
+  await page.getByLabel(/I inspected the prompt/).check();
+  await page.getByLabel(/I applied each validator/).check();
+  await page.getByLabel(/This is my review judgment/).check();
+  await page
+    .getByRole("button", { name: "Append all human-review evidence" })
+    .click();
+  await expect(
+    page.getByText(
+      "All seven human-review checks were appended as separate audit records.",
+    ),
+  ).toBeVisible();
+
+  await page.goto(`${publicationCandidateUrl}?validation=reviewer-batch`);
+  for (const validatorKey of [
+    "difficulty-calibration",
+    "reading-level",
+    "calculator-policy",
+    "explanation-consistency",
+    "accessibility",
+    "topic-alignment",
+    "originality",
+  ]) {
     await expect(
       page
         .getByRole("heading", { name: "Validation evidence" })
         .locator("..")
-        .getByText(`${validatorKey} v${activeVersion}`, { exact: true }),
+        .getByText(new RegExp(`^${validatorKey} v\\d+$`)),
     ).toBeVisible();
   }
 

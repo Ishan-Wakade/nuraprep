@@ -175,6 +175,61 @@ test("uses numeric-only input when the prompt already specifies the unit", async
   ).toBeVisible();
 });
 
+test("records every human validator in one exact-version submission", async ({
+  page,
+}) => {
+  await page.goto(`/review/questions/${promptSpecifiedUnitVersionId}`);
+
+  for (const validatorKey of [
+    "difficulty-calibration",
+    "reading-level",
+    "calculator-policy",
+    "explanation-consistency",
+    "accessibility",
+    "topic-alignment",
+    "originality",
+  ]) {
+    const validatorLabel = validatorKey
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+    await page.getByLabel(`Outcome for ${validatorLabel}`).selectOption("PASS");
+    await page
+      .getByLabel(`Evidence for ${validatorLabel}`)
+      .fill(
+        `E2E reviewer inspected ${validatorKey} for this exact immutable question version.`,
+      );
+  }
+  await page.getByLabel(/I inspected the prompt/).check();
+  await page.getByLabel(/I applied each validator/).check();
+  await page.getByLabel(/This is my review judgment/).check();
+  await page
+    .getByRole("button", { name: "Append all human-review evidence" })
+    .click();
+
+  await expect(
+    page.getByText(
+      "All seven human-review checks were appended as separate audit records.",
+    ),
+  ).toBeVisible();
+  const validationEvidence = page
+    .getByRole("heading", { name: "Validation evidence" })
+    .locator("..");
+  for (const validatorKey of [
+    "difficulty-calibration",
+    "reading-level",
+    "calculator-policy",
+    "explanation-consistency",
+    "accessibility",
+    "topic-alignment",
+    "originality",
+  ]) {
+    await expect(
+      validationEvidence.getByText(new RegExp(`^${validatorKey} v\\d+$`)),
+    ).toBeVisible();
+  }
+});
+
 test("registers governed source metadata and an abstract coverage note", async ({
   page,
 }) => {
