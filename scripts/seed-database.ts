@@ -430,7 +430,7 @@ const seedQuestions: SeedQuestion[] = [
       ],
       answerSpec: { type: "single_choice", choiceId: "c" },
       explanation:
-        "One liter equals 1,000 milliliters, so 2.35 × 1,000 = 2,350 milliliters.",
+        "Use the conversion factor 1,000 mL/1 L: 2.35 L × (1,000 mL/1 L) = 2,350 mL. The liter units cancel, leaving milliliters.",
       distractorRationales: {
         a: "This divides by 1,000 instead of multiplying by 1,000.",
         b: "This moves the decimal only two places rather than three.",
@@ -1077,7 +1077,7 @@ const numbersAndAlgebraExpansion: SeedQuestion[] = [
       ],
       answerSpec: { type: "single_choice", choiceId: "c" },
       explanation:
-        "Use twelfths: 1/4 = 3/12 and 2/3 = 8/12. Then 2 + 1 + 3/12 + 8/12 = 3 11/12.",
+        "The least common denominator of 4 and 3 is 12, so rewrite the fractions in twelfths: 1/4 = 3/12 and 2/3 = 8/12. Then 2 + 1 + 3/12 + 8/12 = 3 11/12.",
       distractorRationales: {
         a: "This adds the numerators and denominators directly.",
         b: "This changes the denominator but does not create equivalent fractions.",
@@ -1263,7 +1263,7 @@ const numbersAndAlgebraExpansion: SeedQuestion[] = [
       ],
       answerSpec: { type: "single_choice", choiceId: "c" },
       explanation:
-        "There are 60 minutes in an hour. Divide: 150 ÷ 60 = 2.5 hours, which is 2 hours 30 minutes.",
+        "Use the conversion factor 1 hour/60 minutes: 150 min × (1 hr/60 min) = 2.5 hr. The minute units cancel, and 2.5 hours is 2 hours 30 minutes.",
       distractorRationales: {
         a: "This treats the conversion as a decimal-place change rather than division by 60.",
         b: "This treats 30 minutes as 0.05 hour instead of one-half hour.",
@@ -1406,10 +1406,10 @@ const numbersAndAlgebraExpansion: SeedQuestion[] = [
     primarySkillId: ids.inequalities,
     learningObjective:
       "Interpret a budget constraint as an inequality and identify its greatest whole-number solution.",
-    difficulty: "PROFICIENT",
+    difficulty: "DEVELOPING",
     difficultyRationale:
-      "Requires translating an at-most constraint and interpreting the whole-number boundary.",
-    estimatedSeconds: 85,
+      "Requires translating at most into 7n ≤ 49 and completing one exact division to identify the greatest whole-number solution.",
+    estimatedSeconds: 70,
     calculatorPolicy: "NOT_NEEDED",
     misconceptions: ["REVERSES_AT_MOST_INEQUALITY"],
     misconceptionRules: [
@@ -1713,7 +1713,8 @@ const measurementDataExpansion: SeedQuestion[] = [
         { id: "d", content: "26 meters" },
       ],
       answerSpec: { type: "single_choice", choiceId: "d" },
-      explanation: "Multiply by the scale factor: 6.5 × 4 = 26 meters.",
+      explanation:
+        "The scale is 4 actual meters for each 1 drawing centimeter. Multiply by that scale factor: 6.5 cm × (4 m/1 cm) = 26 m. The drawing-centimeter units cancel, leaving actual meters.",
       distractorRationales: {
         a: "This divides by the scale factor instead of multiplying.",
         b: "This adds the scale factor to the drawing length.",
@@ -1776,7 +1777,7 @@ const measurementDataExpansion: SeedQuestion[] = [
     learningObjective: "Calculate circumference from a circle's diameter.",
     difficulty: "DEVELOPING",
     difficultyRationale:
-      "Requires distinguishing diameter from radius and applying a provided approximation for pi.",
+      "Requires distinguishing diameter from radius and applying a provided approximation for π.",
     estimatedSeconds: 70,
     calculatorPolicy: "ALLOWED",
     misconceptions: ["USES_RADIUS_WITH_DIAMETER_FORMULA"],
@@ -1784,17 +1785,17 @@ const measurementDataExpansion: SeedQuestion[] = [
       "halves-diameter-before-pi",
       "USES_RADIUS_WITH_DIAMETER_FORMULA",
       "a",
-      "The circumference formula C = pi times diameter already uses the full diameter; do not halve it first.",
+      "The circumference formula C = πd already uses the full diameter; do not halve it first.",
     ),
     tutorGuidance: tutorGuidance(
       "Which circumference formula uses diameter directly?",
-      "Multiply the given diameter, 10, by 3.14.",
+      "Use C = πd, where C is circumference and d is diameter, then substitute π ≈ 3.14 and d = 10.",
       "Why is the circumference a little more than three times the diameter?",
     ),
     content: {
       questionType: "SINGLE_CHOICE",
       prompt:
-        "A circular lid has a diameter of 10 inches. Using 3.14 for pi, what is its circumference?",
+        "A circular lid has a diameter of 10 inches. Using π ≈ 3.14, what is its circumference?",
       choices: [
         { id: "a", content: "15.7 inches" },
         { id: "b", content: "20 inches" },
@@ -1802,10 +1803,11 @@ const measurementDataExpansion: SeedQuestion[] = [
         { id: "d", content: "78.5 inches" },
       ],
       answerSpec: { type: "single_choice", choiceId: "c" },
-      explanation: "Use C = pi times diameter: 3.14 × 10 = 31.4 inches.",
+      explanation:
+        "Use C = πd, where C represents circumference and d represents diameter. Substitute π ≈ 3.14 and d = 10 inches: C = 3.14 × 10 = 31.4 inches.",
       distractorRationales: {
         a: "This uses half the diameter and therefore finds only half the circumference.",
-        b: "This doubles the diameter but does not apply pi.",
+        b: "This doubles the diameter but does not apply π.",
         d: "This applies an area calculation rather than circumference.",
       },
     },
@@ -2143,7 +2145,7 @@ const measurementDataExpansion: SeedQuestion[] = [
       prompt: "What is the mean of 7, 10, 13, 6, and 9?",
       answerSpec: numericAnswer(9),
       explanation:
-        "The mean is the equal-share average: the value each observation would have if the total were distributed evenly. Add the five values to get 45, then divide by the 5 observations: 45 ÷ 5 = 9. The result is reasonable because 9 falls between the smallest value, 6, and the largest, 13.",
+        "The arithmetic mean is the average found by adding all values and dividing by the number of values. Add the five values to get 45, then divide by 5: 45 ÷ 5 = 9. The result is reasonable because 9 falls between the smallest value, 6, and the largest, 13.",
       distractorRationales: {},
     },
     verificationSpec: {
@@ -2160,10 +2162,10 @@ const measurementDataExpansion: SeedQuestion[] = [
     primarySkillId: ids.probabilityStatistics,
     learningObjective:
       "Calculate the median of a data set with an even number of values.",
-    difficulty: "PROFICIENT",
+    difficulty: "DEVELOPING",
     difficultyRationale:
-      "Requires ordering an even-sized set and averaging its two middle values.",
-    estimatedSeconds: 80,
+      "Requires two familiar linked steps: order four values, then average the two middle values.",
+    estimatedSeconds: 70,
     calculatorPolicy: "NOT_NEEDED",
     misconceptions: ["SELECTS_ONE_MIDDLE_VALUE"],
     misconceptionRules: numericMisconception(
@@ -2227,7 +2229,7 @@ function numericAnswer(
     toleranceMode: "absolute",
     unit,
     acceptedUnits,
-    unitRequired: Boolean(unit),
+    unitRequired: false,
   };
 }
 

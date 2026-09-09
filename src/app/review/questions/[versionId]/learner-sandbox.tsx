@@ -151,9 +151,9 @@ export function LearnerSandbox({
               placeholder="Enter a number"
             />
           </label>
-          {(answerSpec.unit || answerSpec.unitRequired) && (
+          {answerSpec.unitRequired && (
             <label className="text-xs font-bold text-[#52676a]">
-              Unit{answerSpec.unitRequired ? " (required)" : " (optional)"}
+              Unit (required)
               <input
                 aria-label="Sandbox answer unit"
                 value={numericUnit}

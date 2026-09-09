@@ -369,6 +369,7 @@ async function answerDiagnosticQuestion(
     return;
   }
   if (prompt.includes("Write 7/8 as a decimal")) {
+    await expect(page.getByLabel(/^Unit/)).toHaveCount(0);
     await page.getByLabel("Numeric answer").fill("0.875");
     return;
   }

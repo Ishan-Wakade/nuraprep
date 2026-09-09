@@ -8,6 +8,7 @@ config({ path: ".env.local", quiet: true });
 
 const firstVersionId = "14000000-0000-4000-8000-000000000001";
 const numericVersionId = "14000000-0000-4000-8000-000000000002";
+const promptSpecifiedUnitVersionId = "14000000-0000-4000-8000-000000000025";
 
 test.describe.configure({ mode: "serial" });
 
@@ -156,6 +157,22 @@ test("creates a numeric revision without answer choices", async ({ page }) => {
   await expect(
     page.getByRole("link", { name: "Open version 2" }),
   ).toHaveAttribute("href", new URL(latestVersionUrl).pathname);
+});
+
+test("uses numeric-only input when the prompt already specifies the unit", async ({
+  page,
+}) => {
+  await page.goto(`/review/questions/${promptSpecifiedUnitVersionId}`);
+
+  await expect(
+    page.getByRole("paragraph").filter({ hasText: /How many meters remain/i }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Sandbox answer unit")).toHaveCount(0);
+  await page.getByLabel("Sandbox numeric answer").fill("1.55");
+  await page.getByRole("button", { name: "Check sandbox answer" }).click();
+  await expect(
+    page.getByText(/stored answer contract accepts this response/i),
+  ).toBeVisible();
 });
 
 test("registers governed source metadata and an abstract coverage note", async ({

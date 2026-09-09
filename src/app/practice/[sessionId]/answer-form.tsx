@@ -90,7 +90,11 @@ export function AnswerForm({
       )}
 
       {questionType === "NUMERIC" && (
-        <div className="grid max-w-xl gap-4 sm:grid-cols-[minmax(0,1fr)_180px]">
+        <div
+          className={`grid max-w-xl gap-4 ${
+            unitRequired ? "sm:grid-cols-[minmax(0,1fr)_180px]" : ""
+          }`}
+        >
           <label className="text-sm font-bold">
             Numeric answer
             <input
@@ -102,15 +106,17 @@ export function AnswerForm({
               placeholder="Example: 0.75 or 3/4"
             />
           </label>
-          <label className="text-sm font-bold">
-            Unit {unitRequired ? "" : "(optional)"}
-            <input
-              name="unit"
-              required={unitRequired}
-              autoComplete="off"
-              className="mt-2 w-full rounded-xl border border-[#cdd7d0] bg-white px-4 py-3 text-lg"
-            />
-          </label>
+          {unitRequired && (
+            <label className="text-sm font-bold">
+              Unit
+              <input
+                name="unit"
+                required
+                autoComplete="off"
+                className="mt-2 w-full rounded-xl border border-[#cdd7d0] bg-white px-4 py-3 text-lg"
+              />
+            </label>
+          )}
         </div>
       )}
 
