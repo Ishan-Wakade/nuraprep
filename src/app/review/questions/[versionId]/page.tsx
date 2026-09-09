@@ -49,7 +49,8 @@ export default async function QuestionReviewPage({
               <p className="text-xs text-[#52676a]">
                 {question.reviewNavigation.reviewed}/
                 {question.reviewNavigation.total} latest candidates have a
-                decision
+                decision · {question.reviewNavigation.humanValidationComplete}/
+                {question.reviewNavigation.total} have all human checks passing
               </p>
             </div>
             <div
@@ -79,6 +80,12 @@ export default async function QuestionReviewPage({
             >
               View unreviewed
             </Link>
+            <Link
+              href="/review?validation=HUMAN_NEEDED"
+              className="rounded-lg border border-[#9fc9bd] bg-white px-3 py-2 text-xs font-bold text-[#116b65]"
+            >
+              View human checks
+            </Link>
             {question.reviewNavigation.nextNeedsRevision && (
               <Link
                 href={`/review/questions/${question.reviewNavigation.nextNeedsRevision.versionId}`}
@@ -95,6 +102,15 @@ export default async function QuestionReviewPage({
                 title={`${question.reviewNavigation.nextUnreviewed.skillTitle}: ${question.reviewNavigation.nextUnreviewed.slug}`}
               >
                 Next unreviewed →
+              </Link>
+            )}
+            {question.reviewNavigation.nextReviewerValidation && (
+              <Link
+                href={`/review/questions/${question.reviewNavigation.nextReviewerValidation.versionId}`}
+                className="rounded-lg bg-[#116b65] px-3 py-2 text-xs font-bold text-white"
+                title={`${question.reviewNavigation.nextReviewerValidation.skillTitle}: ${question.reviewNavigation.nextReviewerValidation.slug}`}
+              >
+                Next human checks →
               </Link>
             )}
           </div>

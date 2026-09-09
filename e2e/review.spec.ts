@@ -25,6 +25,12 @@ test("filters the review queue and opens full provenance", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("No published item").first()).toBeVisible();
 
+  await page.getByLabel("Publication review").selectOption("HUMAN_NEEDED");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect(page).toHaveURL(/validation=HUMAN_NEEDED/);
+  await expect(page.getByText(/human checks needed/i).first()).toBeVisible();
+
+  await page.getByLabel("Publication review").selectOption("");
   await page.getByLabel("Type").selectOption("NUMERIC");
   await page.getByRole("button", { name: "Apply filters" }).click();
   await expect(page).toHaveURL(/questionType=NUMERIC/);
@@ -44,6 +50,9 @@ test("filters the review queue and opens full provenance", async ({ page }) => {
     "href",
     `/review/questions/${firstVersionId}`,
   );
+  await expect(
+    page.getByRole("link", { name: "Next human checks" }),
+  ).toBeVisible();
   await expect(
     page
       .getByRole("paragraph")

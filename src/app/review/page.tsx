@@ -21,6 +21,7 @@ const reviewStatuses = [
   "REJECTED",
 ] as const;
 const scopes = ["CURRENT", "HISTORY"] as const;
+const validationStatuses = ["HUMAN_NEEDED"] as const;
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -38,12 +39,16 @@ export default async function ReviewQueuePage({
   const questionType = single(params.questionType);
   const reviewStatus = single(params.status);
   const scope = single(params.scope);
+  const validationStatus = single(params.validation);
   const filters: ReviewQueueFilters = {
     scope: scopes.find((value) => value === scope) ?? "CURRENT",
     query: single(params.q)?.trim() || undefined,
     difficulty: difficulties.find((value) => value === difficulty),
     questionType: questionTypes.find((value) => value === questionType),
     reviewStatus: reviewStatuses.find((value) => value === reviewStatus),
+    validationStatus: validationStatuses.find(
+      (value) => value === validationStatus,
+    ),
     skillCode: single(params.skill) || undefined,
   };
   const queue = await getReviewQueue(filters);
@@ -72,7 +77,7 @@ export default async function ReviewQueuePage({
       </div>
 
       <section
-        className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-5"
+        className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-6"
         aria-label="Queue summary"
       >
         <SummaryCard label="Visible" value={queue.summary.total} />
@@ -82,6 +87,10 @@ export default async function ReviewQueuePage({
           value={queue.summary.needsRevision}
         />
         <SummaryCard label="Approved" value={queue.summary.approved} />
+        <SummaryCard
+          label="Human checks needed"
+          value={queue.summary.humanChecksNeeded}
+        />
         <SummaryCard
           label="Learner reports"
           value={queue.summary.learnerReports}
@@ -161,7 +170,7 @@ export default async function ReviewQueuePage({
         </div>
       </section>
 
-      <form className="mt-6 grid gap-3 rounded-2xl border border-[#d8ded9] bg-[#fffdf8] p-4 shadow-sm md:grid-cols-2 lg:grid-cols-6">
+      <form className="mt-6 grid gap-3 rounded-2xl border border-[#d8ded9] bg-[#fffdf8] p-4 shadow-sm md:grid-cols-2 lg:grid-cols-7">
         <label className="lg:col-span-2">
           <span className="mb-1.5 block text-xs font-bold text-[#52676a]">
             Search
@@ -185,6 +194,12 @@ export default async function ReviewQueuePage({
           name="status"
           value={filters.reviewStatus}
           options={reviewStatuses}
+        />
+        <FilterSelect
+          label="Publication review"
+          name="validation"
+          value={filters.validationStatus}
+          options={validationStatuses}
         />
         <FilterSelect
           label="Difficulty"
@@ -263,6 +278,13 @@ export default async function ReviewQueuePage({
                     {item.passingValidatorCount}/{item.requiredValidatorCount}
                   </strong>
                   validators passing
+                </div>
+                <div>
+                  <strong className="block text-lg text-[#123136]">
+                    {item.passingReviewerValidatorCount}/
+                    {item.reviewerValidatorCount}
+                  </strong>
+                  human checks passing
                 </div>
                 <div>
                   <strong className="block text-lg text-[#123136]">

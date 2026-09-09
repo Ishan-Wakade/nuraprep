@@ -40,6 +40,7 @@ export type ReviewQueueFilters = {
   questionType?: (typeof questionVersions.questionType.enumValues)[number];
   reviewStatus?:
     "UNREVIEWED" | (typeof reviewDecisions.decision.enumValues)[number];
+  validationStatus?: "HUMAN_NEEDED";
   skillCode?: string;
 };
 
@@ -268,6 +269,11 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
       const passingValidatorCount = [
         ...(latestValidationByVersion.get(row.versionId)?.values() ?? []),
       ].filter((outcome) => outcome === "PASS").length;
+      const passingReviewerValidatorCount =
+        REVIEWER_PUBLICATION_VALIDATORS.filter(
+          (key) =>
+            latestValidationByVersion.get(row.versionId)?.get(key) === "PASS",
+        ).length;
 
       return {
         ...row,
@@ -275,13 +281,18 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
         latestDecision: decision,
         passingValidatorCount,
         requiredValidatorCount: REQUIRED_PUBLICATION_VALIDATORS.length,
+        passingReviewerValidatorCount,
+        reviewerValidatorCount: REVIEWER_PUBLICATION_VALIDATORS.length,
         provenanceCount: provenanceCount.get(row.versionId) ?? 0,
         learnerReportCount: learnerReportCount.get(row.versionId) ?? 0,
       };
     })
     .filter(
       (row) =>
-        !filters.reviewStatus || row.latestDecision === filters.reviewStatus,
+        (!filters.reviewStatus ||
+          row.latestDecision === filters.reviewStatus) &&
+        (!filters.validationStatus ||
+          row.passingReviewerValidatorCount < row.reviewerValidatorCount),
     );
 
   return {
@@ -314,6 +325,10 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
       ).length,
       approved: items.filter((item) => item.latestDecision === "APPROVED")
         .length,
+      humanChecksNeeded: items.filter(
+        (item) =>
+          item.passingReviewerValidatorCount < item.reviewerValidatorCount,
+      ).length,
       learnerReports: items.reduce(
         (total, item) => total + item.learnerReportCount,
         0,
@@ -523,6 +538,7 @@ export async function getQuestionReviewDetail(versionId: string) {
       skill_title: string;
       latest_decision:
         "UNREVIEWED" | "APPROVED" | "NEEDS_REVISION" | "REJECTED";
+      passing_reviewer_validators: number;
     }>(sql`
       WITH latest_versions AS (
         SELECT DISTINCT ON (version.question_id)
@@ -538,17 +554,43 @@ export async function getQuestionReviewDetail(versionId: string) {
                decision.decision
           FROM review_decisions AS decision
          ORDER BY decision.question_version_id, decision.decided_at DESC, decision.id DESC
+      ), latest_reviewer_runs AS (
+        SELECT DISTINCT ON (run.question_version_id, rule.key)
+               run.question_version_id,
+               rule.key,
+               run.outcome
+          FROM validation_runs AS run
+          INNER JOIN validator_rules AS rule ON rule.id = run.validator_rule_id
+         WHERE rule.active = true
+           AND rule.key IN (
+             'difficulty-calibration',
+             'reading-level',
+             'calculator-policy',
+             'explanation-consistency',
+             'accessibility',
+             'topic-alignment',
+             'originality'
+           )
+         ORDER BY run.question_version_id, rule.key, run.executed_at DESC, run.id DESC
+      ), reviewer_passes AS (
+        SELECT run.question_version_id,
+               count(*) FILTER (WHERE run.outcome = 'PASS')::int AS passing_reviewer_validators
+          FROM latest_reviewer_runs AS run
+         GROUP BY run.question_version_id
       )
       SELECT latest.version_id,
              latest.version,
              question.internal_slug AS slug,
              skill.title AS skill_title,
-             coalesce(decision.decision::text, 'UNREVIEWED') AS latest_decision
+             coalesce(decision.decision::text, 'UNREVIEWED') AS latest_decision,
+             coalesce(reviewer.passing_reviewer_validators, 0)::int AS passing_reviewer_validators
         FROM latest_versions AS latest
         INNER JOIN questions AS question ON question.id = latest.question_id
         INNER JOIN skills AS skill ON skill.id = latest.primary_skill_id
         LEFT JOIN latest_decisions AS decision
           ON decision.question_version_id = latest.version_id
+        LEFT JOIN reviewer_passes AS reviewer
+          ON reviewer.question_version_id = latest.version_id
        WHERE question.section = 'MATH'
          AND question.internal_slug NOT LIKE 'e2e-%'
        ORDER BY CASE coalesce(decision.decision::text, 'UNREVIEWED')
@@ -636,6 +678,7 @@ export async function getQuestionReviewDetail(versionId: string) {
     slug: item.slug,
     skillTitle: item.skill_title,
     latestDecision: item.latest_decision,
+    passingReviewerValidators: item.passing_reviewer_validators,
   }));
   const nextUnreviewed = navigationItems.find(
     (item) =>
@@ -644,6 +687,11 @@ export async function getQuestionReviewDetail(versionId: string) {
   const nextNeedsRevision = navigationItems.find(
     (item) =>
       item.versionId !== versionId && item.latestDecision === "NEEDS_REVISION",
+  );
+  const nextReviewerValidation = navigationItems.find(
+    (item) =>
+      item.versionId !== versionId &&
+      item.passingReviewerValidators < REVIEWER_PUBLICATION_VALIDATORS.length,
   );
 
   return {
@@ -703,10 +751,16 @@ export async function getQuestionReviewDetail(versionId: string) {
       needsRevision: navigationItems.filter(
         (item) => item.latestDecision === "NEEDS_REVISION",
       ).length,
+      humanValidationComplete: navigationItems.filter(
+        (item) =>
+          item.passingReviewerValidators ===
+          REVIEWER_PUBLICATION_VALIDATORS.length,
+      ).length,
       currentIsLatest: versions[0]?.id === versionId,
       latestFamilyVersion: versions[0] ?? null,
       nextUnreviewed: nextUnreviewed ?? null,
       nextNeedsRevision: nextNeedsRevision ?? null,
+      nextReviewerValidation: nextReviewerValidation ?? null,
     },
   };
 }

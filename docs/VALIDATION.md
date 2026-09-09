@@ -41,6 +41,8 @@ Reviewer rubrics are themselves immutable versioned records. Activating a change
 4. Record an approval decision with rubric scores and notes.
 5. Publish the exact eligible version as a separate owner action.
 
+The current-version queue can be filtered to `Human needed`, and every detail page links directly to the next candidate lacking a complete set of passing human checks. This navigation is derived from the latest run under each active reviewer rubric; stale, failed, or missing evidence remains in the queue.
+
 Publication creates an attributed ledger record and activates the question family. Publishing a newer eligible version retires the previous ledger record without deleting it. A database trigger prevents rewriting publication identity or attribution and prevents retired records from changing.
 
 Learner selection will join only the single current publication record. Drafts, approved-but-unpublished versions, retired versions, and versions missing any required evidence remain outside the learner bank.
