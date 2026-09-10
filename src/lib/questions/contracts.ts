@@ -62,6 +62,29 @@ export const answerSpecSchema = z.discriminatedUnion("type", [
   orderedAnswerSchema,
 ]);
 
+export const barGraphDataSchema = z
+  .object({
+    kind: z.literal("bar"),
+    title: z.string().trim().min(1).max(160),
+    xAxisLabel: z.string().trim().min(1).max(120),
+    yAxisLabel: z.string().trim().min(1).max(120),
+    bars: z
+      .array(
+        z.object({
+          label: z.string().trim().min(1).max(80),
+          value: z.number().finite().nonnegative(),
+        }),
+      )
+      .min(2)
+      .max(8),
+  })
+  .refine(
+    (graph) =>
+      new Set(graph.bars.map((bar) => bar.label.toLocaleLowerCase("en-US")))
+        .size === graph.bars.length,
+    { message: "Bar labels must be unique.", path: ["bars"] },
+  );
+
 export const stimulusSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("table"),
@@ -75,7 +98,7 @@ export const stimulusSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("graph"),
     accessibleDescription: z.string().trim().min(1).max(2_000),
-    data: z.record(z.string(), z.unknown()),
+    data: barGraphDataSchema,
   }),
 ]);
 

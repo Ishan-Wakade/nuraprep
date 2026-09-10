@@ -52,6 +52,7 @@ These screens are backed by the local PostgreSQL practice flow. The diagnostic s
 - **Publication safety:** immutable question versions, independent reviewer attestations, versioned validator rubrics, and a database-enforced learner publication boundary.
 - **Reproducible reviewed content:** a typed 38-family bank snapshot is validated in unit tests and reconstructed idempotently by a fresh database seed without pretending a source snapshot replaces complete audit backups.
 - **Deterministic educational checks:** typed answer contracts plus programmatic math, formatting, uniqueness, distractor, and originality signals instead of LLM-only grading.
+- **Accessible visual questions:** shared semantic table rendering and responsive SVG bar graphs include exact-value table alternatives without adding a charting dependency.
 - **Inspectable personalization:** prerequisite-aware diagnostic signals, adaptive scheduling reasons, spaced-review dates, and versioned score-estimate inputs remain explainable.
 - **Privacy-aware accounts:** database sessions, revocable roles, fresh-session export and learner erasure, second-admin privileged pseudonymization, token-safe audit events, and shared authentication rate limits.
 - **Abuse-resistant mutations:** atomic per-account budgets protect session creation, answers, review marks, tutoring, reports, predictions, exports, billing sessions, and generation requests across replicas.

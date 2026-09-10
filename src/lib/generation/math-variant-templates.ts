@@ -4,6 +4,7 @@ import type {
   SeededRandom,
 } from "./deterministic-variants";
 import { mathVariantExpansionTemplates } from "./math-variant-expansion-templates";
+import { mathVariantVisualTemplates } from "./math-variant-visual-templates";
 import type {
   QuestionStimulus,
   RpnExpression,
@@ -1364,6 +1365,7 @@ export const mathDeterministicVariantTemplates: readonly DeterministicVariantTem
       },
     },
     ...mathVariantExpansionTemplates,
+    ...mathVariantVisualTemplates,
   ];
 
 export function getMathDeterministicVariantTemplate(key: string) {

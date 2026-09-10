@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { QuestionStimulus } from "@/components/question-stimulus";
 import { getQuestionReviewDetail } from "@/data/reviewer";
 import {
   DIFFICULTY_RUBRIC_VERSION,
@@ -160,46 +161,7 @@ export default async function QuestionReviewPage({
         <div className="space-y-6">
           <Panel title="Learner preview" eyebrow="Rendered content">
             <p className="text-lg font-semibold leading-8">{question.prompt}</p>
-            {question.stimulus?.type === "table" && (
-              <div className="mt-5 overflow-x-auto">
-                <table className="w-full border-collapse text-left text-sm">
-                  <caption className="mb-2 text-left text-xs font-semibold text-[#52676a]">
-                    {question.stimulus.caption}
-                  </caption>
-                  <thead>
-                    <tr>
-                      {question.stimulus.columns.map((column) => (
-                        <th
-                          key={column}
-                          className="border border-[#d8ded9] bg-[#edf3ef] px-3 py-2"
-                        >
-                          {column}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {question.stimulus.rows.map((row, rowIndex) => (
-                      <tr key={rowIndex}>
-                        {row.map((cell, cellIndex) => (
-                          <td
-                            key={`${rowIndex}-${cellIndex}`}
-                            className="border border-[#d8ded9] px-3 py-2"
-                          >
-                            {cell}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            {question.stimulus?.type === "graph" && (
-              <p className="mt-4 rounded-lg bg-[#edf3ef] p-3 text-sm">
-                Graph description: {question.stimulus.accessibleDescription}
-              </p>
-            )}
+            <QuestionStimulus stimulus={question.stimulus} />
             <LearnerSandbox
               answerSpec={question.answerSpec}
               choices={question.choices ?? null}

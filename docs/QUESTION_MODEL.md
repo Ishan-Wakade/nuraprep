@@ -73,6 +73,8 @@ A generation run records an idempotency key, request scope, requester, optional 
 
 The correct answer is never inferred from display order. Choice identifiers are stable, and shuffling preserves answer references.
 
+The first visual-data contract is intentionally narrow: a bar graph must provide a title, labeled axes, and two to eight uniquely labeled nonnegative values. Learner and reviewer pages share one dependency-free SVG renderer and expose the same exact values in a semantic table alternative. This avoids accepting arbitrary chart payloads that the UI cannot faithfully render. Schema validation proves the structure is renderable; matching descriptive prose to the plotted values remains a template regression and human-review responsibility.
+
 ### ValidationRun
 
 Each validator result is immutable and records validator name/version, execution time, status, structured evidence, and failure code. Required checks include:

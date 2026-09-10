@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { QuestionStimulus } from "@/components/question-stimulus";
 import { getPracticeSessionView } from "@/data/practice";
 
 import { AnswerForm } from "./answer-form";
@@ -110,7 +111,7 @@ export default async function PracticeSessionPage({
         <h2 className="mt-6 max-w-3xl text-xl font-semibold leading-8 sm:text-2xl sm:leading-9">
           {question.prompt}
         </h2>
-        <Stimulus stimulus={question.stimulus} />
+        <QuestionStimulus stimulus={question.stimulus} />
 
         {session.mode === "ADAPTIVE" && (
           <details
@@ -284,58 +285,6 @@ function Feedback({
         questionVersionId={questionVersionId}
         attemptId={feedback.attemptId}
       />
-    </div>
-  );
-}
-
-function Stimulus({
-  stimulus,
-}: {
-  stimulus: NonNullable<
-    Awaited<ReturnType<typeof getPracticeSessionView>>
-  >["item"]["stimulus"];
-}) {
-  if (!stimulus) return null;
-  if (stimulus.type === "graph") {
-    return (
-      <p className="mt-5 rounded-xl bg-[#edf3ef] p-4 text-sm leading-6">
-        Graph description: {stimulus.accessibleDescription}
-      </p>
-    );
-  }
-  return (
-    <div className="mt-5 overflow-x-auto">
-      <table className="w-full border-collapse text-left text-sm">
-        <caption className="mb-2 text-left text-xs font-semibold text-[#52676a]">
-          {stimulus.caption}
-        </caption>
-        <thead>
-          <tr>
-            {stimulus.columns.map((column) => (
-              <th
-                key={column}
-                className="border border-[#d8ded9] bg-[#edf3ef] px-3 py-2"
-              >
-                {column}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {stimulus.rows.map((row, rowIndex) => (
-            <tr key={rowIndex}>
-              {row.map((cell, cellIndex) => (
-                <td
-                  key={`${rowIndex}-${cellIndex}`}
-                  className="border border-[#d8ded9] px-3 py-2"
-                >
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }
