@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { mathVariantExpansionTemplates } from "./math-variant-expansion-templates";
 
 describe("Math variant expansion templates", () => {
-  it("adds four bounded reasoning families across three response formats", () => {
+  it("adds eight bounded reasoning families across three response formats", () => {
     expect(
       mathVariantExpansionTemplates.map((template) => ({
         key: template.key,
@@ -28,6 +28,26 @@ describe("Math variant expansion templates", () => {
       },
       {
         key: "math.fractions.order-mixed-representations",
+        questionType: "ORDERED_RESPONSE",
+        structureCapacity: 20,
+      },
+      {
+        key: "math.arithmetic.signed-change-choice",
+        questionType: "SINGLE_CHOICE",
+        structureCapacity: 20,
+      },
+      {
+        key: "math.linear-equations.plan-break-even-choice",
+        questionType: "SINGLE_CHOICE",
+        structureCapacity: 20,
+      },
+      {
+        key: "math.unit-conversions.multiple-select-equivalence",
+        questionType: "MULTIPLE_SELECT",
+        structureCapacity: 20,
+      },
+      {
+        key: "math.probability.order-event-likelihood",
         questionType: "ORDERED_RESPONSE",
         structureCapacity: 20,
       },
