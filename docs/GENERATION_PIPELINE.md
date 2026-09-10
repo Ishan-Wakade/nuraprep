@@ -2,7 +2,7 @@
 
 ## Current boundary
 
-NuraPrep now has the intake and dispatch boundary for model-assisted question work. It does not yet call an external generation provider. This is deliberate: queued requests remain `PENDING` with provider `UNCONFIGURED` until a reviewed adapter and credentials exist.
+NuraPrep has both a no-cost deterministic variant engine and the intake and dispatch boundary for future model-assisted question work. It does not call an external generation provider. This is deliberate: queued model requests remain `PENDING` with provider `UNCONFIGURED` until a reviewed adapter and credentials exist.
 
 The current slice supports:
 
@@ -18,7 +18,23 @@ The current slice supports:
 - strict structured-output, answer-contract, symbolic-math, misconception, and regeneration-scope checks; and
 - atomic candidate persistence with database-enforced one-way completion linked to exactly one generated candidate version.
 
+It also supports a dry-run-only deterministic path with versioned Math templates, reproducible SHA-256 seeds, structural-diversity limits, current-bank duplicate checks, and the same content, answer-contract, symbolic-math, and misconception validators used elsewhere in the application.
+
 No action in the reviewer UI fetches source pages, stores source question text, or sends content to a model.
+
+## Deterministic Math variants
+
+Run a local pilot against the latest real Math corpus with:
+
+```bash
+pnpm questions:variants:dry-run --count=8 --seed=reviewed-pilot-v1
+```
+
+The command requires `DATABASE_URL`, emits a JSON quality report, and writes nothing to PostgreSQL. Each accepted candidate records its template key and version, target skill, batch and candidate seeds, selected parameters, canonical content hash, deterministic validation result, internal similarity signals, and an explicit statement that source-question text was not provided.
+
+A slot is rejected and retried when the template output is malformed, violates its declared type or difficulty, fails content or answer validation, fails deterministic mathematics, contains invalid misconception behavior, reuses a structure within the batch, or triggers an internal duplicate signal against the current corpus or earlier accepted variants. An exhausted slot is reported rather than silently replaced with a lower-quality item.
+
+The first pilot registry intentionally covers only three reviewed problem families: constant-rate ratios, discount-then-tax percent sequences, and recovering a missing value from a mean. This proves the generation and rejection machinery; it does **not** mean thousands of questions are currently approved. Scaling responsibly requires additional reviewed templates across the complete Math taxonomy, batch-level quality reports, representative human sampling, and learner-performance calibration. Deterministic acceptance is an engineering gate, not human publication approval.
 
 ## Source intake
 
