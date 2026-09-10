@@ -58,6 +58,16 @@ The reviewer queue links to `/review?sample=DETERMINISTIC_UNREVIEWED`, which sel
 
 This is a workload-reduction aid, not statistical sampling, approval inheritance, or evidence that sibling variants are correct. A decision applies only to the exact question version reviewed. Findings should be converted into template regression cases or controlled improvement proposals before another batch is generated; broader random and stratified sampling remains necessary before large-scale publication.
 
+Run a read-only persistence audit before human sampling with:
+
+```bash
+pnpm questions:variants:audit
+```
+
+The audit rebuilds every deterministic draft candidate from PostgreSQL and recomputes its schema, content, math, misconception, template-contract, provenance, stored-validator, publication-isolation, and internal-similarity checks. It emits JSON and exits unsuccessfully when a machine-checkable error is found. It writes no database rows and must never be described as human review.
+
+The 2026-09-10 audit passed all 272 staged drafts across 31 template versions and 12 leaf skills. All 272 had valid candidate schemas and tutor guidance; no draft had an active learner publication or blocking internal duplicate. Eight pairs produced non-blocking five-token overlap signals from 0.50 through 0.538. Those signals remain visible sampling cues, not proof of copying or correctness. The audit cannot establish educational quality, accessibility in context, difficulty calibration, TEAS alignment, or legal originality.
+
 ## Source intake
 
 Each source starts with a canonical HTTPS URL, publisher, title, access class, policy decision, rationale, reviewer, and optional recheck date. The server derives permissions from the decision instead of accepting independent permission checkboxes.
