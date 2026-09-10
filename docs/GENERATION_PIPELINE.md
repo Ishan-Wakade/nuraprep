@@ -52,6 +52,12 @@ pnpm questions:variants:capacity -- --target=1000
 
 The target is a planning input, not an official requirement. The report compares current and published families with registered template capacity, uncovered leaf skills, and capacity by response format. Capacity is an upper bound; it is never labeled as accepted, reviewed, or published inventory.
 
+### Representative review sampling
+
+The reviewer queue links to `/review?sample=DETERMINISTIC_UNREVIEWED`, which selects one current unreviewed candidate from each deterministic template version. Selection uses the lowest stable prompt hash, with the version ID as a deterministic tie-breaker, so database row order cannot silently change the sample. The live 272-draft pilot currently produces 31 review items instead of asking an owner to inspect every numeric variation.
+
+This is a workload-reduction aid, not statistical sampling, approval inheritance, or evidence that sibling variants are correct. A decision applies only to the exact question version reviewed. Findings should be converted into template regression cases or controlled improvement proposals before another batch is generated; broader random and stratified sampling remains necessary before large-scale publication.
+
 ## Source intake
 
 Each source starts with a canonical HTTPS URL, publisher, title, access class, policy decision, rationale, reviewer, and optional recheck date. The server derives permissions from the decision instead of accepting independent permission checkboxes.

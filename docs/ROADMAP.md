@@ -98,6 +98,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Add explicit-confirmation, transaction-safe, replay-protected staging that creates validated drafts without decisions or publications.
 - [x] Cover every Math leaf skill with a bounded pilot template and report structural capacity, taxonomy gaps, and response-format concentration without treating capacity as approved inventory.
 - [x] Prove format-specific deterministic generation for single choice, multiple select, numeric response, ordered response, and table stimuli while keeping every candidate draft-only.
+- [x] Add stable one-per-template sampling for unreviewed deterministic drafts without implying approval of sibling variants.
 - [ ] Add a reviewed network transport and licensed-storage adapter; do not enable collection from gated or unclear-rights sources.
 - [ ] Add a configured provider and production queue host, wall-clock rate controls, and calibration cases for originality thresholds.
 - [x] Add recurring-error summaries and evidence-backed, separately approved improvement proposals that never auto-mutate prompts or rubrics.
@@ -105,7 +106,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [ ] Implement approved proposals only through reviewed version changes and regression suites.
 - Expand only at the rate human review and quality sampling can support.
 
-**Exit:** the deterministic pilot now moves from governed inputs through checks into the review queue without copying source content or silently publishing failures. Complete taxonomy-scale template coverage and representative human sampling remain open.
+**Exit:** the deterministic pilot now moves from governed inputs through checks into the review queue without copying source content or silently publishing failures. Taxonomy-scale template coverage and its sampling workflow are implemented; representative human decisions and broader statistical sampling remain open.
 
 ## 7. Authentication and account lifecycle
 
