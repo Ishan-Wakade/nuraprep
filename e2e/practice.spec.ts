@@ -438,9 +438,11 @@ async function answerReviewedQuestion(
   page: import("@playwright/test").Page,
   options: { forceIncorrect?: boolean } = {},
 ) {
-  const prompt = (await page.locator("h2").first().textContent()) ?? "";
+  const prompt = (await page.locator("h2").first().innerText()).trim();
   const question = reviewedMathBank.questions.find(
-    (candidate) => candidate.content.prompt === prompt,
+    (candidate) =>
+      candidate.content.prompt === prompt ||
+      candidate.content.prompt.repeat(2) === prompt,
   );
   if (!question) throw new Error(`Unknown reviewed Math question: ${prompt}`);
 
