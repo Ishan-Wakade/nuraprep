@@ -66,10 +66,11 @@ function BarGraph({ stimulus }: { stimulus: BarGraphStimulus }) {
   const plotHeight = chart.height - chart.top - chart.bottom;
   const slotWidth = plotWidth / bars.length;
   const barWidth = Math.min(64, slotWidth * 0.62);
-  const maximum = niceCeiling(Math.max(...bars.map((bar) => bar.value)));
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((fraction) => ({
-    value: maximum * fraction,
-    y: chart.top + plotHeight * (1 - fraction),
+  const ticks = buildTicks(Math.max(...bars.map((bar) => bar.value)));
+  const maximum = ticks.at(-1) ?? 1;
+  const positionedTicks = ticks.map((value) => ({
+    value,
+    y: chart.top + plotHeight * (1 - value / maximum),
   }));
   const renderedBars = bars.map((bar, index) => {
     const height = (bar.value / maximum) * plotHeight;
@@ -99,7 +100,7 @@ function BarGraph({ stimulus }: { stimulus: BarGraphStimulus }) {
         >
           {title}
         </text>
-        {ticks.map((tick) => (
+        {positionedTicks.map((tick) => (
           <line
             key={`line-${tick.value}`}
             x1={chart.left}
@@ -110,7 +111,7 @@ function BarGraph({ stimulus }: { stimulus: BarGraphStimulus }) {
             strokeWidth="1"
           />
         ))}
-        {ticks.map((tick) => (
+        {positionedTicks.map((tick) => (
           <text
             key={`label-${tick.value}`}
             x={chart.left - 10}
@@ -152,9 +153,9 @@ function BarGraph({ stimulus }: { stimulus: BarGraphStimulus }) {
           <text
             key={`value-${bar.label}`}
             x={x + barWidth / 2}
-            y={Math.max(chart.top + 13, y - 7)}
+            y={Math.min(chart.top + plotHeight - 6, y + 17)}
             textAnchor="middle"
-            className="fill-[#15383a] text-[13px] font-bold"
+            className="fill-white text-[13px] font-bold"
           >
             {formatTick(bar.value)}
           </text>
@@ -231,6 +232,15 @@ function niceCeiling(value: number) {
   const factor =
     normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
   return factor * magnitude;
+}
+
+function buildTicks(maximumValue: number) {
+  const step = niceCeiling(maximumValue / 5);
+  const maximum = Math.max(step, Math.ceil(maximumValue / step) * step);
+  return Array.from(
+    { length: Math.round(maximum / step) + 1 },
+    (_, index) => index * step,
+  );
 }
 
 function formatTick(value: number) {

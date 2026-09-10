@@ -55,6 +55,8 @@ describe("QuestionStimulus", () => {
       }),
     ).toBeInTheDocument();
     expect(container.querySelectorAll("svg rect")).toHaveLength(2);
+    expect(screen.getByText("20")).toBeInTheDocument();
+    expect(screen.queryByText("12.5")).not.toBeInTheDocument();
     expect(screen.getByText("View graph data as a table")).toBeInTheDocument();
     const tableAlternative = screen
       .getByText("View graph data as a table")
