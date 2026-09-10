@@ -3,6 +3,7 @@ import type {
   DeterministicVariantTemplate,
   SeededRandom,
 } from "./deterministic-variants";
+import { mathVariantDepthTemplates } from "./math-variant-depth-templates";
 import { mathVariantExpansionTemplates } from "./math-variant-expansion-templates";
 import { mathVariantVisualTemplates } from "./math-variant-visual-templates";
 import type {
@@ -1366,6 +1367,7 @@ export const mathDeterministicVariantTemplates: readonly DeterministicVariantTem
     },
     ...mathVariantExpansionTemplates,
     ...mathVariantVisualTemplates,
+    ...mathVariantDepthTemplates,
   ];
 
 export function getMathDeterministicVariantTemplate(key: string) {

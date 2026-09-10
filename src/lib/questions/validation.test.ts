@@ -453,6 +453,78 @@ describe("validateMathVerification", () => {
     ).toMatchObject({ valid: true });
   });
 
+  it("derives every integer satisfying an inequality rather than trusting the key", () => {
+    const content: QuestionContent = {
+      questionType: "MULTIPLE_SELECT",
+      prompt: "Select every listed value that satisfies x ≥ 4.",
+      choices: [
+        { id: "a", content: "x = 2" },
+        { id: "b", content: "x = 4" },
+        { id: "c", content: "x = 7" },
+      ],
+      answerSpec: { type: "multiple_select", choiceIds: ["b", "c"] },
+      explanation: "Four and seven are each at least four.",
+      distractorRationales: { a: "Two is less than four." },
+    };
+    const specification = {
+      kind: "inequality_choices" as const,
+      left: { coefficient: 1, constant: 0 },
+      right: { coefficient: 0, constant: 4 },
+      relation: "gte" as const,
+      candidateValues: { a: 2, b: 4, c: 7 },
+    };
+
+    expect(validateMathVerification(content, specification)).toMatchObject({
+      valid: true,
+      evidence: {
+        computedChoiceIds: ["b", "c"],
+      },
+    });
+    expect(
+      validateMathVerification(
+        {
+          ...content,
+          answerSpec: { type: "multiple_select", choiceIds: ["c"] },
+          distractorRationales: {
+            a: "Two is less than four.",
+            b: "This incorrectly excludes the boundary.",
+          },
+        },
+        specification,
+      ),
+    ).toMatchObject({
+      valid: false,
+      failureCode: "KEYED_INEQUALITY_CHOICES_MISMATCH",
+    });
+  });
+
+  it("requires inequality verification to cover every displayed choice", () => {
+    const content: QuestionContent = {
+      questionType: "MULTIPLE_SELECT",
+      prompt: "Select every listed value that satisfies x < 3.",
+      choices: [
+        { id: "a", content: "x = 1" },
+        { id: "b", content: "x = 4" },
+      ],
+      answerSpec: { type: "multiple_select", choiceIds: ["a"] },
+      explanation: "One is less than three.",
+      distractorRationales: { b: "Four is greater than three." },
+    };
+
+    expect(
+      validateMathVerification(content, {
+        kind: "inequality_choices",
+        left: { coefficient: 1, constant: 0 },
+        right: { coefficient: 0, constant: 3 },
+        relation: "lt",
+        candidateValues: { a: 1 },
+      }),
+    ).toMatchObject({
+      valid: false,
+      failureCode: "INEQUALITY_CANDIDATES_INCOMPLETE",
+    });
+  });
+
   it("derives ordered-response positions from stored numeric values", () => {
     const content: QuestionContent = {
       questionType: "ORDERED_RESPONSE",

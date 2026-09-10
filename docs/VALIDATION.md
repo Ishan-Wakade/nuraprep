@@ -9,7 +9,7 @@ Two checks are currently automated:
 - `answer-contract` validates the response type, stable identifiers, distinct displayed and numeric-equivalent choices, numeric unit aliases and comma grouping, choice set, distractor mappings, table shape, deterministic misconception rules, and internal near-duplicate rejection signals.
 - `mathematical-correctness` executes a safe structured verification recipe and compares the computed result with the keyed answer.
 
-The math verifier does not evaluate arbitrary JavaScript or model-written code. Its supported recipes are a bounded reverse-Polish arithmetic expression, equivalence checks across candidate expressions, numeric ordering, and mean/median/range operations. Unsupported or malformed recipes fail closed.
+The math verifier does not evaluate arbitrary JavaScript or model-written code. Its supported recipes are a bounded reverse-Polish arithmetic expression, equivalence checks across candidate expressions, exhaustive candidate evaluation against a linear inequality, numeric ordering, and mean/median/range operations. Inequality evidence must cover every displayed choice, preventing an omitted candidate from making an incomplete answer key appear valid. Unsupported or malformed recipes fail closed.
 
 Misconception attribution also fails closed. A reviewer must explicitly map a selected distractor, omitted correct choice, numeric value, reversed ordered pair, or numeric-input error to a declared misconception code and learner-facing teaching message. Matching rules are copied into the immutable attempt record. NuraPrep does not infer a learner misconception from free-form text or an LLM response.
 

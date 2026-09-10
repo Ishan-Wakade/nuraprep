@@ -228,6 +228,19 @@ export const mathVerificationSpecSchema = z.discriminatedUnion("kind", [
     tolerance: z.number().finite().nonnegative().default(0),
   }),
   z.object({
+    kind: z.literal("inequality_choices"),
+    left: z.object({
+      coefficient: z.number().finite(),
+      constant: z.number().finite(),
+    }),
+    right: z.object({
+      coefficient: z.number().finite(),
+      constant: z.number().finite(),
+    }),
+    relation: z.enum(["lt", "lte", "gt", "gte"]),
+    candidateValues: z.record(stableIdSchema, z.number().finite()),
+  }),
+  z.object({
     kind: z.literal("ordered_values"),
     values: z.record(stableIdSchema, z.number().finite()),
     direction: z.enum(["ascending", "descending"]),

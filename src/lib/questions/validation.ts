@@ -636,6 +636,8 @@ export function validateMathVerification(
         );
       case "choice_equivalence":
         return validateChoiceEquivalence(content, specification);
+      case "inequality_choices":
+        return validateInequalityChoices(content, specification);
       case "ordered_values":
         return validateOrderedValues(content, specification);
     }
@@ -644,6 +646,67 @@ export function validateMathVerification(
       message: error instanceof Error ? error.message : "Unknown error",
     });
   }
+}
+
+function validateInequalityChoices(
+  content: QuestionContent,
+  specification: Extract<MathVerificationSpec, { kind: "inequality_choices" }>,
+): DeterministicMathValidation {
+  if (content.answerSpec.type !== "multiple_select") {
+    return failure("ANSWER_TYPE_NOT_MULTIPLE_SELECT", {
+      answerType: content.answerSpec.type,
+    });
+  }
+
+  const displayedChoiceIds = (content.choices ?? [])
+    .map((choice) => choice.id)
+    .sort();
+  const candidateChoiceIds = Object.keys(specification.candidateValues).sort();
+  if (!equalSets(displayedChoiceIds, candidateChoiceIds)) {
+    return failure("INEQUALITY_CANDIDATES_INCOMPLETE", {
+      displayedChoiceIds,
+      candidateChoiceIds,
+    });
+  }
+
+  const computedChoiceIds = Object.entries(specification.candidateValues)
+    .filter(([, value]) => {
+      const leftValue =
+        specification.left.coefficient * value + specification.left.constant;
+      const rightValue =
+        specification.right.coefficient * value + specification.right.constant;
+      return satisfiesRelation(leftValue, rightValue, specification.relation);
+    })
+    .map(([choiceId]) => choiceId)
+    .sort();
+  const keyedChoiceIds = [...content.answerSpec.choiceIds].sort();
+  const evidence = {
+    method: "deterministic-inequality-choice-verification",
+    relation: specification.relation,
+    left: specification.left,
+    right: specification.right,
+    candidateValues: specification.candidateValues,
+    computedChoiceIds,
+    keyedChoiceIds,
+  };
+
+  return equalSets(computedChoiceIds, keyedChoiceIds)
+    ? { valid: true, evidence }
+    : failure("KEYED_INEQUALITY_CHOICES_MISMATCH", evidence);
+}
+
+function satisfiesRelation(
+  left: number,
+  right: number,
+  relation: Extract<
+    MathVerificationSpec,
+    { kind: "inequality_choices" }
+  >["relation"],
+) {
+  if (relation === "lt") return left < right;
+  if (relation === "lte") return left <= right;
+  if (relation === "gt") return left > right;
+  return left >= right;
 }
 
 function validateNumericResult(
