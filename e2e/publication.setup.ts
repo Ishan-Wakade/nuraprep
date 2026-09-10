@@ -4,7 +4,7 @@ import { Pool, type PoolClient } from "pg";
 
 config({ path: ".env.local", quiet: true });
 
-const firstVersionId = "14000000-0000-4000-8000-000000000001";
+const firstVersionId = "d4b2d1ca-fc08-4da5-8d21-1300f811f9ec";
 
 setup("publishes an owner-approved deterministic fixture", async ({ page }) => {
   await page.goto(`/review/questions/${firstVersionId}`);
@@ -189,7 +189,17 @@ async function publishAdditionalDiagnosticFixtures() {
       );
     }
 
-    await publishPracticeTestFixtures(client, rules.rows);
+    const publicationCount = await client.query<{ count: number }>(
+      `SELECT count(*)::int AS count
+         FROM question_publications AS publication
+         INNER JOIN questions AS question ON question.id = publication.question_id
+        WHERE publication.retired_at IS NULL
+          AND question.section = 'MATH'
+          AND question.internal_slug NOT LIKE 'e2e-%'`,
+    );
+    if ((publicationCount.rows[0]?.count ?? 0) < 38) {
+      await publishPracticeTestFixtures(client, rules.rows);
+    }
 
     await client.query("COMMIT");
   } catch (error) {

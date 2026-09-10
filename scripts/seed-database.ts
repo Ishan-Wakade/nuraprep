@@ -5,13 +5,16 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { config } from "dotenv";
 import { Pool } from "pg";
 
+import reviewedMathBankJson from "../src/content/reviewed-math-bank.json";
 import {
   examSpecifications,
   generationRuns,
   generationTemplates,
+  questionPublications,
   questions,
   questionVersionSources,
   questionVersions,
+  reviewDecisions,
   skillPrerequisites,
   skills,
   sourceArtifacts,
@@ -38,6 +41,7 @@ import {
   EXPLANATION_RUBRIC_VERSION,
   INTERNAL_DIFFICULTY_RUBRIC,
 } from "../src/lib/questions/review-rubrics";
+import { reviewedMathBankSnapshotSchema } from "../src/lib/questions/reviewed-bank-snapshot";
 
 config({ path: ".env.local", quiet: true });
 
@@ -46,6 +50,9 @@ const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is required to seed the database.");
 }
+
+const reviewedMathBank =
+  reviewedMathBankSnapshotSchema.parse(reviewedMathBankJson);
 
 const ids = {
   examSpecification: "10000000-0000-4000-8000-000000000001",
@@ -2848,10 +2855,169 @@ async function main() {
           })
           .onConflictDoNothing();
       }
+
+      const skillCodeRows = await transaction
+        .select({ id: skills.id, code: skills.code })
+        .from(skills);
+      const skillIdByCode = new Map(
+        skillCodeRows.map((skillRow) => [skillRow.code, skillRow.id]),
+      );
+      const sourceRows = await transaction
+        .select({
+          id: sourceArtifacts.id,
+          canonicalUrl: sourceArtifacts.canonicalUrl,
+        })
+        .from(sourceArtifacts);
+      const sourceIdByUrl = new Map(
+        sourceRows.map((sourceRow) => [sourceRow.canonicalUrl, sourceRow.id]),
+      );
+      const ruleIdByKey = new Map(
+        ruleRows.map((ruleRow) => [ruleRow.key, ruleRow.id]),
+      );
+
+      for (const [index, reviewed] of reviewedMathBank.questions.entries()) {
+        const skillId = skillIdByCode.get(reviewed.skillCode);
+        const answerRuleId = ruleIdByKey.get("answer-contract");
+        const mathRuleId = ruleIdByKey.get("mathematical-correctness");
+        if (!skillId || !answerRuleId || !mathRuleId) {
+          throw new Error(
+            `Reviewed bank prerequisites are missing for ${reviewed.slug}.`,
+          );
+        }
+        const contentResult = validateQuestionContent(reviewed.content);
+        const mathResult = validateMathVerification(
+          reviewed.content,
+          reviewed.verificationSpec,
+        );
+        const misconceptionIssues = validateMisconceptionRules(
+          reviewed.content,
+          reviewed.commonMisconceptions,
+          reviewed.misconceptionRules,
+        );
+        if (
+          !contentResult.valid ||
+          !mathResult.valid ||
+          misconceptionIssues.length > 0
+        ) {
+          throw new Error(
+            `Reviewed bank snapshot no longer validates for ${reviewed.slug}.`,
+          );
+        }
+
+        await transaction
+          .insert(questionVersions)
+          .values({
+            id: reviewed.versionId,
+            questionId: reviewed.questionId,
+            version: reviewed.originalVersionNumber,
+            questionType: reviewed.content.questionType,
+            prompt: reviewed.content.prompt,
+            stimulus: reviewed.content.stimulus,
+            choices: reviewed.content.choices,
+            answerSpec: reviewed.content.answerSpec,
+            explanation: reviewed.content.explanation,
+            distractorRationales: reviewed.content.distractorRationales,
+            verificationSpec: reviewed.verificationSpec,
+            primarySkillId: skillId,
+            learningObjective: reviewed.learningObjective,
+            difficulty: reviewed.difficulty,
+            difficultyRationale: reviewed.difficultyRationale,
+            estimatedSeconds: reviewed.estimatedSeconds,
+            calculatorPolicy: reviewed.calculatorPolicy,
+            commonMisconceptions: reviewed.commonMisconceptions,
+            misconceptionRules: reviewed.misconceptionRules,
+            tutorGuidance: reviewed.tutorGuidance,
+            authoringMode: "HUMAN",
+            authorId: reviewed.ownerDecision.reviewerId,
+            provenanceSummary: `${reviewed.provenanceSummary} Preserved in source control as reviewed-math-bank-v1; operational history remains in the verified database backup.`,
+          })
+          .onConflictDoNothing();
+
+        for (const source of reviewed.sources) {
+          const sourceArtifactId = sourceIdByUrl.get(source.canonicalUrl);
+          if (!sourceArtifactId) {
+            throw new Error(
+              `Reviewed source is not governed in seed data: ${source.canonicalUrl}.`,
+            );
+          }
+          await transaction
+            .insert(questionVersionSources)
+            .values({
+              questionVersionId: reviewed.versionId,
+              sourceArtifactId,
+              relationship: source.relationship,
+              transformationNotes: source.transformationNotes,
+            })
+            .onConflictDoNothing();
+        }
+
+        await transaction
+          .insert(validationRuns)
+          .values([
+            {
+              id: reviewedSnapshotId("21", index * 2 + 1),
+              questionVersionId: reviewed.versionId,
+              validatorRuleId: answerRuleId,
+              outcome: "PASS",
+              evidence: {
+                context: "REVIEWED_BANK_SNAPSHOT",
+                method: "deterministic-reviewed-snapshot-import",
+                snapshotVersion: reviewedMathBank.schemaVersion,
+                issues: [],
+                note: "Typed content, answer, misconception, and tutor contracts were recomputed during seed.",
+              },
+            },
+            {
+              id: reviewedSnapshotId("21", index * 2 + 2),
+              questionVersionId: reviewed.versionId,
+              validatorRuleId: mathRuleId,
+              outcome: "PASS",
+              evidence: {
+                context: "REVIEWED_BANK_SNAPSHOT",
+                ...mathResult.evidence,
+                snapshotVersion: reviewedMathBank.schemaVersion,
+              },
+            },
+          ])
+          .onConflictDoNothing();
+
+        await transaction
+          .insert(reviewDecisions)
+          .values({
+            id: reviewedSnapshotId("22", index + 1),
+            questionVersionId: reviewed.versionId,
+            reviewerId: reviewed.ownerDecision.reviewerId,
+            decision: reviewed.ownerDecision.decision,
+            rubricScores: reviewed.ownerDecision.rubricScores,
+            notes: reviewed.ownerDecision.notes,
+            decidedAt: new Date(reviewed.ownerDecision.decidedAt),
+          })
+          .onConflictDoNothing();
+
+        await transaction
+          .insert(questionPublications)
+          .values({
+            id: reviewedSnapshotId("23", index + 1),
+            questionId: reviewed.questionId,
+            questionVersionId: reviewed.versionId,
+            publishedBy: reviewed.ownerDecision.reviewerId,
+            publishedAt: new Date(reviewed.ownerDecision.decidedAt),
+          })
+          .onConflictDoNothing();
+
+        await transaction
+          .update(questions)
+          .set({ lifecycle: "ACTIVE", retractionReason: null })
+          .where(eq(questions.id, reviewed.questionId));
+      }
     });
   } finally {
     await pool.end();
   }
+}
+
+function reviewedSnapshotId(prefix: "21" | "22" | "23", index: number) {
+  return `${prefix}000000-0000-4000-8000-${String(index).padStart(12, "0")}`;
 }
 
 function assertSeedDatasetIntegrity() {

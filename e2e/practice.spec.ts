@@ -1,8 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+import reviewedMathBankJson from "../src/content/reviewed-math-bank.json";
+import { reviewedMathBankSnapshotSchema } from "../src/lib/questions/reviewed-bank-snapshot";
 import { expectNoA11yViolations } from "./accessibility";
 
 test.describe.configure({ mode: "serial" });
+
+const reviewedMathBank =
+  reviewedMathBankSnapshotSchema.parse(reviewedMathBankJson);
+let diagnosticWeakSkillTitle = "";
 
 test("completes a published topic-practice question with feedback", async ({
   page,
@@ -31,41 +37,36 @@ test("completes a published topic-practice question with feedback", async ({
   await expect(
     page.getByRole("heading", { name: "Question 1 of 1" }),
   ).toBeVisible();
-  await expect(
-    page.getByText(/volunteer team fills 24 cartons/i),
-  ).toBeVisible();
-  await expect(page.getByText(/The total is the number of boxes/)).toBeHidden();
+  const prompt = await page.getByRole("heading", { level: 2 }).textContent();
+  const fixture = practiceFixtureFor(prompt);
+  await expect(page.getByText(fixture.explanation)).toBeHidden();
   await expectNoA11yViolations(page);
 
   await page.getByRole("button", { name: "Ask for a hint" }).click();
   await expect(
     page.getByText("A reviewed tutor step is now visible."),
   ).toBeVisible();
-  await expect(
-    page.getByText(/what operation represents several equal groups/i),
-  ).toBeVisible();
-  await expect(page.getByText(/The total is the number of boxes/)).toBeHidden();
+  await expect(page.getByText(fixture.hint)).toBeVisible();
+  await expect(page.getByText(fixture.explanation)).toBeHidden();
   await expectNoA11yViolations(page);
 
-  await page.locator('input[name="choiceId"][value="a"]').check();
+  await page
+    .locator(`input[name="choiceId"][value="${fixture.wrongChoiceId}"]`)
+    .check();
   await page.getByLabel("Confidence (optional)").selectOption("4");
   await page.getByRole("button", { name: "Check answer" }).click();
 
   await expect(
     page.getByRole("heading", {
-      name: "Correct answer: C. 432",
+      name: fixture.correctAnswer,
     }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Reasoning pattern to revisit" }),
   ).toBeVisible();
-  await expect(
-    page.getByText(/added the number of groups and the amount/i),
-  ).toBeVisible();
-  await expect(page.getByText(/if one more carton were added/i)).toBeVisible();
-  await expect(
-    page.getByText(/The total is the number of boxes/),
-  ).toBeVisible();
+  await expect(page.getByText(fixture.misconception)).toBeVisible();
+  await expect(page.getByText(fixture.reflection)).toBeVisible();
+  await expect(page.getByText(fixture.explanation)).toBeVisible();
   await expectNoA11yViolations(page);
 
   await page
@@ -73,7 +74,7 @@ test("completes a published topic-practice question with feedback", async ({
     .click();
   await page.getByLabel("Issue category").selectOption("AMBIGUITY");
   const reportDetails =
-    "The phrase about the volunteer team should be checked for unnecessary reading load.";
+    "The selected reviewed question should be checked for unnecessary reading load.";
   await page
     .getByLabel("What should the reviewer inspect?")
     .fill(reportDetails);
@@ -83,10 +84,10 @@ test("completes a published topic-practice question with feedback", async ({
   ).toBeVisible();
 
   const ownerPage = await page.context().newPage();
-  await ownerPage.goto("/review?q=volunteer");
+  await ownerPage.goto(`/review?q=${encodeURIComponent(prompt ?? "")}`);
   await ownerPage
     .getByRole("link")
-    .filter({ hasText: /volunteer team fills 24 cartons/i })
+    .filter({ hasText: prompt ?? "" })
     .first()
     .click();
   const reportCard = ownerPage.locator("article").filter({
@@ -113,6 +114,30 @@ test("completes a published topic-practice question with feedback", async ({
   await expectNoA11yViolations(page);
 });
 
+function practiceFixtureFor(prompt: string | null) {
+  if (prompt?.includes("volunteer team fills 24 cartons")) {
+    return {
+      correctAnswer: "Correct answer: C. 432",
+      explanation: /The total is the number of boxes/,
+      hint: /what operation represents several equal groups/i,
+      misconception: /added the number of groups and the amount/i,
+      reflection: /if one more carton were added/i,
+      wrongChoiceId: "a",
+    };
+  }
+  if (prompt?.includes("temperature was −4°C")) {
+    return {
+      correctAnswer: "Correct answer: C. 7 degrees Celsius",
+      explanation: /An increase of 11°C means add 11/,
+      hint: /in which direction does an increase move/i,
+      misconception: /treated the starting temperature as positive/i,
+      reflection: /rise to end at exactly 0°C/i,
+      wrongChoiceId: "d",
+    };
+  }
+  throw new Error(`Unexpected published Arithmetic fixture: ${prompt}`);
+}
+
 test("uses a responsive practice setup without horizontal overflow", async ({
   page,
 }) => {
@@ -136,16 +161,23 @@ test("completes a coverage-aware diagnostic and recommends a starting skill", as
     page.getByRole("heading", { name: "Find a defensible starting point." }),
   ).toBeVisible();
   await expect(
-    page.getByText("5 published skills · 38 published questions"),
+    page.getByText("12 published skills · 38 published questions"),
   ).toBeVisible();
   await page.getByRole("button", { name: "Start diagnostic" }).click();
   await expect(page).toHaveURL(/\/practice\/[a-f0-9-]+\?item=1/);
 
-  for (let position = 1; position <= 5; position += 1) {
+  for (let position = 1; position <= 6; position += 1) {
     await expect(
-      page.getByRole("heading", { name: `Question ${position} of 5` }),
+      page.getByRole("heading", { name: `Question ${position} of 6` }),
     ).toBeVisible();
-    await answerDiagnosticQuestion(page, { missArithmetic: true });
+    if (position === 1) {
+      const sessionLabel =
+        (await page.getByText(/Math diagnostic ·/i).textContent()) ?? "";
+      diagnosticWeakSkillTitle =
+        sessionLabel.match(/Math diagnostic · (.+) ·/i)?.[1] ?? "";
+      expect(diagnosticWeakSkillTitle).toBeTruthy();
+    }
+    await answerReviewedQuestion(page, { forceIncorrect: position === 1 });
     await page.getByLabel("Confidence (optional)").selectOption("4");
     await page.getByRole("button", { name: "Check answer" }).click();
     await expect(
@@ -155,7 +187,7 @@ test("completes a coverage-aware diagnostic and recommends a starting skill", as
     await page
       .getByRole("link", {
         name:
-          position === 5
+          position === 6
             ? "View session summary"
             : "Continue to next question →",
       })
@@ -164,20 +196,20 @@ test("completes a coverage-aware diagnostic and recommends a starting skill", as
 
   await expect(page.getByText("Diagnostic results")).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "4 of 5 correct" }),
+    page.getByRole("heading", { name: "5 of 6 correct" }),
   ).toBeVisible();
   await expect(page.getByText("Personalized starting point")).toBeVisible();
   await expect(
     page
       .locator("section")
       .filter({ hasText: "Personalized starting point" })
-      .getByRole("heading", { name: "Arithmetic" }),
+      .getByRole("heading", { name: diagnosticWeakSkillTitle }),
   ).toBeVisible();
   await expect(page.getByText(/not proof of mastery/i)).toBeVisible();
   await page.getByRole("link", { name: "Practice this skill" }).click();
-  await expect(page.getByLabel("Topic").locator("option:checked")).toHaveText(
-    /Arithmetic/,
-  );
+  await expect(
+    page.getByLabel("Topic").locator("option:checked"),
+  ).toContainText(diagnosticWeakSkillTitle);
 });
 
 test("builds and completes an inspectable adaptive session", async ({
@@ -188,9 +220,12 @@ test("builds and completes an inspectable adaptive session", async ({
   await expect(
     page.getByRole("heading", { name: "Practice where the evidence points." }),
   ).toBeVisible();
-  const firstPriority = page.locator("li").filter({ hasText: "Priority 1" });
+  const firstPriority = page.locator("li").filter({
+    has: page.getByText("Priority 1", { exact: true }),
+  });
+  await expect(firstPriority.getByRole("heading")).toBeVisible();
   await expect(
-    firstPriority.getByRole("heading", { name: "Arithmetic" }),
+    page.getByRole("heading", { name: diagnosticWeakSkillTitle }),
   ).toBeVisible();
   await expect(page.getByText("adaptive-baseline-v1")).toBeVisible();
 
@@ -210,7 +245,7 @@ test("builds and completes an inspectable adaptive session", async ({
         /adaptive-baseline-v1; adaptive score -?\d\.\d{3}/,
       ),
     ).toBeVisible();
-    await answerDiagnosticQuestion(page);
+    await answerReviewedQuestion(page);
     await page.getByLabel("Confidence (optional)").selectOption("3");
     await page.getByRole("button", { name: "Check answer" }).click();
     await expect(
@@ -260,7 +295,7 @@ test("completes a 38-question timed Math simulation without answer leakage", asy
     await expect(
       page.getByRole("heading", { name: `Question ${position} of 38` }),
     ).toBeVisible();
-    await answerDiagnosticQuestion(page);
+    await answerReviewedQuestion(page, { forceIncorrect: position === 1 });
     await page
       .getByRole("button", { name: "Save answer and continue" })
       .click();
@@ -355,53 +390,92 @@ test("creates a versioned readiness estimate and edits its study plan", async ({
   expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
 });
 
-async function answerDiagnosticQuestion(
+async function answerReviewedQuestion(
   page: import("@playwright/test").Page,
-  options: { missArithmetic?: boolean } = {},
+  options: { forceIncorrect?: boolean } = {},
 ) {
   const prompt = (await page.locator("h2").first().textContent()) ?? "";
-  const shouldMissArithmetic =
-    options.missArithmetic === true &&
-    (await page.getByText(/Math diagnostic · Arithmetic ·/i).isVisible());
+  const question = reviewedMathBank.questions.find(
+    (candidate) => candidate.content.prompt === prompt,
+  );
+  if (!question) throw new Error(`Unknown reviewed Math question: ${prompt}`);
 
-  if (prompt.includes("volunteer team fills 24 cartons")) {
-    await page.locator('input[name="choiceId"][value="a"]').check();
+  const answer = question.content.answerSpec;
+  const choices = question.content.choices ?? [];
+  if (answer.type === "single_choice") {
+    const choiceId = options.forceIncorrect
+      ? choices.find((choice) => choice.id !== answer.choiceId)?.id
+      : answer.choiceId;
+    if (!choiceId) throw new Error(`No selectable response for: ${prompt}`);
+    await page.locator(`input[name="choiceId"][value="${choiceId}"]`).check();
     return;
   }
-  if (prompt.includes("Write 7/8 as a decimal")) {
-    await expect(page.getByLabel(/^Unit/)).toHaveCount(0);
-    await page.getByLabel("Numeric answer").fill("0.875");
+
+  if (answer.type === "multiple_select") {
+    const choiceIds = options.forceIncorrect
+      ? choices
+          .filter((choice) => !answer.choiceIds.includes(choice.id))
+          .slice(0, 1)
+          .map((choice) => choice.id)
+      : answer.choiceIds;
+    if (!choiceIds.length) {
+      throw new Error(`No selectable response for: ${prompt}`);
+    }
+    for (const choiceId of choiceIds) {
+      await page.locator(`input[name="choiceId"][value="${choiceId}"]`).check();
+    }
     return;
   }
-  if (prompt.includes("equivalent to 3:5")) {
-    await page.locator('input[name="choiceId"][value="a"]').check();
-    await page.locator('input[name="choiceId"][value="c"]').check();
+
+  if (answer.type === "numeric") {
+    const value = options.forceIncorrect ? answer.value + 12_345 : answer.value;
+    await page.getByLabel("Numeric answer").fill(String(value));
+    if (answer.unitRequired) {
+      await page
+        .getByLabel("Unit")
+        .fill(answer.unit ?? answer.acceptedUnits[0] ?? "units");
+    }
     return;
   }
-  if (prompt.includes("Arrange the values")) {
-    await page.getByRole("button", { name: "Move 0.206 up" }).click();
-    await page.getByRole("button", { name: "Move 0.206 up" }).click();
-    await page.getByRole("button", { name: "Move 0.26 up" }).click();
-    await page.getByRole("button", { name: "Move 0.26 up" }).click();
-    await page.getByRole("button", { name: "Move 0.602 up" }).click();
-    return;
-  }
-  if (prompt.includes("median number of books")) {
-    await page.locator('input[name="choiceId"][value="b"]').check();
-    return;
-  }
-  if (prompt.includes("garden has a perimeter")) {
-    await page.locator('input[name="choiceId"][value="a"]').check();
-    return;
-  }
-  const fixtureAddition = prompt.match(/What is (\d+) \+ (\d+)\?/);
-  if (fixtureAddition) {
-    const expected = Number(fixtureAddition[1]) + Number(fixtureAddition[2]);
+
+  await orderResponse(page, answer.itemIds, choices);
+  if (options.forceIncorrect) {
+    const firstChoice = choices.find(
+      (choice) => choice.id === answer.itemIds[0],
+    );
+    if (!firstChoice) throw new Error(`Missing ordered choice for: ${prompt}`);
     await page
-      .getByLabel("Numeric answer")
-      .fill(String(shouldMissArithmetic ? expected + 1 : expected));
-    return;
+      .getByRole("button", {
+        name: `Move ${firstChoice.content} down`,
+        exact: true,
+      })
+      .click();
   }
+}
 
-  throw new Error(`Unhandled diagnostic fixture: ${prompt}`);
+async function orderResponse(
+  page: import("@playwright/test").Page,
+  targetOrder: string[],
+  choices: { id: string; content: string }[],
+) {
+  for (const [targetIndex, choiceId] of targetOrder.entries()) {
+    let currentOrder = await page
+      .locator('input[name="orderedItemId"]')
+      .evaluateAll((inputs) =>
+        inputs.map((input) => (input as HTMLInputElement).value),
+      );
+    while (currentOrder.indexOf(choiceId) > targetIndex) {
+      const content = choices.find((choice) => choice.id === choiceId)?.content;
+      if (!content)
+        throw new Error(`Missing ordered-response choice ${choiceId}.`);
+      await page
+        .getByRole("button", { name: `Move ${content} up`, exact: true })
+        .click();
+      currentOrder = await page
+        .locator('input[name="orderedItemId"]')
+        .evaluateAll((inputs) =>
+          inputs.map((input) => (input as HTMLInputElement).value),
+        );
+    }
+  }
 }

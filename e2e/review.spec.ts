@@ -52,7 +52,8 @@ test("filters the review queue and opens full provenance", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Math question-bank coverage" }),
   ).toBeVisible();
-  await expect(page.getByText("No published item").first()).toBeVisible();
+  await expect(page.getByText("No published item")).toHaveCount(0);
+  await expect(page.getByText("Has published evidence")).toHaveCount(12);
 
   await page.getByLabel("Detailed review").selectOption("HUMAN_NEEDED");
   await page.getByRole("button", { name: "Apply filters" }).click();
@@ -66,7 +67,9 @@ test("filters the review queue and opens full provenance", async ({ page }) => {
   await page.getByRole("button", { name: "Apply filters" }).click();
   await expect(page).toHaveURL(/questionType=NUMERIC/);
   await expect(page.getByText(/\d+ visible versions/)).toBeVisible();
-  await expect(page.getByText("Write 7/8 as a decimal.")).toBeVisible();
+  await expect(
+    page.getByText("Write the fraction 7/8 as a decimal number."),
+  ).toBeVisible();
 
   await page.goto(`/review/questions/${firstVersionId}`);
   await expect(
@@ -75,12 +78,7 @@ test("filters the review queue and opens full provenance", async ({ page }) => {
   await expect(
     page.getByRole("progressbar", { name: "Latest candidates reviewed" }),
   ).toBeVisible();
-  const nextUnreviewed = page.getByRole("link", { name: "Next unreviewed" });
-  await expect(nextUnreviewed).toBeVisible();
-  await expect(nextUnreviewed).not.toHaveAttribute(
-    "href",
-    `/review/questions/${firstVersionId}`,
-  );
+  await expect(page.getByText("0 unreviewed · 0 need revision")).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Next optional checks" }),
   ).toBeVisible();
@@ -195,7 +193,7 @@ test("creates a numeric revision without answer choices", async ({ page }) => {
     page.getByText(/inspecting historical version 1/i),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Open version 2" }),
+    page.getByRole("link", { name: /Open version \d+/ }),
   ).toHaveAttribute("href", new URL(latestVersionUrl).pathname);
 });
 

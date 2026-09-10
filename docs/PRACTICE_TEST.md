@@ -38,4 +38,4 @@ This 20/18 total distribution is an internal approximation. NuraPrep does not de
 
 ## Test fixtures versus production content
 
-The browser suite creates 32 additional synthetic question families inside its disposable database so it can verify an end-to-end 38-question run. Their provenance, validation evidence, review decisions, and publication attribution explicitly say they are test-only. They are not seeded into a normal development or production database and do not count toward production content readiness.
+The browser suite uses the reproducible 38-family reviewed development snapshot for full-test assembly. Its setup still contains a fail-safe path that creates additional synthetic families only when a disposable test database has fewer than 38 non-test publications. Any fallback records carry explicit test-only provenance, validation evidence, review decisions, and publication attribution; they are never seeded into a normal development or production database and never count toward content readiness.

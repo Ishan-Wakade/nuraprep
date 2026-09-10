@@ -354,6 +354,8 @@ These are useful interview examples because they show correction rather than a f
 
 The system needed enough content to exercise every flow before human review, but marking AI-assisted seed content approved would have created a false safety claim. The initial resolution was to keep 38 candidates in draft and let Playwright create disposable test-only approval evidence in an isolated database. The owner later reviewed the real bank, recorded genuine decisions, and published the exact validated versions through the normal UI; test evidence remained excluded.
 
+The next issue was reproducibility: those decisions initially existed only in the development database and backup, so a GitHub clone could not reconstruct the reviewed state. A typed, source-controlled bank snapshot now preserves the exact current content and latest genuine decisions, while fresh seeding recomputes deterministic evidence before publication. The complete append-only history remains a database-backup concern rather than being misrepresented by the snapshot.
+
 Lesson: testability does not justify weakening the production state model.
 
 ### Concurrent database work

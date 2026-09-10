@@ -105,7 +105,15 @@ The owner added decisions for the 27 candidates that remained unreviewed after t
 
 [Official ATI sample-item guidance](https://help.atitesting.com/what-are-the-question-types-on-the-ati-teas-version-7-exam/) confirms that TEAS Version 7 includes numeric fill-in-the-blank items, and [ATI's calculator guidance](https://help.atitesting.com/do-i-need-to-bring-a-calculator/) says the exam provides a calculator. The public material reviewed did not establish a universal typed-unit syntax. NuraPrep therefore treats numeric-only entry for a prompt-specified unit as an internal usability decision, retains the canonical unit in the answer contract and feedback, and does not claim this interaction is identical to ATI's proprietary interface.
 
-The pass did not supply genuine owner decisions for every current version. A later audit also found a browser-test decision written under the development reviewer identity, which a publisher-name-only filter could not detect. Those records remain a human-review gate. As before, every content correction creates a new immutable version whose earlier decision does not transfer.
+At that point, the pass had not supplied genuine owner decisions for every current version. A later audit also found a browser-test decision written under the development reviewer identity, which a publisher-name-only filter could not detect. The owner completed the remaining exact-version decisions on 2026-09-09, and the release workflow excluded the synthetic records before publishing 38 real families. As before, every future content correction creates a new immutable version whose earlier decision does not transfer.
+
+## Reviewed development-bank snapshot
+
+The exact 38-family owner-reviewed Math bank is preserved in `src/content/reviewed-math-bank.json`. The export command refuses to produce a snapshot unless it finds exactly 38 current, non-test, genuinely approved Math publications. The checked-in artifact contains learner-facing content, deterministic verification metadata, governed source links, and the latest owner decision for each exact version; it contains no learner data, provider secrets, or restricted source-question text.
+
+The seed process validates the entire artifact against typed question, misconception, tutor, source, and decision contracts. It recomputes content and mathematical checks, inserts deterministic snapshot evidence, restores the genuine owner decision, and publishes only after the database gate can verify the exact version. A fresh-database test confirmed 38 active, approved, source-linked, deterministic-ready publications, and repeated seeding produced no duplicates.
+
+This is a reproducible development-data snapshot, not a substitute for the append-only operational history. Original intermediate versions, superseded decisions, audit events, and timestamps remain in the verified PostgreSQL backup. Regenerating the snapshot after future review requires inspecting the diff and rerunning every quality gate before commit.
 
 ## Synthetic-fixture containment
 
