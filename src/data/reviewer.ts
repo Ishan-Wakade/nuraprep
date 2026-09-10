@@ -28,6 +28,7 @@ import {
 } from "@/db/schema";
 import { requireReviewer } from "@/lib/auth/reviewer";
 import { getServerEnvironment } from "@/lib/env/server";
+import { selectDeterministicReviewSample } from "@/lib/questions/review-sampling";
 import {
   evaluatePublicationGate,
   REQUIRED_PUBLICATION_VALIDATORS,
@@ -42,6 +43,7 @@ export type ReviewQueueFilters = {
   reviewStatus?:
     "UNREVIEWED" | (typeof reviewDecisions.decision.enumValues)[number];
   validationStatus?: "HUMAN_NEEDED";
+  sampleMode?: "DETERMINISTIC_UNREVIEWED";
   skillCode?: string;
 };
 
@@ -70,11 +72,24 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
       difficulty: questionVersions.difficulty,
       skillCode: skills.code,
       skillTitle: skills.title,
+      generationTemplateKey: generationTemplates.templateKey,
+      generationTemplateVersion: generationTemplates.version,
+      generationProvider: generationRuns.provider,
+      generationModel: generationRuns.model,
+      generationPromptHash: generationRuns.promptHash,
       createdAt: questionVersions.createdAt,
     })
     .from(questionVersions)
     .innerJoin(questions, eq(questions.id, questionVersions.questionId))
     .innerJoin(skills, eq(skills.id, questionVersions.primarySkillId))
+    .leftJoin(
+      generationRuns,
+      eq(generationRuns.id, questionVersions.generationRunId),
+    )
+    .leftJoin(
+      generationTemplates,
+      eq(generationTemplates.id, generationRuns.templateId),
+    )
     .where(
       and(
         not(ilike(questions.internalSlug, "e2e-%")),
@@ -102,7 +117,9 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
       ),
     )
     .orderBy(desc(questionVersions.createdAt), desc(questionVersions.version))
-    .limit(filters.scope === "HISTORY" ? 500 : 200);
+    .limit(
+      filters.sampleMode ? 5_000 : filters.scope === "HISTORY" ? 500 : 200,
+    );
 
   const versionIds = rows.map((row) => row.versionId);
   const [
@@ -282,7 +299,7 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
     );
   }
 
-  const items = rows
+  const filteredItems = rows
     .map((row) => {
       const decision =
         latestDecision.get(row.versionId)?.decision ?? "UNREVIEWED";
@@ -313,6 +330,10 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
         (!filters.validationStatus ||
           row.passingReviewerValidatorCount < row.reviewerValidatorCount),
     );
+  const items =
+    filters.sampleMode === "DETERMINISTIC_UNREVIEWED"
+      ? selectDeterministicReviewSample(filteredItems)
+      : filteredItems;
 
   return {
     items,

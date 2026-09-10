@@ -22,6 +22,7 @@ const reviewStatuses = [
 ] as const;
 const scopes = ["CURRENT", "HISTORY"] as const;
 const validationStatuses = ["HUMAN_NEEDED"] as const;
+const sampleModes = ["DETERMINISTIC_UNREVIEWED"] as const;
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -40,6 +41,7 @@ export default async function ReviewQueuePage({
   const reviewStatus = single(params.status);
   const scope = single(params.scope);
   const validationStatus = single(params.validation);
+  const sampleMode = single(params.sample);
   const filters: ReviewQueueFilters = {
     scope: scopes.find((value) => value === scope) ?? "CURRENT",
     query: single(params.q)?.trim() || undefined,
@@ -49,6 +51,7 @@ export default async function ReviewQueuePage({
     validationStatus: validationStatuses.find(
       (value) => value === validationStatus,
     ),
+    sampleMode: sampleModes.find((value) => value === sampleMode),
     skillCode: single(params.skill) || undefined,
   };
   const queue = await getReviewQueue(filters);
@@ -70,9 +73,11 @@ export default async function ReviewQueuePage({
         </div>
         <span className="rounded-full border border-[#c9d9d3] bg-[#e8f3ef] px-3 py-2 text-xs font-semibold text-[#116b65]">
           {queue.summary.total} visible versions ·{" "}
-          {filters.scope === "CURRENT"
-            ? "latest candidate per family"
-            : "full history"}
+          {filters.sampleMode
+            ? "one unreviewed candidate per deterministic template"
+            : filters.scope === "CURRENT"
+              ? "latest candidate per family"
+              : "full history"}
         </span>
       </div>
 
@@ -170,7 +175,20 @@ export default async function ReviewQueuePage({
         </div>
       </section>
 
-      <form className="mt-6 grid gap-3 rounded-2xl border border-[#d8ded9] bg-[#fffdf8] p-4 shadow-sm md:grid-cols-2 lg:grid-cols-7">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-3xl text-xs leading-5 text-[#52676a]">
+          For scaled pilots, inspect a stable cross-template sample before
+          deciding whether a larger review batch is justified.
+        </p>
+        <Link
+          href="/review?sample=DETERMINISTIC_UNREVIEWED"
+          className="rounded-lg border border-[#9cbcb3] bg-[#e8f3ef] px-4 py-2 text-xs font-bold text-[#116b65]"
+        >
+          Open representative draft sample
+        </Link>
+      </div>
+
+      <form className="mt-3 grid gap-3 rounded-2xl border border-[#d8ded9] bg-[#fffdf8] p-4 shadow-sm md:grid-cols-2 lg:grid-cols-8">
         <label className="lg:col-span-2">
           <span className="mb-1.5 block text-xs font-bold text-[#52676a]">
             Search
@@ -213,6 +231,12 @@ export default async function ReviewQueuePage({
           value={filters.questionType}
           options={questionTypes}
         />
+        <FilterSelect
+          label="Sample"
+          name="sample"
+          value={filters.sampleMode}
+          options={sampleModes}
+        />
         <label className="lg:col-span-3">
           <span className="mb-1.5 block text-xs font-bold text-[#52676a]">
             Skill
@@ -246,6 +270,23 @@ export default async function ReviewQueuePage({
         </div>
       </form>
 
+      {filters.sampleMode && (
+        <section className="mt-6 rounded-2xl border border-[#b9d4cb] bg-[#eef7f3] p-5">
+          <p className="text-[11px] font-bold tracking-wide text-[#116b65] uppercase">
+            Sampling aid
+          </p>
+          <h2 className="mt-1 font-serif text-2xl">
+            Representative deterministic sample
+          </h2>
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-[#47615f]">
+            This view uses each candidate&apos;s stable prompt hash to select
+            one unreviewed draft from every available deterministic template. It
+            reduces repetitive review work, but it is not statistical validation
+            and does not approve the remaining variants.
+          </p>
+        </section>
+      )}
+
       <section className="mt-6 space-y-3" aria-label="Question versions">
         {queue.items.length ? (
           queue.items.map((item) => (
@@ -271,6 +312,12 @@ export default async function ReviewQueuePage({
                 <p className="mt-2 text-xs text-[#52676a]">
                   {item.skillTitle} · <code>{item.slug}</code>
                 </p>
+                {filters.sampleMode && item.generationTemplateKey && (
+                  <p className="mt-2 text-xs font-semibold text-[#116b65]">
+                    Sampled from {item.generationTemplateKey} v
+                    {item.generationTemplateVersion}
+                  </p>
+                )}
               </div>
               <div className="flex flex-wrap items-center gap-5 border-t border-[#edf0ed] pt-4 text-xs text-[#52676a] lg:border-t-0 lg:pt-0">
                 <div>
@@ -347,6 +394,7 @@ function FilterSelect({
         {label}
       </span>
       <select
+        key={`${name}:${value ?? ""}`}
         name={name}
         defaultValue={value}
         className="w-full rounded-lg border border-[#ccd5d0] bg-white px-3 py-2.5 text-sm"
@@ -379,5 +427,8 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function formatLabel(value: string) {
+  if (value === "DETERMINISTIC_UNREVIEWED") {
+    return "One unreviewed per template";
+  }
   return value.toLocaleLowerCase("en-US").replaceAll("_", " ");
 }

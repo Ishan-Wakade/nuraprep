@@ -55,6 +55,24 @@ test("filters the review queue and opens full provenance", async ({ page }) => {
   await expect(page.getByText("No published item")).toHaveCount(0);
   await expect(page.getByText("Has published evidence")).toHaveCount(12);
 
+  await page
+    .getByRole("link", { name: "Open representative draft sample" })
+    .click();
+  await expect(page).toHaveURL(/sample=DETERMINISTIC_UNREVIEWED/);
+  await expect(
+    page.getByRole("heading", {
+      name: "Representative deterministic sample",
+    }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Sample")).toHaveValue(
+    "DETERMINISTIC_UNREVIEWED",
+  );
+  await expect(
+    page.getByText(/one unreviewed candidate per deterministic template/i),
+  ).toBeVisible();
+
+  await page.goto("/review");
+
   await page.getByLabel("Detailed review").selectOption("HUMAN_NEEDED");
   await page.getByRole("button", { name: "Apply filters" }).click();
   await expect(page).toHaveURL(/validation=HUMAN_NEEDED/);
