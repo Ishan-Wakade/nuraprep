@@ -292,7 +292,11 @@ export default async function ReviewQueuePage({
           queue.items.map((item) => (
             <Link
               key={item.versionId}
-              href={`/review/questions/${item.versionId}`}
+              href={
+                filters.sampleMode
+                  ? `/review/questions/${item.versionId}?sample=${filters.sampleMode}`
+                  : `/review/questions/${item.versionId}`
+              }
               className="group grid gap-4 rounded-2xl border border-[#d8ded9] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[#9cbcb3] hover:shadow-md lg:grid-cols-[1fr_auto]"
             >
               <div className="min-w-0">

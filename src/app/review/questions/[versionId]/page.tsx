@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { QuestionStimulus } from "@/components/question-stimulus";
-import { getQuestionReviewDetail } from "@/data/reviewer";
+import { getQuestionReviewDetail, getReviewQueue } from "@/data/reviewer";
 import {
   DIFFICULTY_RUBRIC_VERSION,
   EXPLANATION_RUBRIC,
@@ -25,18 +25,66 @@ import { LearnerSandbox } from "./learner-sandbox";
 
 export default async function QuestionReviewPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ versionId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { versionId } = await params;
-  const question = await getQuestionReviewDetail(versionId);
+  const requestedSample = single((await searchParams).sample);
+  const sampleMode =
+    requestedSample === "DETERMINISTIC_UNREVIEWED"
+      ? requestedSample
+      : undefined;
+  const [question, sampleQueue] = await Promise.all([
+    getQuestionReviewDetail(versionId),
+    sampleMode
+      ? getReviewQueue({ scope: "CURRENT", sampleMode })
+      : Promise.resolve(null),
+  ]);
   if (!question) notFound();
+  const sampleIndex =
+    sampleQueue?.items.findIndex((item) => item.versionId === versionId) ?? -1;
+  const nextSample = sampleQueue
+    ? sampleIndex >= 0
+      ? (sampleQueue.items[sampleIndex + 1] ?? null)
+      : (sampleQueue.items[0] ?? null)
+    : null;
+  const reviewQueueHref = sampleMode
+    ? `/review?sample=${sampleMode}`
+    : "/review";
 
   return (
     <div className="mx-auto max-w-6xl">
-      <Link href="/review" className="text-sm font-semibold text-[#116b65]">
-        ← Back to review queue
+      <Link
+        href={reviewQueueHref}
+        className="text-sm font-semibold text-[#116b65]"
+      >
+        ← Back to {sampleMode ? "representative sample" : "review queue"}
       </Link>
+      {sampleMode && sampleQueue && (
+        <section className="mt-5 flex flex-col justify-between gap-3 rounded-2xl border border-[#b9d4cb] bg-[#eef7f3] p-4 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-[11px] font-bold tracking-wide text-[#116b65] uppercase">
+              Representative sample
+            </p>
+            <p className="mt-1 text-sm leading-6 text-[#47615f]">
+              {sampleQueue.summary.total} deterministic template candidate
+              {sampleQueue.summary.total === 1 ? " remains" : "s remain"}
+              unreviewed. A decision applies only to this exact version.
+            </p>
+          </div>
+          {nextSample && nextSample.versionId !== versionId && (
+            <Link
+              href={`/review/questions/${nextSample.versionId}?sample=${sampleMode}`}
+              className="shrink-0 rounded-lg bg-[#116b65] px-4 py-2 text-xs font-bold text-white"
+              title={`${nextSample.skillTitle}: ${nextSample.slug}`}
+            >
+              Next sampled draft →
+            </Link>
+          )}
+        </section>
+      )}
       <section
         aria-label="Review workflow navigation"
         className="mt-5 rounded-2xl border border-[#c9d9d3] bg-[#f4faf7] p-4 shadow-sm"
@@ -97,7 +145,7 @@ export default async function QuestionReviewPage({
                 Next needing revision
               </Link>
             )}
-            {question.reviewNavigation.nextUnreviewed && (
+            {!sampleMode && question.reviewNavigation.nextUnreviewed && (
               <Link
                 href={`/review/questions/${question.reviewNavigation.nextUnreviewed.versionId}`}
                 className="rounded-lg bg-[#116b65] px-3 py-2 text-xs font-bold text-white"
@@ -581,4 +629,8 @@ function Meta({ term, value }: { term: string; value: string }) {
 }
 function label(value: string) {
   return value.toLocaleLowerCase("en-US").replaceAll("_", " ");
+}
+
+function single(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }
