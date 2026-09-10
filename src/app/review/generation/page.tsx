@@ -67,6 +67,49 @@ export default async function GenerationConsolePage() {
         </div>
       </section>
 
+      <section
+        className="mt-7"
+        aria-labelledby="deterministic-capacity-heading"
+      >
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="text-[11px] font-bold tracking-wide text-[#116b65] uppercase">
+              No-cost expansion
+            </p>
+            <h2
+              id="deterministic-capacity-heading"
+              className="mt-1 font-serif text-2xl"
+            >
+              Deterministic draft capacity
+            </h2>
+          </div>
+          <p className="max-w-xl text-xs leading-5 text-[#52676a]">
+            Capacity is a pre-rejection engineering ceiling, not an approved
+            bank size. Staged candidates stay invisible to learners until an
+            exact-version human decision and publication event.
+          </p>
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <MetricCard
+            label="Versioned templates"
+            value={String(consoleData.deterministicExpansion.templateCount)}
+            note="Bounded structures across all Math leaf skills"
+          />
+          <MetricCard
+            label="Declared structure ceiling"
+            value={String(
+              consoleData.deterministicExpansion.declaredStructureCapacity,
+            )}
+            note="Before validation and duplicate rejection"
+          />
+          <MetricCard
+            label="Current staged drafts"
+            value={String(consoleData.deterministicExpansion.stagedDraftCount)}
+            note="Unreviewed and not learner-visible"
+          />
+        </div>
+      </section>
+
       <section className="mt-7 grid gap-4 lg:grid-cols-2">
         {consoleData.templates.map((template) => (
           <article
@@ -85,6 +128,12 @@ export default async function GenerationConsolePage() {
                   {template.questionType.replaceAll("_", " ")} ·{" "}
                   {template.difficulty}
                 </p>
+                {template.structureCapacity !== null && (
+                  <p className="mt-2 text-xs font-semibold text-[#116b65]">
+                    {template.structureCapacity} declared structures ·{" "}
+                    {template.stagedDraftCount} current drafts
+                  </p>
+                )}
               </div>
             </div>
             <p className="mt-4 rounded-lg bg-[#faf9f4] p-3 text-xs leading-5 text-[#52676a]">

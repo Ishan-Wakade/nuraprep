@@ -447,6 +447,14 @@ test("approves a template and deduplicates regeneration requests", async ({
   await expect(
     page.getByRole("heading", { name: "Queue health" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Deterministic draft capacity" }),
+  ).toBeVisible();
+  await expect(page.getByText("Declared structure ceiling")).toBeVisible();
+  await expect(page.getByText("608", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(/pre-rejection engineering ceiling/i),
+  ).toBeVisible();
   await expect(page.getByText("Active worst-case ceiling")).toBeVisible();
   await expect(page.getByText("Recorded provider cost")).toBeVisible();
 

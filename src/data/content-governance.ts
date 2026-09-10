@@ -20,6 +20,7 @@ import {
 } from "@/db/schema";
 import { requireReviewer } from "@/lib/auth/reviewer";
 import { getServerEnvironment } from "@/lib/env/server";
+import { mathDeterministicVariantTemplates } from "@/lib/generation/math-variant-templates";
 
 export async function getSourceRegistry() {
   await connection();
@@ -175,102 +176,123 @@ export async function getGenerationConsole() {
   await requireReviewer();
   const database = getDatabase();
 
-  const [templates, runs, [metrics], implementationRows] = await Promise.all([
-    database
-      .select({
-        id: generationTemplates.id,
-        templateKey: generationTemplates.templateKey,
-        version: generationTemplates.version,
-        status: generationTemplates.status,
-        skillTitle: skills.title,
-        questionType: generationTemplates.questionType,
-        difficulty: generationTemplates.difficulty,
-        instructions: generationTemplates.instructions,
-        authoredBy: generationTemplates.authoredBy,
-        approvedBy: generationTemplates.approvedBy,
-        approvalNotes: generationTemplates.approvalNotes,
-        approvedAt: generationTemplates.approvedAt,
-      })
-      .from(generationTemplates)
-      .innerJoin(skills, eq(skills.id, generationTemplates.targetSkillId))
-      .orderBy(desc(generationTemplates.createdAt)),
-    database
-      .select({
-        id: generationRuns.id,
-        idempotencyKey: generationRuns.idempotencyKey,
-        requestKind: generationRuns.requestKind,
-        status: generationRuns.status,
-        provider: generationRuns.provider,
-        model: generationRuns.model,
-        claimedBy: generationRuns.claimedBy,
-        leaseExpiresAt: generationRuns.leaseExpiresAt,
-        attemptCount: generationRuns.attemptCount,
-        maxCostMicros: generationRuns.maxCostMicros,
-        estimatedCostMicros: generationRuns.estimatedCostMicros,
-        sourceQuestionVersionId: generationRuns.sourceQuestionVersionId,
-        questionSlug: questions.internalSlug,
-        templateKey: generationTemplates.templateKey,
-        templateVersion: generationTemplates.version,
-        requestedBy: generationRuns.requestedBy,
-        startedAt: generationRuns.startedAt,
-        completedAt: generationRuns.completedAt,
-        failureCode: generationRuns.failureCode,
-        cancelledBy: generationRuns.cancelledBy,
-        cancellationReason: generationRuns.cancellationReason,
-      })
-      .from(generationRuns)
-      .innerJoin(
-        generationTemplates,
-        eq(generationTemplates.id, generationRuns.templateId),
-      )
-      .leftJoin(
-        questionVersions,
-        eq(questionVersions.id, generationRuns.sourceQuestionVersionId),
-      )
-      .leftJoin(questions, eq(questions.id, questionVersions.questionId))
-      .orderBy(desc(generationRuns.startedAt))
-      .limit(100),
-    database
-      .select({
-        total: sql<number>`count(*)::int`,
-        pending: sql<number>`count(*) filter (where ${generationRuns.status} = 'PENDING')::int`,
-        running: sql<number>`count(*) filter (where ${generationRuns.status} = 'RUNNING')::int`,
-        staleLeases: sql<number>`count(*) filter (where ${generationRuns.status} = 'RUNNING' and ${generationRuns.leaseExpiresAt} <= now())::int`,
-        succeeded: sql<number>`count(*) filter (where ${generationRuns.status} = 'SUCCEEDED')::int`,
-        failed: sql<number>`count(*) filter (where ${generationRuns.status} = 'FAILED')::int`,
-        cancelled: sql<number>`count(*) filter (where ${generationRuns.status} = 'CANCELLED')::int`,
-        retryExhausted: sql<number>`count(*) filter (where ${generationRuns.failureCode} = 'LEASE_ATTEMPTS_EXHAUSTED')::int`,
-        activeCeilingMicros:
-          sql<number>`coalesce(sum(${generationRuns.maxCostMicros}) filter (where ${generationRuns.status} in ('PENDING', 'RUNNING')), 0)`.mapWith(
-            Number,
+  const [templates, runs, [metrics], implementationRows, draftRows] =
+    await Promise.all([
+      database
+        .select({
+          id: generationTemplates.id,
+          templateKey: generationTemplates.templateKey,
+          version: generationTemplates.version,
+          status: generationTemplates.status,
+          skillTitle: skills.title,
+          questionType: generationTemplates.questionType,
+          difficulty: generationTemplates.difficulty,
+          instructions: generationTemplates.instructions,
+          authoredBy: generationTemplates.authoredBy,
+          approvedBy: generationTemplates.approvedBy,
+          approvalNotes: generationTemplates.approvalNotes,
+          approvedAt: generationTemplates.approvedAt,
+        })
+        .from(generationTemplates)
+        .innerJoin(skills, eq(skills.id, generationTemplates.targetSkillId))
+        .orderBy(desc(generationTemplates.createdAt)),
+      database
+        .select({
+          id: generationRuns.id,
+          idempotencyKey: generationRuns.idempotencyKey,
+          requestKind: generationRuns.requestKind,
+          status: generationRuns.status,
+          provider: generationRuns.provider,
+          model: generationRuns.model,
+          claimedBy: generationRuns.claimedBy,
+          leaseExpiresAt: generationRuns.leaseExpiresAt,
+          attemptCount: generationRuns.attemptCount,
+          maxCostMicros: generationRuns.maxCostMicros,
+          estimatedCostMicros: generationRuns.estimatedCostMicros,
+          sourceQuestionVersionId: generationRuns.sourceQuestionVersionId,
+          questionSlug: questions.internalSlug,
+          templateKey: generationTemplates.templateKey,
+          templateVersion: generationTemplates.version,
+          requestedBy: generationRuns.requestedBy,
+          startedAt: generationRuns.startedAt,
+          completedAt: generationRuns.completedAt,
+          failureCode: generationRuns.failureCode,
+          cancelledBy: generationRuns.cancelledBy,
+          cancellationReason: generationRuns.cancellationReason,
+        })
+        .from(generationRuns)
+        .innerJoin(
+          generationTemplates,
+          eq(generationTemplates.id, generationRuns.templateId),
+        )
+        .leftJoin(
+          questionVersions,
+          eq(questionVersions.id, generationRuns.sourceQuestionVersionId),
+        )
+        .leftJoin(questions, eq(questions.id, questionVersions.questionId))
+        .orderBy(desc(generationRuns.startedAt))
+        .limit(100),
+      database
+        .select({
+          total: sql<number>`count(*)::int`,
+          pending: sql<number>`count(*) filter (where ${generationRuns.status} = 'PENDING')::int`,
+          running: sql<number>`count(*) filter (where ${generationRuns.status} = 'RUNNING')::int`,
+          staleLeases: sql<number>`count(*) filter (where ${generationRuns.status} = 'RUNNING' and ${generationRuns.leaseExpiresAt} <= now())::int`,
+          succeeded: sql<number>`count(*) filter (where ${generationRuns.status} = 'SUCCEEDED')::int`,
+          failed: sql<number>`count(*) filter (where ${generationRuns.status} = 'FAILED')::int`,
+          cancelled: sql<number>`count(*) filter (where ${generationRuns.status} = 'CANCELLED')::int`,
+          retryExhausted: sql<number>`count(*) filter (where ${generationRuns.failureCode} = 'LEASE_ATTEMPTS_EXHAUSTED')::int`,
+          activeCeilingMicros:
+            sql<number>`coalesce(sum(${generationRuns.maxCostMicros}) filter (where ${generationRuns.status} in ('PENDING', 'RUNNING')), 0)`.mapWith(
+              Number,
+            ),
+          recordedCostMicros:
+            sql<number>`coalesce(sum(${generationRuns.estimatedCostMicros}), 0)`.mapWith(
+              Number,
+            ),
+        })
+        .from(generationRuns),
+      database
+        .select({
+          resultTemplateId: improvementTemplateImplementations.resultTemplateId,
+          proposalId: improvementProposals.id,
+          proposalTitle: improvementProposals.title,
+          implementationSummary:
+            improvementTemplateImplementations.implementationSummary,
+          regressionEvidence:
+            improvementTemplateImplementations.regressionEvidence,
+          implementedBy: improvementTemplateImplementations.implementedBy,
+          implementedAt: improvementTemplateImplementations.createdAt,
+        })
+        .from(improvementTemplateImplementations)
+        .innerJoin(
+          improvementProposals,
+          eq(
+            improvementProposals.id,
+            improvementTemplateImplementations.proposalId,
           ),
-        recordedCostMicros:
-          sql<number>`coalesce(sum(${generationRuns.estimatedCostMicros}), 0)`.mapWith(
-            Number,
-          ),
-      })
-      .from(generationRuns),
-    database
-      .select({
-        resultTemplateId: improvementTemplateImplementations.resultTemplateId,
-        proposalId: improvementProposals.id,
-        proposalTitle: improvementProposals.title,
-        implementationSummary:
-          improvementTemplateImplementations.implementationSummary,
-        regressionEvidence:
-          improvementTemplateImplementations.regressionEvidence,
-        implementedBy: improvementTemplateImplementations.implementedBy,
-        implementedAt: improvementTemplateImplementations.createdAt,
-      })
-      .from(improvementTemplateImplementations)
-      .innerJoin(
-        improvementProposals,
-        eq(
-          improvementProposals.id,
-          improvementTemplateImplementations.proposalId,
         ),
-      ),
-  ]);
+      database
+        .select({
+          templateId: generationRuns.templateId,
+          draftCount: count(questionVersions.id),
+        })
+        .from(generationRuns)
+        .innerJoin(
+          questionVersions,
+          eq(questionVersions.generationRunId, generationRuns.id),
+        )
+        .innerJoin(questions, eq(questions.id, questionVersions.questionId))
+        .where(
+          and(
+            eq(generationRuns.provider, "NuraPrep"),
+            eq(generationRuns.requestKind, "NEW_QUESTION"),
+            eq(generationRuns.status, "SUCCEEDED"),
+            eq(questions.lifecycle, "DRAFT"),
+          ),
+        )
+        .groupBy(generationRuns.templateId),
+    ]);
 
   const implementationByTemplate = new Map(
     implementationRows.map((implementation) => [
@@ -281,12 +303,34 @@ export async function getGenerationConsole() {
       },
     ]),
   );
+  const draftCountByTemplate = new Map(
+    draftRows.map((row) => [row.templateId, row.draftCount]),
+  );
+  const deterministicTemplateByKey = new Map(
+    mathDeterministicVariantTemplates.map((template) => [
+      `${template.key}@${template.version}`,
+      template,
+    ]),
+  );
+  const stagedDeterministicDrafts = templates.reduce((total, template) => {
+    const deterministic = deterministicTemplateByKey.get(
+      `${template.templateKey}@${template.version}`,
+    );
+    return deterministic
+      ? total + (draftCountByTemplate.get(template.id) ?? 0)
+      : total;
+  }, 0);
 
   return {
     templates: templates.map((template) => ({
       ...template,
       approvedAt: template.approvedAt?.toISOString() ?? null,
       implementation: implementationByTemplate.get(template.id) ?? null,
+      structureCapacity:
+        deterministicTemplateByKey.get(
+          `${template.templateKey}@${template.version}`,
+        )?.structureCapacity ?? null,
+      stagedDraftCount: draftCountByTemplate.get(template.id) ?? 0,
     })),
     runs: runs.map((run) => ({
       ...run,
@@ -305,6 +349,14 @@ export async function getGenerationConsole() {
       retryExhausted: 0,
       activeCeilingMicros: 0,
       recordedCostMicros: 0,
+    },
+    deterministicExpansion: {
+      templateCount: mathDeterministicVariantTemplates.length,
+      declaredStructureCapacity: mathDeterministicVariantTemplates.reduce(
+        (total, template) => total + template.structureCapacity,
+        0,
+      ),
+      stagedDraftCount: stagedDeterministicDrafts,
     },
   };
 }
