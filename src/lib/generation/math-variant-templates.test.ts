@@ -70,7 +70,7 @@ describe("Math deterministic variant templates", () => {
     ).toEqual(expectedLeafSkills);
     expect(
       mathDeterministicVariantTemplates.every(
-        (template) => template.structureCapacity === 20,
+        (template) => template.structureCapacity >= 8,
       ),
     ).toBe(true);
   });

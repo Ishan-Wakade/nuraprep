@@ -276,6 +276,105 @@ const dataContexts = [
 
 const dataTasks = ["total", "mean", "range", "first-to-last-change"] as const;
 
+const probabilityContexts = [
+  { key: "colored-marbles", noun: "marbles", favorableLabel: "red" },
+  { key: "shape-cards", noun: "cards", favorableLabel: "star-marked" },
+  { key: "game-tokens", noun: "tokens", favorableLabel: "orange" },
+  { key: "craft-beads", noun: "beads", favorableLabel: "silver" },
+  { key: "letter-tiles", noun: "tiles", favorableLabel: "vowel" },
+] as const;
+
+const probabilityFrames: PromptFrame[] = [
+  {
+    key: "single-draw",
+    render: ({ noun, favorableLabel, favorable, otherA, otherB }) =>
+      `A container has ${favorable} ${favorableLabel} ${noun}, ${otherA} of a second kind, and ${otherB} of a third kind. If one ${singular(String(noun))} is selected at random, what is the probability it is ${favorableLabel}?`,
+  },
+  {
+    key: "favorable-over-total",
+    render: ({ noun, favorableLabel, favorable, otherA, otherB }) =>
+      `Among ${Number(favorable) + Number(otherA) + Number(otherB)} equally likely ${noun}, ${favorable} are ${favorableLabel}. Which probability represents selecting a ${favorableLabel} item?`,
+  },
+  {
+    key: "random-selection",
+    render: ({ noun, favorableLabel, favorable, otherA, otherB }) =>
+      `A random selection is made from ${Number(favorable) + Number(otherA) + Number(otherB)} ${noun}: ${favorable} ${favorableLabel}, ${otherA} in another group, and ${otherB} in a third group. Find the probability of the ${favorableLabel} group.`,
+  },
+  {
+    key: "event-probability",
+    render: ({ noun, favorableLabel, favorable, otherA, otherB }) =>
+      `There are ${Number(favorable) + Number(otherA) + Number(otherB)} ${noun} in all, including ${favorable} that are ${favorableLabel}. What is P(${favorableLabel}) for one random draw?`,
+  },
+] as const;
+
+const fractionEquivalenceFrames: PromptFrame[] = [
+  {
+    key: "select-equivalents",
+    render: ({ numerator, denominator }) =>
+      `Select every value equivalent to ${numerator}/${denominator}.`,
+  },
+  {
+    key: "same-rational-value",
+    render: ({ numerator, denominator }) =>
+      `Which choices represent the same rational value as ${numerator}/${denominator}? Select all that apply.`,
+  },
+  {
+    key: "fraction-decimal-match",
+    render: ({ numerator, denominator }) =>
+      `Identify all fraction or decimal forms equal to ${numerator}/${denominator}.`,
+  },
+  {
+    key: "equivalence-set",
+    render: ({ numerator, denominator }) =>
+      `Choose the complete set of expressions with value ${numerator}/${denominator}.`,
+  },
+  {
+    key: "scaled-and-decimal",
+    render: ({ numerator, denominator }) =>
+      `Starting from ${numerator}/${denominator}, select each option that preserves its value through scaling or decimal conversion.`,
+  },
+  {
+    key: "representation-check",
+    render: ({ numerator, denominator }) =>
+      `Check every representation against ${numerator}/${denominator}, then select all exact matches.`,
+  },
+  {
+    key: "equivalent-number-forms",
+    render: ({ numerator, denominator }) =>
+      `Which number forms are equivalent to the fraction ${numerator}/${denominator}? More than one may be correct.`,
+  },
+  {
+    key: "complete-match-set",
+    render: ({ numerator, denominator }) =>
+      `Select the complete group of values that matches ${numerator}/${denominator} exactly.`,
+  },
+] as const;
+
+const fractionDenominators = [4, 5, 8, 10, 20] as const;
+
+const orderedTableFrames = [
+  {
+    key: "greatest-to-least",
+    direction: "descending" as const,
+    prompt: "Arrange the periods from greatest to least value.",
+  },
+  {
+    key: "least-to-greatest",
+    direction: "ascending" as const,
+    prompt: "Arrange the periods from least to greatest value.",
+  },
+  {
+    key: "descending-order",
+    direction: "descending" as const,
+    prompt: "Place the table rows in descending numerical order.",
+  },
+  {
+    key: "ascending-order",
+    direction: "ascending" as const,
+    prompt: "Place the table rows in ascending numerical order.",
+  },
+] as const;
+
 const ratioContexts = [
   { key: "study-cards", item: "study cards", container: "review sets" },
   { key: "supply-labels", item: "supply labels", container: "storage bins" },
@@ -809,6 +908,277 @@ export const mathDeterministicVariantTemplates: readonly DeterministicVariantTem
             reflection:
               "How can you label the operation before calculating to avoid mixing up total, mean, range, and change?",
           }),
+        };
+      },
+    },
+    {
+      key: "math.data-interpretation.order-table-values",
+      version: 1,
+      targetSkillCode: "MATH.DATA_INTERPRETATION",
+      questionType: "ORDERED_RESPONSE",
+      difficulty: "DEVELOPING",
+      structureCapacity: dataContexts.length * orderedTableFrames.length,
+      generate(random) {
+        const context = random.pick(dataContexts);
+        const frame = random.pick(orderedTableFrames);
+        const base = random.integer(14, 38);
+        const values = random.shuffle([
+          base,
+          base + random.integer(4, 8),
+          base + random.integer(11, 16),
+          base + random.integer(20, 27),
+        ]);
+        const entries = values.map((value, index) => ({
+          id: `period-${index + 1}`,
+          label: `Period ${index + 1}`,
+          value,
+        }));
+        const ordered = [...entries].sort((left, right) =>
+          frame.direction === "ascending"
+            ? left.value - right.value
+            : right.value - left.value,
+        );
+        return {
+          structureKey: `${context.key}.${frame.key}`,
+          parameters: {
+            direction: frame.direction,
+            values,
+            orderedIds: ordered.map((entry) => entry.id),
+          },
+          candidate: {
+            content: {
+              questionType: "ORDERED_RESPONSE",
+              prompt: `Using the ${context.caption.toLocaleLowerCase("en-US")} table, ${frame.prompt.toLocaleLowerCase("en-US")}`,
+              stimulus: {
+                type: "table",
+                caption: context.caption,
+                columns: ["Period", context.label],
+                rows: entries.map((entry) => [
+                  entry.label,
+                  String(entry.value),
+                ]),
+              },
+              choices: entries.map((entry) => ({
+                id: entry.id,
+                content: `${entry.label}: ${entry.value}`,
+              })),
+              answerSpec: {
+                type: "ordered_response",
+                itemIds: ordered.map((entry) => entry.id),
+              },
+              explanation: `The ${frame.direction} order is ${ordered.map((entry) => `${entry.label} (${entry.value})`).join(", ")}.`,
+              distractorRationales: {},
+            },
+            verificationSpec: {
+              kind: "ordered_values",
+              values: Object.fromEntries(
+                entries.map((entry) => [entry.id, entry.value]),
+              ),
+              direction: frame.direction,
+            },
+            learningObjective:
+              "Read labeled quantitative table entries and order them by value.",
+            difficulty: "DEVELOPING",
+            difficultyRationale:
+              "The learner must compare four table values and preserve the requested ordering direction.",
+            estimatedSeconds: 75,
+            calculatorPolicy: "NOT_NEEDED",
+            commonMisconceptions: [],
+            misconceptionRules: [],
+            tutorGuidance: {
+              steps: [
+                {
+                  id: "identify-extreme",
+                  kind: "SOCRATIC_QUESTION",
+                  content: `Which row has the ${frame.direction === "ascending" ? "smallest" : "largest"} value?`,
+                },
+                {
+                  id: "compare-adjacent",
+                  kind: "HINT",
+                  content:
+                    "After placing the first row, compare the remaining values and repeat.",
+                },
+              ],
+              reflectionPrompt:
+                "How can checking each adjacent pair confirm the entire order?",
+            },
+          },
+        };
+      },
+    },
+    {
+      key: "math.fractions.multiple-select-equivalence",
+      version: 1,
+      targetSkillCode: "MATH.FRACTIONS_DECIMALS_PERCENT",
+      questionType: "MULTIPLE_SELECT",
+      difficulty: "PROFICIENT",
+      structureCapacity: fractionEquivalenceFrames.length,
+      generate(random) {
+        const denominator = random.pick(fractionDenominators);
+        const frame = random.pick(fractionEquivalenceFrames);
+        const numerator = random.integer(1, denominator - 1);
+        const wrongNumerator =
+          numerator + 1 < denominator ? numerator + 1 : numerator - 1;
+        const decimal = numerator / denominator;
+        const choices = random.shuffle([
+          { id: "original", content: `${numerator}/${denominator}` },
+          { id: "scaled", content: `${numerator * 3}/${denominator * 3}` },
+          { id: "decimal", content: formatNumber(decimal) },
+          { id: "nearby", content: `${wrongNumerator}/${denominator}` },
+        ]);
+        return {
+          structureKey: frame.key,
+          parameters: { numerator, denominator, wrongNumerator, decimal },
+          candidate: {
+            content: {
+              questionType: "MULTIPLE_SELECT",
+              prompt: frame.render({ numerator, denominator }),
+              choices,
+              answerSpec: {
+                type: "multiple_select",
+                choiceIds: ["original", "scaled", "decimal"],
+              },
+              explanation: `${numerator}/${denominator}, ${numerator * 3}/${denominator * 3}, and ${formatNumber(decimal)} all evaluate to ${formatNumber(decimal)}. The nearby-numerator fraction has a different value.`,
+              distractorRationales: {
+                nearby:
+                  "Changing only the numerator changes the fraction's value; equivalent fractions scale numerator and denominator by the same nonzero factor.",
+              },
+            },
+            verificationSpec: {
+              kind: "choice_equivalence",
+              target: [numerator, denominator, "divide"],
+              candidates: {
+                original: [numerator, denominator, "divide"],
+                scaled: [numerator * 3, denominator * 3, "divide"],
+                decimal: [decimal],
+                nearby: [wrongNumerator, denominator, "divide"],
+              },
+              tolerance: 1e-9,
+            },
+            learningObjective:
+              "Recognize equivalent fraction and decimal representations of the same rational number.",
+            difficulty: "PROFICIENT",
+            difficultyRationale:
+              "The learner must evaluate multiple representations and identify every equivalent value without selecting a near miss.",
+            estimatedSeconds: 100,
+            calculatorPolicy: "ALLOWED",
+            commonMisconceptions: ["CHANGES_ONLY_NUMERATOR"],
+            misconceptionRules: [
+              {
+                id: "selects-nearby-numerator",
+                kind: "selected_choice",
+                code: "CHANGES_ONLY_NUMERATOR",
+                choiceId: "nearby",
+                learnerMessage:
+                  "You selected a fraction that changes only the numerator. Equivalent fractions scale both parts by the same factor.",
+              },
+            ],
+            tutorGuidance: {
+              steps: [
+                {
+                  id: "compare-values",
+                  kind: "SOCRATIC_QUESTION",
+                  content:
+                    "What decimal value does the target fraction represent?",
+                },
+                {
+                  id: "scale-both-parts",
+                  kind: "HINT",
+                  content:
+                    "For a fraction form, check whether numerator and denominator were multiplied by the same number.",
+                },
+              ],
+              reflectionPrompt:
+                "How can converting each option to a decimal verify a multiple-select answer?",
+            },
+          },
+        };
+      },
+    },
+    {
+      key: "math.probability.single-choice-event",
+      version: 1,
+      targetSkillCode: "MATH.PROBABILITY_STATISTICS",
+      questionType: "SINGLE_CHOICE",
+      difficulty: "DEVELOPING",
+      structureCapacity: probabilityContexts.length * probabilityFrames.length,
+      generate(random) {
+        const context = random.pick(probabilityContexts);
+        const frame = random.pick(probabilityFrames);
+        const favorable = random.integer(2, 8);
+        const otherA = favorable + random.integer(1, 3);
+        const otherB = favorable + random.integer(4, 7);
+        const total = favorable + otherA + otherB;
+        const choices = random.shuffle([
+          { id: "correct", content: `${favorable}/${total}` },
+          { id: "other-group", content: `${otherA}/${total}` },
+          {
+            id: "excludes-favorable",
+            content: `${favorable}/${otherA + otherB}`,
+          },
+          { id: "reversed", content: `${total}/${favorable}` },
+        ]);
+        return {
+          structureKey: `${context.key}.${frame.key}`,
+          parameters: { favorable, otherA, otherB, total },
+          candidate: {
+            content: {
+              questionType: "SINGLE_CHOICE",
+              prompt: frame.render({ ...context, favorable, otherA, otherB }),
+              choices,
+              answerSpec: { type: "single_choice", choiceId: "correct" },
+              explanation: `Probability is favorable outcomes divided by all equally likely outcomes: ${favorable}/${total}.`,
+              distractorRationales: {
+                "other-group":
+                  "This numerator counts a different group rather than the requested favorable outcomes.",
+                "excludes-favorable":
+                  "The denominator must include every possible item, including the favorable group.",
+                reversed:
+                  "Probability uses favorable outcomes over total outcomes, not total over favorable.",
+              },
+            },
+            verificationSpec: {
+              kind: "numeric_result",
+              expression: [favorable, total, "divide"],
+              tolerance: 1e-9,
+            },
+            learningObjective:
+              "Calculate a simple event probability as favorable outcomes divided by total outcomes.",
+            difficulty: "DEVELOPING",
+            difficultyRationale:
+              "The learner must identify the requested favorable category and count the complete sample space.",
+            estimatedSeconds: 75,
+            calculatorPolicy: "NOT_NEEDED",
+            commonMisconceptions: ["USES_WRONG_FAVORABLE_GROUP"],
+            misconceptionRules: [
+              {
+                id: "selects-other-group",
+                kind: "selected_choice",
+                code: "USES_WRONG_FAVORABLE_GROUP",
+                choiceId: "other-group",
+                learnerMessage:
+                  "You used the count from a different group. The numerator must count the event named in the question.",
+              },
+            ],
+            tutorGuidance: {
+              steps: [
+                {
+                  id: "name-favorable-event",
+                  kind: "SOCRATIC_QUESTION",
+                  content:
+                    "Which items count as favorable for the event in the question?",
+                },
+                {
+                  id: "count-sample-space",
+                  kind: "HINT",
+                  content:
+                    "Add every category to find the denominator before forming the probability.",
+                },
+              ],
+              reflectionPrompt:
+                "How can you check that a simple probability lies between 0 and 1?",
+            },
+          },
         };
       },
     },
