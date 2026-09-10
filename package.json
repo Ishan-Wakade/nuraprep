@@ -23,6 +23,7 @@
     "db:seed": "tsx scripts/seed-database.ts",
     "db:studio": "drizzle-kit studio",
     "questions:variants:dry-run": "tsx scripts/dry-run-math-variants.ts",
+    "questions:variants:capacity": "tsx scripts/report-math-variant-capacity.ts",
     "questions:variants:stage": "tsx scripts/stage-math-variants.ts",
     "test:db": "tsx scripts/database-smoke.ts",
     "format": "prettier --write .",

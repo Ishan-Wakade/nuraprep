@@ -32,6 +32,7 @@ const multiplicationTemplate: DeterministicVariantTemplate = {
   targetSkillCode: "MATH.ARITHMETIC",
   questionType: "NUMERIC",
   difficulty: "FOUNDATIONAL",
+  structureCapacity: frames.length,
   generate(random) {
     const frame = random.pick(frames);
     const groups = random.integer(6, 24);
@@ -193,6 +194,16 @@ describe("deterministic variant batches", () => {
       reason: "CONTENT_DUPLICATE",
       detail: "EXACT_TEXT against published-family.",
     });
+  });
+
+  it("refuses requests larger than the declared structural capacity", () => {
+    expect(() =>
+      generateDeterministicVariantBatch({
+        template: multiplicationTemplate,
+        batchSeed: "over-capacity",
+        requestedCount: frames.length + 1,
+      }),
+    ).toThrow("declares only 3 distinct structures");
   });
 });
 

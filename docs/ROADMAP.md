@@ -95,6 +95,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Add internal exact, number-invariant, and phrase-overlap rejection signals to deterministic review evidence.
 - [x] Add reproducible no-cost deterministic Math templates with structure reuse, malformed output, incorrect math, and current-corpus duplicate rejection.
 - [x] Add explicit-confirmation, transaction-safe, replay-protected staging that creates validated drafts without decisions or publications.
+- [x] Cover every Math leaf skill with a bounded pilot template and report structural capacity, taxonomy gaps, and response-format concentration without treating capacity as approved inventory.
 - [ ] Add a reviewed network transport and licensed-storage adapter; do not enable collection from gated or unclear-rights sources.
 - [ ] Add a configured provider and production queue host, wall-clock rate controls, and calibration cases for originality thresholds.
 - [x] Add recurring-error summaries and evidence-backed, separately approved improvement proposals that never auto-mutate prompts or rubrics.

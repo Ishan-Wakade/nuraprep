@@ -1,11 +1,280 @@
 import type { GeneratedCandidate } from "./contracts";
-import type { DeterministicVariantTemplate } from "./deterministic-variants";
-import type { RpnExpression } from "@/lib/questions/contracts";
+import type {
+  DeterministicVariantTemplate,
+  SeededRandom,
+} from "./deterministic-variants";
+import type {
+  QuestionStimulus,
+  RpnExpression,
+} from "@/lib/questions/contracts";
 
 type PromptFrame = {
   key: string;
   render(values: Record<string, string | number>): string;
 };
+
+const arithmeticContexts = [
+  { key: "supply-kits", noun: "supply kits" },
+  { key: "review-cards", noun: "review cards" },
+  { key: "clinic-forms", noun: "clinic forms" },
+  { key: "training-seats", noun: "training seats" },
+  { key: "meal-containers", noun: "meal containers" },
+] as const;
+
+const arithmeticFrames: PromptFrame[] = [
+  {
+    key: "start-add-remove",
+    render: ({ start, added, removed, noun }) =>
+      `A team begins with ${start} ${noun}, receives ${added} more, and then uses ${removed}. How many ${noun} remain?`,
+  },
+  {
+    key: "inventory-change",
+    render: ({ start, added, removed, noun }) =>
+      `An inventory lists ${start} ${noun}. After ${added} are added and ${removed} are distributed, find the new inventory count.`,
+  },
+  {
+    key: "two-step-balance",
+    render: ({ start, added, removed, noun }) =>
+      `There are ${start} ${noun} at first. A delivery contributes ${added}, and a later activity takes away ${removed}. What is the final number?`,
+  },
+  {
+    key: "net-change",
+    render: ({ start, added, removed, noun }) =>
+      `Calculate the ending balance of ${noun} after starting at ${start}, increasing by ${added}, and decreasing by ${removed}.`,
+  },
+] as const;
+
+const algebraExpressionFrames: PromptFrame[] = [
+  {
+    key: "evaluate-values",
+    render: ({ expression, x, y }) =>
+      `Evaluate ${expression} when x = ${x} and y = ${y}.`,
+  },
+  {
+    key: "substitute-values",
+    render: ({ expression, x, y }) =>
+      `Substitute x = ${x} and y = ${y} into ${expression}. What value results?`,
+  },
+  {
+    key: "expression-value",
+    render: ({ expression, x, y }) =>
+      `Find the value of the expression ${expression} for x = ${x} and y = ${y}.`,
+  },
+  {
+    key: "replacement-evaluation",
+    render: ({ expression, x, y }) =>
+      `Replace x with ${x} and y with ${y}, then simplify ${expression}.`,
+  },
+] as const;
+
+const algebraExpressionForms = [
+  "weighted-sum",
+  "grouped-sum",
+  "scaled-difference",
+  "quotient-combination",
+  "squared-term",
+] as const;
+
+const linearEquationFrames: PromptFrame[] = [
+  {
+    key: "solve-equation",
+    render: ({ equation }) => `Solve the equation ${equation}.`,
+  },
+  {
+    key: "determine-x",
+    render: ({ equation }) =>
+      `Determine the value of x that makes ${equation} true.`,
+  },
+  {
+    key: "isolate-variable",
+    render: ({ equation }) => `Isolate x in ${equation} and give its value.`,
+  },
+  {
+    key: "solution-value",
+    render: ({ equation }) => `What is the solution to ${equation}?`,
+  },
+] as const;
+
+const linearEquationForms = [
+  "add-after-scale",
+  "subtract-after-scale",
+  "divide-then-add",
+  "group-then-scale",
+  "subtract-then-divide",
+] as const;
+
+const inequalityContexts = [
+  { key: "workshop-seats", noun: "workshop seats" },
+  { key: "study-guides", noun: "study guides" },
+  { key: "supply-packs", noun: "supply packs" },
+  { key: "event-tickets", noun: "event tickets" },
+  { key: "meal-kits", noun: "meal kits" },
+] as const;
+
+const inequalityFrames: PromptFrame[] = [
+  {
+    key: "maximum-with-fee",
+    render: ({ fixed, unit, budget, noun }) =>
+      `A fixed fee of $${fixed} plus $${unit} for each of several ${noun} must be no more than $${budget}. What is the greatest whole number of ${noun} allowed?`,
+  },
+  {
+    key: "budget-constraint",
+    render: ({ fixed, unit, budget, noun }) =>
+      `The total cost for ${noun} is $${fixed} + $${unit}x and cannot exceed $${budget}. Find the maximum whole-number value of x.`,
+  },
+  {
+    key: "upper-bound",
+    render: ({ fixed, unit, budget, noun }) =>
+      `After a $${fixed} setup charge, each ${noun} costs $${unit}. If spending is limited to $${budget}, how many ${noun} can be included at most?`,
+  },
+  {
+    key: "solve-context-inequality",
+    render: ({ fixed, unit, budget, noun }) =>
+      `Solve the practical constraint ${fixed} + ${unit}x ≤ ${budget}, where x counts ${noun}. Give the largest permitted whole number.`,
+  },
+] as const;
+
+const conversionRelationships = [
+  {
+    key: "liters-milliliters",
+    from: "liters",
+    to: "milliliters",
+    factor: 1000,
+  },
+  { key: "meters-centimeters", from: "meters", to: "centimeters", factor: 100 },
+  { key: "kilograms-grams", from: "kilograms", to: "grams", factor: 1000 },
+  { key: "hours-minutes", from: "hours", to: "minutes", factor: 60 },
+  { key: "pounds-ounces", from: "pounds", to: "ounces", factor: 16 },
+] as const;
+
+const conversionFrames: PromptFrame[] = [
+  {
+    key: "convert-quantity",
+    render: ({ amount, from, to }) => `Convert ${amount} ${from} to ${to}.`,
+  },
+  {
+    key: "equivalent-measure",
+    render: ({ amount, from, to }) =>
+      `How many ${to} are equivalent to ${amount} ${from}?`,
+  },
+  {
+    key: "rewrite-unit",
+    render: ({ amount, from, to }) =>
+      `Rewrite a measurement of ${amount} ${from} using ${to}.`,
+  },
+  {
+    key: "conversion-factor",
+    render: ({ amount, from, to }) =>
+      `Use the appropriate conversion factor to express ${amount} ${from} in ${to}.`,
+  },
+] as const;
+
+const travelContexts = [
+  { key: "delivery-route", noun: "delivery route" },
+  { key: "cycling-trip", noun: "cycling trip" },
+  { key: "training-walk", noun: "training walk" },
+  { key: "shuttle-trip", noun: "shuttle trip" },
+  { key: "river-journey", noun: "river journey" },
+] as const;
+
+const travelFrames: PromptFrame[] = [
+  {
+    key: "two-leg-total",
+    render: ({ noun, rate1, time1, rate2, time2 }) =>
+      `A ${noun} covers its first leg at ${rate1} miles per hour for ${time1} hours and its second leg at ${rate2} miles per hour for ${time2} hours. What total distance is covered?`,
+  },
+  {
+    key: "combined-distance",
+    render: ({ noun, rate1, time1, rate2, time2 }) =>
+      `During a ${noun}, one segment lasts ${time1} hours at ${rate1} miles per hour and another lasts ${time2} hours at ${rate2} miles per hour. Find the combined distance.`,
+  },
+  {
+    key: "sum-segments",
+    render: ({ noun, rate1, time1, rate2, time2 }) =>
+      `For a ${noun}, calculate the distance from ${rate1} mph for ${time1} hours plus the distance from ${rate2} mph for ${time2} hours.`,
+  },
+  {
+    key: "rate-time-model",
+    render: ({ noun, rate1, time1, rate2, time2 }) =>
+      `A ${noun} can be modeled by (${rate1} × ${time1}) + (${rate2} × ${time2}). What is the total distance in miles?`,
+  },
+] as const;
+
+const prismContexts = [
+  { key: "storage-box", noun: "storage box" },
+  { key: "supply-bin", noun: "supply bin" },
+  { key: "shipping-carton", noun: "shipping carton" },
+  { key: "display-case", noun: "display case" },
+  { key: "drawer-organizer", noun: "drawer organizer" },
+] as const;
+
+const prismFrames: PromptFrame[] = [
+  {
+    key: "find-volume",
+    render: ({ noun, length, width, height }) =>
+      `A rectangular ${noun} is ${length} cm long, ${width} cm wide, and ${height} cm high. What is its volume in cubic centimeters?`,
+  },
+  {
+    key: "capacity-by-dimensions",
+    render: ({ noun, length, width, height }) =>
+      `Find the volume of a rectangular ${noun} with dimensions ${length} cm by ${width} cm by ${height} cm.`,
+  },
+  {
+    key: "three-dimensional-measure",
+    render: ({ noun, length, width, height }) =>
+      `The inside dimensions of a ${noun} are ${length} cm, ${width} cm, and ${height} cm. Calculate the three-dimensional space inside it in cm³.`,
+  },
+  {
+    key: "volume-formula",
+    render: ({ noun, length, width, height }) =>
+      `Use V = length × width × height for a ${noun} measuring ${length} cm × ${width} cm × ${height} cm. What is V?`,
+  },
+] as const;
+
+const angleContexts = [
+  "a triangular sign",
+  "a triangular garden section",
+  "a roof truss triangle",
+  "a triangular diagram",
+  "a triangular support frame",
+] as const;
+
+const angleFrames: PromptFrame[] = [
+  {
+    key: "missing-angle",
+    render: ({ context, a, b }) =>
+      `Two interior angles of ${context} measure ${a}° and ${b}°. What is the third interior angle?`,
+  },
+  {
+    key: "triangle-sum",
+    render: ({ context, a, b }) =>
+      `In ${context}, two angle measures are ${a}° and ${b}°. Use the triangle angle sum to find the remaining measure.`,
+  },
+  {
+    key: "unknown-interior-angle",
+    render: ({ context, a, b }) =>
+      `${context} has interior angles ${a}°, ${b}°, and x°. Determine x.`,
+  },
+  {
+    key: "complete-angle-set",
+    render: ({ context, a, b }) =>
+      `Complete the interior angle set for ${context}: ${a}°, ${b}°, and ____.`,
+  },
+] as const;
+
+const dataContexts = [
+  {
+    key: "practice-minutes",
+    caption: "Daily practice minutes",
+    label: "Minutes",
+  },
+  { key: "pages-reviewed", caption: "Pages reviewed", label: "Pages" },
+  { key: "items-organized", caption: "Items organized", label: "Items" },
+  { key: "weekly-miles", caption: "Weekly miles", label: "Miles" },
+  { key: "tasks-completed", caption: "Tasks completed", label: "Tasks" },
+] as const;
+
+const dataTasks = ["total", "mean", "range", "first-to-last-change"] as const;
 
 const ratioContexts = [
   { key: "study-cards", item: "study cards", container: "review sets" },
@@ -127,11 +396,429 @@ const meanFrames: PromptFrame[] = [
 export const mathDeterministicVariantTemplates: readonly DeterministicVariantTemplate[] =
   [
     {
+      key: "math.arithmetic.inventory-net-change",
+      version: 1,
+      targetSkillCode: "MATH.ARITHMETIC",
+      questionType: "NUMERIC",
+      difficulty: "DEVELOPING",
+      structureCapacity: arithmeticContexts.length * arithmeticFrames.length,
+      generate(random) {
+        const context = random.pick(arithmeticContexts);
+        const frame = random.pick(arithmeticFrames);
+        const start = random.integer(45, 140);
+        const added = random.integer(18, 75);
+        const removed = random.integer(12, start + added - 20);
+        const answer = start + added - removed;
+        return {
+          structureKey: `${context.key}.${frame.key}`,
+          parameters: { start, added, removed, answer },
+          candidate: numericCandidate({
+            prompt: frame.render({ ...context, start, added, removed }),
+            answer,
+            verificationExpression: [start, added, "add", removed, "subtract"],
+            learningObjective:
+              "Apply addition and subtraction in the correct order to find a changing quantity.",
+            difficulty: "DEVELOPING",
+            difficultyRationale:
+              "The learner must translate a two-step change and preserve the direction of each operation.",
+            estimatedSeconds: 70,
+            calculatorPolicy: "ALLOWED",
+            explanation: `Add the incoming amount first: ${start} + ${added} = ${start + added}. Then subtract the amount used: ${start + added} - ${removed} = ${answer}.`,
+            misconception: {
+              code: "SUBTRACTION_DIRECTION_ERROR",
+              value: start + added + removed,
+              message:
+                "You may have added the amount that left the inventory. A used or distributed quantity decreases the balance.",
+            },
+            tutorQuestion:
+              "Which event increases the starting amount, and which event decreases it?",
+            reflection:
+              "How can a quick estimate confirm that the final count is below the post-delivery count?",
+          }),
+        };
+      },
+    },
+    {
+      key: "math.algebra.evaluate-two-variable-expression",
+      version: 1,
+      targetSkillCode: "MATH.ALGEBRAIC_EXPRESSIONS",
+      questionType: "NUMERIC",
+      difficulty: "DEVELOPING",
+      structureCapacity:
+        algebraExpressionForms.length * algebraExpressionFrames.length,
+      generate(random) {
+        const form = random.pick(algebraExpressionForms);
+        const frame = random.pick(algebraExpressionFrames);
+        const values = buildAlgebraExpression(random, form);
+        return {
+          structureKey: `${form}.${frame.key}`,
+          parameters: values.parameters,
+          candidate: numericCandidate({
+            prompt: frame.render({
+              expression: values.display,
+              x: values.x,
+              y: values.y,
+            }),
+            answer: values.answer,
+            tolerance: 1e-9,
+            verificationExpression: values.expression,
+            learningObjective:
+              "Substitute values into an algebraic expression and apply the order of operations.",
+            difficulty: "DEVELOPING",
+            difficultyRationale:
+              "The learner must substitute two values and evaluate a multi-operation expression accurately.",
+            estimatedSeconds: 85,
+            calculatorPolicy: "ALLOWED",
+            explanation: `${values.substitution} Following the order of operations gives ${formatNumber(values.answer)}.`,
+            misconception: {
+              code: "ORDER_OF_OPERATIONS_ERROR",
+              value: values.answer + values.offset,
+              message:
+                "You may have changed the operation order after substitution. Complete grouping and exponents before multiplication, division, addition, and subtraction.",
+            },
+            tutorQuestion:
+              "After replacing x and y, which operation must be completed first?",
+            reflection:
+              "How could you rewrite the substituted expression on one line before calculating?",
+          }),
+        };
+      },
+    },
+    {
+      key: "math.linear-equations.two-step-integer-solution",
+      version: 1,
+      targetSkillCode: "MATH.LINEAR_EQUATIONS",
+      questionType: "NUMERIC",
+      difficulty: "DEVELOPING",
+      structureCapacity:
+        linearEquationForms.length * linearEquationFrames.length,
+      generate(random) {
+        const form = random.pick(linearEquationForms);
+        const frame = random.pick(linearEquationFrames);
+        const values = buildLinearEquation(random, form);
+        return {
+          structureKey: `${form}.${frame.key}`,
+          parameters: values.parameters,
+          candidate: numericCandidate({
+            prompt: frame.render({ equation: values.equation }),
+            answer: values.answer,
+            verificationExpression: values.expression,
+            learningObjective:
+              "Solve a two-step linear equation by applying inverse operations.",
+            difficulty: "DEVELOPING",
+            difficultyRationale:
+              "The learner must reverse two operations while preserving equation balance.",
+            estimatedSeconds: 85,
+            calculatorPolicy: "ALLOWED",
+            explanation: values.explanation,
+            misconception: {
+              code: "INVERSE_OPERATION_ERROR",
+              value: values.answer + values.offset,
+              message:
+                "You may have used the same operation instead of its inverse. Undo operations in reverse order on both sides.",
+            },
+            tutorQuestion:
+              "Which operation is farthest from x, and what inverse operation removes it from both sides?",
+            reflection:
+              "How can substituting your solution into the original equation verify it?",
+          }),
+        };
+      },
+    },
+    {
+      key: "math.inequalities.maximum-whole-number",
+      version: 1,
+      targetSkillCode: "MATH.INEQUALITIES",
+      questionType: "NUMERIC",
+      difficulty: "PROFICIENT",
+      structureCapacity: inequalityContexts.length * inequalityFrames.length,
+      generate(random) {
+        const context = random.pick(inequalityContexts);
+        const frame = random.pick(inequalityFrames);
+        const fixed = random.integer(8, 35);
+        const unit = random.integer(3, 14);
+        const answer = random.integer(5, 22);
+        const budget = fixed + unit * answer;
+        return {
+          structureKey: `${context.key}.${frame.key}`,
+          parameters: { fixed, unit, budget, answer },
+          candidate: numericCandidate({
+            prompt: frame.render({ ...context, fixed, unit, budget }),
+            answer,
+            verificationExpression: [budget, fixed, "subtract", unit, "divide"],
+            learningObjective:
+              "Interpret and solve a linear inequality with a whole-number contextual limit.",
+            difficulty: "PROFICIENT",
+            difficultyRationale:
+              "The learner must translate an upper-bound constraint, isolate the variable, and interpret a whole-number maximum.",
+            estimatedSeconds: 105,
+            calculatorPolicy: "ALLOWED",
+            explanation: `Subtract the fixed amount: ${budget} - ${fixed} = ${budget - fixed}. Divide by ${unit}: x ≤ ${answer}. Therefore, the greatest permitted whole number is ${answer}.`,
+            misconception: {
+              code: "FIXED_COST_NOT_REMOVED",
+              value: budget / unit,
+              message:
+                "You may have divided the full budget by the per-item cost without first removing the fixed charge.",
+            },
+            tutorQuestion:
+              "Which part of the total does not depend on x and should be removed first?",
+            reflection:
+              "What happens to the total cost if one more item than your answer is included?",
+          }),
+        };
+      },
+    },
+    {
+      key: "math.unit-conversions.single-factor",
+      version: 1,
+      targetSkillCode: "MATH.UNIT_CONVERSIONS",
+      questionType: "NUMERIC",
+      difficulty: "DEVELOPING",
+      structureCapacity:
+        conversionRelationships.length * conversionFrames.length,
+      generate(random) {
+        const relationship = random.pick(conversionRelationships);
+        const frame = random.pick(conversionFrames);
+        const amount = random.integer(2, 24);
+        const answer = amount * relationship.factor;
+        return {
+          structureKey: `${relationship.key}.${frame.key}`,
+          parameters: { ...relationship, amount, answer },
+          candidate: numericCandidate({
+            prompt: frame.render({ ...relationship, amount }),
+            answer,
+            verificationExpression: [amount, relationship.factor, "multiply"],
+            learningObjective:
+              "Apply a standard one-step conversion factor between measurement units.",
+            difficulty: "DEVELOPING",
+            difficultyRationale:
+              "The learner must select the correct conversion direction and apply one multiplicative factor.",
+            estimatedSeconds: 70,
+            calculatorPolicy: "ALLOWED",
+            explanation: `One ${singular(relationship.from)} equals ${relationship.factor} ${relationship.to}. Multiply: ${amount} × ${relationship.factor} = ${answer} ${relationship.to}.`,
+            misconception: {
+              code: "CONVERSION_DIRECTION_REVERSED",
+              value: amount / relationship.factor,
+              message:
+                "You may have divided when converting to the smaller unit. A fixed amount contains more smaller units, so multiply by the conversion factor.",
+            },
+            tutorQuestion:
+              "Are you converting to a larger unit or a smaller unit, and should the numerical value grow or shrink?",
+            reflection:
+              "How can the relative sizes of the units help you check the direction of the conversion?",
+          }),
+        };
+      },
+    },
+    {
+      key: "math.word-problems.two-leg-distance",
+      version: 1,
+      targetSkillCode: "MATH.WORD_PROBLEMS",
+      questionType: "NUMERIC",
+      difficulty: "PROFICIENT",
+      structureCapacity: travelContexts.length * travelFrames.length,
+      generate(random) {
+        const context = random.pick(travelContexts);
+        const frame = random.pick(travelFrames);
+        const rate1 = random.integer(3, 15) * 2;
+        const rate2 = random.integer(4, 18) * 2;
+        const time1 = random.integer(1, 4);
+        const time2 = random.integer(1, 4);
+        const firstDistance = rate1 * time1;
+        const secondDistance = rate2 * time2;
+        const answer = firstDistance + secondDistance;
+        return {
+          structureKey: `${context.key}.${frame.key}`,
+          parameters: { rate1, rate2, time1, time2, answer },
+          candidate: numericCandidate({
+            prompt: frame.render({ ...context, rate1, rate2, time1, time2 }),
+            answer,
+            verificationExpression: [
+              rate1,
+              time1,
+              "multiply",
+              rate2,
+              time2,
+              "multiply",
+              "add",
+            ],
+            learningObjective:
+              "Use distance = rate × time for multiple travel segments and combine the results.",
+            difficulty: "PROFICIENT",
+            difficultyRationale:
+              "The learner must identify two rate-time pairs, calculate each distance, and combine them.",
+            estimatedSeconds: 110,
+            calculatorPolicy: "ALLOWED",
+            explanation: `The first segment is ${rate1} × ${time1} = ${firstDistance} miles. The second is ${rate2} × ${time2} = ${secondDistance} miles. Together: ${firstDistance} + ${secondDistance} = ${answer} miles.`,
+            misconception: {
+              code: "RATE_AND_TIME_ADDED",
+              value: rate1 + time1 + rate2 + time2,
+              message:
+                "You may have added rates and times directly. Find each segment's distance by multiplying rate by its matching time.",
+            },
+            tutorQuestion:
+              "Which rate belongs with each time interval, and what distance does each pair produce?",
+            reflection:
+              "Why would averaging the two rates be unreliable when the segment times can differ?",
+          }),
+        };
+      },
+    },
+    {
+      key: "math.measurement.rectangular-prism-volume",
+      version: 1,
+      targetSkillCode: "MATH.MEASUREMENT",
+      questionType: "NUMERIC",
+      difficulty: "DEVELOPING",
+      structureCapacity: prismContexts.length * prismFrames.length,
+      generate(random) {
+        const context = random.pick(prismContexts);
+        const frame = random.pick(prismFrames);
+        const length = random.integer(5, 18);
+        const width = random.integer(3, 12);
+        const height = random.integer(2, 10);
+        const answer = length * width * height;
+        return {
+          structureKey: `${context.key}.${frame.key}`,
+          parameters: { length, width, height, answer },
+          candidate: numericCandidate({
+            prompt: frame.render({ ...context, length, width, height }),
+            answer,
+            verificationExpression: [
+              length,
+              width,
+              "multiply",
+              height,
+              "multiply",
+            ],
+            learningObjective:
+              "Calculate the volume of a rectangular prism from three dimensions.",
+            difficulty: "DEVELOPING",
+            difficultyRationale:
+              "The learner must identify all three dimensions and apply the rectangular-prism volume formula.",
+            estimatedSeconds: 80,
+            calculatorPolicy: "ALLOWED",
+            explanation: `Volume is length × width × height: ${length} × ${width} × ${height} = ${answer} cm³.`,
+            misconception: {
+              code: "AREA_INSTEAD_OF_VOLUME",
+              value: length * width,
+              message:
+                "You may have found only the base area. Volume also includes the height of the prism.",
+            },
+            tutorQuestion:
+              "Which three perpendicular dimensions determine the space inside a rectangular prism?",
+            reflection: "Why is the resulting unit cubic rather than square?",
+          }),
+        };
+      },
+    },
+    {
+      key: "math.geometry.triangle-missing-angle",
+      version: 1,
+      targetSkillCode: "MATH.GEOMETRY",
+      questionType: "NUMERIC",
+      difficulty: "DEVELOPING",
+      structureCapacity: angleContexts.length * angleFrames.length,
+      generate(random) {
+        const context = random.pick(angleContexts);
+        const frame = random.pick(angleFrames);
+        const a = random.integer(28, 72);
+        const b = random.integer(32, Math.min(95, 145 - a));
+        const answer = 180 - a - b;
+        return {
+          structureKey: `${slug(context)}.${frame.key}`,
+          parameters: { a, b, answer },
+          candidate: numericCandidate({
+            prompt: frame.render({ context, a, b }),
+            answer,
+            verificationExpression: [180, a, "subtract", b, "subtract"],
+            learningObjective:
+              "Use the sum of a triangle's interior angles to find a missing angle.",
+            difficulty: "DEVELOPING",
+            difficultyRationale:
+              "The learner must recall the 180-degree relationship and subtract two known measures.",
+            estimatedSeconds: 70,
+            calculatorPolicy: "NOT_NEEDED",
+            explanation: `Triangle interior angles total 180°. Subtract the known angles: 180 - ${a} - ${b} = ${answer}°.`,
+            misconception: {
+              code: "TRIANGLE_SUM_MISAPPLIED",
+              value: a + b,
+              message:
+                "You may have added the known angles without subtracting their sum from 180°.",
+            },
+            tutorQuestion:
+              "What fixed total do the three interior angles of every triangle have?",
+            reflection:
+              "How can you add all three measures to verify the missing angle?",
+          }),
+        };
+      },
+    },
+    {
+      key: "math.data-interpretation.four-row-table",
+      version: 1,
+      targetSkillCode: "MATH.DATA_INTERPRETATION",
+      questionType: "NUMERIC",
+      difficulty: "PROFICIENT",
+      structureCapacity: dataContexts.length * dataTasks.length,
+      generate(random) {
+        const context = random.pick(dataContexts);
+        const task = random.pick(dataTasks);
+        const start = random.integer(12, 35);
+        const values = [
+          start,
+          start + random.integer(3, 8),
+          start + random.integer(10, 15),
+          start + random.integer(18, 25),
+        ] as const;
+        const result = buildTableTask(task, values, context.label);
+        const stimulus: QuestionStimulus = {
+          type: "table",
+          caption: context.caption,
+          columns: ["Period", context.label],
+          rows: values.map((value, index) => [
+            `Period ${index + 1}`,
+            String(value),
+          ]),
+        };
+        return {
+          structureKey: `${context.key}.${task}`,
+          parameters: { task, values: [...values], answer: result.answer },
+          candidate: numericCandidate({
+            stimulus,
+            prompt: result.prompt,
+            answer: result.answer,
+            tolerance: 1e-9,
+            verificationExpression: result.expression,
+            learningObjective:
+              "Extract quantitative values from a table and apply the requested summary operation.",
+            difficulty: "PROFICIENT",
+            difficultyRationale:
+              "The learner must locate multiple table entries, choose the requested operation, and compute a summary.",
+            estimatedSeconds: 100,
+            calculatorPolicy: "ALLOWED",
+            explanation: result.explanation,
+            misconception: {
+              code: "TABLE_OPERATION_MISMATCH",
+              value: result.answer + 1,
+              message:
+                "You may have read the values correctly but applied a different summary operation than the prompt requested.",
+            },
+            tutorQuestion:
+              "Which exact table entries does the requested operation use?",
+            reflection:
+              "How can you label the operation before calculating to avoid mixing up total, mean, range, and change?",
+          }),
+        };
+      },
+    },
+    {
       key: "math.ratios.constant-rate",
       version: 1,
       targetSkillCode: "MATH.RATIOS_PROPORTIONS",
       questionType: "NUMERIC",
       difficulty: "DEVELOPING",
+      structureCapacity: ratioContexts.length * ratioFrames.length,
       generate(random) {
         const context = random.pick(ratioContexts);
         const frame = random.pick(ratioFrames);
@@ -193,6 +880,7 @@ export const mathDeterministicVariantTemplates: readonly DeterministicVariantTem
       targetSkillCode: "MATH.FRACTIONS_DECIMALS_PERCENT",
       questionType: "NUMERIC",
       difficulty: "PROFICIENT",
+      structureCapacity: purchaseContexts.length * purchaseFrames.length,
       generate(random) {
         const item = random.pick(purchaseContexts);
         const frame = random.pick(purchaseFrames);
@@ -249,6 +937,7 @@ export const mathDeterministicVariantTemplates: readonly DeterministicVariantTem
       targetSkillCode: "MATH.PROBABILITY_STATISTICS",
       questionType: "NUMERIC",
       difficulty: "PROFICIENT",
+      structureCapacity: meanContexts.length * meanFrames.length,
       generate(random) {
         const context = random.pick(meanContexts);
         const frame = random.pick(meanFrames);
@@ -312,6 +1001,7 @@ export function getMathDeterministicVariantTemplate(key: string) {
 }
 
 function numericCandidate(input: {
+  stimulus?: QuestionStimulus;
   prompt: string;
   answer: number;
   verificationExpression: RpnExpression;
@@ -331,6 +1021,7 @@ function numericCandidate(input: {
     content: {
       questionType: "NUMERIC",
       prompt: input.prompt,
+      stimulus: input.stimulus,
       answerSpec: {
         type: "numeric",
         value: input.answer,
@@ -382,6 +1073,221 @@ function numericCandidate(input: {
   };
 }
 
+function buildTableTask(
+  task: (typeof dataTasks)[number],
+  values: readonly [number, number, number, number],
+  label: string,
+) {
+  const [first, second, third, fourth] = values;
+  if (task === "total") {
+    const answer = first + second + third + fourth;
+    return {
+      answer,
+      prompt: `What is the total number of ${label.toLocaleLowerCase("en-US")} across all four periods?`,
+      expression: [
+        first,
+        second,
+        "add",
+        third,
+        "add",
+        fourth,
+        "add",
+      ] as RpnExpression,
+      explanation: `Add all four entries: ${first} + ${second} + ${third} + ${fourth} = ${answer}.`,
+    };
+  }
+  if (task === "mean") {
+    const answer = (first + second + third + fourth) / 4;
+    return {
+      answer,
+      prompt: `What is the mean number of ${label.toLocaleLowerCase("en-US")} per period?`,
+      expression: [
+        first,
+        second,
+        "add",
+        third,
+        "add",
+        fourth,
+        "add",
+        4,
+        "divide",
+      ] as RpnExpression,
+      explanation: `The four entries total ${first + second + third + fourth}. Divide by 4 to get a mean of ${formatNumber(answer)}.`,
+    };
+  }
+  if (task === "range") {
+    const answer = fourth - first;
+    return {
+      answer,
+      prompt: `What is the range of the four ${label.toLocaleLowerCase("en-US")} values?`,
+      expression: [fourth, first, "subtract"] as RpnExpression,
+      explanation: `The greatest value is ${fourth} and the least is ${first}. The range is ${fourth} - ${first} = ${answer}.`,
+    };
+  }
+  const answer = fourth - first;
+  return {
+    answer,
+    prompt: `By how much did ${label.toLocaleLowerCase("en-US")} increase from Period 1 to Period 4?`,
+    expression: [fourth, first, "subtract"] as RpnExpression,
+    explanation: `Compare Period 4 with Period 1: ${fourth} - ${first} = ${answer}.`,
+  };
+}
+
+function buildAlgebraExpression(
+  random: SeededRandom,
+  form: (typeof algebraExpressionForms)[number],
+) {
+  const x = random.integer(3, 12);
+  const y = random.integer(2, Math.max(2, x - 1));
+  const a = random.integer(2, 7);
+  const b = random.integer(2, 9);
+  let display: string;
+  let expression: RpnExpression;
+  let substitution: string;
+
+  if (form === "weighted-sum") {
+    display = `${a}x + ${b}y`;
+    expression = [a, x, "multiply", b, y, "multiply", "add"];
+    substitution = `Substitute to get ${a}(${x}) + ${b}(${y}).`;
+  } else if (form === "grouped-sum") {
+    display = `${a}(x + y) - ${b}`;
+    expression = [x, y, "add", a, "multiply", b, "subtract"];
+    substitution = `Substitute to get ${a}(${x} + ${y}) - ${b}.`;
+  } else if (form === "scaled-difference") {
+    display = `${a}(x - y) + ${b}`;
+    expression = [x, y, "subtract", a, "multiply", b, "add"];
+    substitution = `Substitute to get ${a}(${x} - ${y}) + ${b}.`;
+  } else if (form === "quotient-combination") {
+    const divisor = random.integer(2, 5);
+    const factor = random.integer(2, 5);
+    const xCoefficient = divisor * factor;
+    display = `(${xCoefficient}x + ${divisor}y) ÷ ${divisor}`;
+    expression = [
+      xCoefficient,
+      x,
+      "multiply",
+      divisor,
+      y,
+      "multiply",
+      "add",
+      divisor,
+      "divide",
+    ];
+    substitution = `Substitute to get (${xCoefficient}(${x}) + ${divisor}(${y})) ÷ ${divisor}.`;
+  } else {
+    display = `${a}x² - ${b}y`;
+    expression = [
+      x,
+      x,
+      "multiply",
+      a,
+      "multiply",
+      b,
+      y,
+      "multiply",
+      "subtract",
+    ];
+    substitution = `Substitute to get ${a}(${x}²) - ${b}(${y}).`;
+  }
+
+  const answer = evaluateSimpleRpn(expression);
+  return {
+    display,
+    expression,
+    substitution,
+    x,
+    y,
+    answer,
+    offset: Math.max(1, a),
+    parameters: { form, x, y, a, b, answer },
+  };
+}
+
+function buildLinearEquation(
+  random: SeededRandom,
+  form: (typeof linearEquationForms)[number],
+) {
+  const a = random.integer(2, 9);
+  const b = random.integer(3, 18);
+  let answer: number;
+  let c: number;
+  let equation: string;
+  let expression: RpnExpression;
+  let explanation: string;
+
+  if (form === "add-after-scale") {
+    answer = random.integer(3, 18);
+    c = a * answer + b;
+    equation = `${a}x + ${b} = ${c}`;
+    expression = [c, b, "subtract", a, "divide"];
+    explanation = `Subtract ${b} from both sides: ${a}x = ${c - b}. Then divide by ${a}: x = ${answer}.`;
+  } else if (form === "subtract-after-scale") {
+    answer = random.integer(4, 18);
+    c = a * answer - b;
+    equation = `${a}x - ${b} = ${c}`;
+    expression = [c, b, "add", a, "divide"];
+    explanation = `Add ${b} to both sides: ${a}x = ${c + b}. Then divide by ${a}: x = ${answer}.`;
+  } else if (form === "divide-then-add") {
+    const quotient = random.integer(3, 16);
+    answer = quotient * a;
+    c = quotient + b;
+    equation = `x ÷ ${a} + ${b} = ${c}`;
+    expression = [c, b, "subtract", a, "multiply"];
+    explanation = `Subtract ${b} from both sides: x ÷ ${a} = ${quotient}. Then multiply by ${a}: x = ${answer}.`;
+  } else if (form === "group-then-scale") {
+    answer = random.integer(3, 18);
+    c = a * (answer + b);
+    equation = `${a}(x + ${b}) = ${c}`;
+    expression = [c, a, "divide", b, "subtract"];
+    explanation = `Divide both sides by ${a}: x + ${b} = ${c / a}. Then subtract ${b}: x = ${answer}.`;
+  } else {
+    const quotient = random.integer(3, 16);
+    answer = quotient * a + b;
+    c = quotient;
+    equation = `(x - ${b}) ÷ ${a} = ${c}`;
+    expression = [c, a, "multiply", b, "add"];
+    explanation = `Multiply both sides by ${a}: x - ${b} = ${c * a}. Then add ${b}: x = ${answer}.`;
+  }
+
+  return {
+    answer,
+    equation,
+    expression,
+    explanation,
+    offset: Math.max(1, b),
+    parameters: { form, a, b, c, answer },
+  };
+}
+
+function evaluateSimpleRpn(expression: RpnExpression) {
+  const stack: number[] = [];
+  for (const token of expression) {
+    if (typeof token === "number") {
+      stack.push(token);
+      continue;
+    }
+    const right = stack.pop();
+    const left = stack.pop();
+    if (left === undefined || right === undefined) {
+      throw new Error("Invalid deterministic template expression.");
+    }
+    stack.push(
+      token === "add"
+        ? left + right
+        : token === "subtract"
+          ? left - right
+          : token === "multiply"
+            ? left * right
+            : left / right,
+    );
+  }
+  const value = stack[0];
+  if (stack.length !== 1 || value === undefined || !Number.isFinite(value)) {
+    throw new Error("Invalid deterministic template expression result.");
+  }
+  return value;
+}
+
 function roundCents(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
@@ -390,9 +1296,17 @@ function formatMoney(value: number) {
   return roundCents(value).toFixed(2);
 }
 
+function formatNumber(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(4);
+}
+
 function slug(value: string) {
   return value
     .toLocaleLowerCase("en-US")
     .replaceAll(/[^a-z0-9]+/g, "-")
     .replaceAll(/^-|-$/g, "");
+}
+
+function singular(value: string) {
+  return value.endsWith("s") ? value.slice(0, -1) : value;
 }

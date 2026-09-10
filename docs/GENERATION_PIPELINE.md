@@ -42,7 +42,15 @@ pnpm questions:variants:stage -- --confirm-stage-drafts --count=8 --seed=reviewe
 
 The confirmation phrase is mandatory. Staging takes a database-wide advisory transaction lock, rechecks the current corpus, rejects partial batches, records the governed outline link and complete deterministic provenance, appends both required automated validation events, and creates each candidate as a new `DRAFT` family. It creates no review decision and no publication. Replaying the same template/version/seed/count returns the existing completed batch instead of generating a new batch against the changed corpus; reusing a seed with a different count or incomplete history fails closed.
 
-The first pilot registry intentionally covers only three reviewed problem families: constant-rate ratios, discount-then-tax percent sequences, and recovering a missing value from a mean. The first staged batch contains 24 validated but unreviewed drafts. This proves the generation, rejection, persistence, and replay-protection machinery; it does **not** mean thousands of questions are currently approved. Scaling responsibly requires additional reviewed templates across the complete Math taxonomy, representative human sampling, and learner-performance calibration. Deterministic acceptance is an engineering gate, not human publication approval.
+The registry now contains one bounded template for every Math leaf skill. Each template declares 20 distinct context/frame structures, for a theoretical capacity of 240 before rejection. Two replay-protected pilots have staged 120 validated but unreviewed drafts: 24 from the first three-template pass and 96 from the full-taxonomy pass. This proves the generation, rejection, persistence, and replay-protection machinery; it does **not** mean thousands of questions are currently approved. The current deterministic expansion capacity is entirely numeric-response, so scaling responsibly requires multiple reasoning families and response formats per skill, representative human sampling, and learner-performance calibration. Deterministic acceptance is an engineering gate, not human publication approval.
+
+Run the honest capacity and gap report with:
+
+```bash
+pnpm questions:variants:capacity -- --target=1000
+```
+
+The target is a planning input, not an official requirement. The report compares current and published families with registered template capacity, uncovered leaf skills, and capacity by response format. Capacity is an upper bound; it is never labeled as accepted, reviewed, or published inventory.
 
 ## Source intake
 

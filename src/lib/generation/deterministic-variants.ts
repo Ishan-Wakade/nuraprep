@@ -35,6 +35,7 @@ const templateMetadataSchema = z.object({
     "ORDERED_RESPONSE",
   ]),
   difficulty: z.enum(["FOUNDATIONAL", "DEVELOPING", "PROFICIENT", "ADVANCED"]),
+  structureCapacity: z.number().int().positive().max(10_000),
 });
 
 const batchInputSchema = z.object({
@@ -135,6 +136,11 @@ export function generateDeterministicVariantBatch(input: {
     templateVersion: metadata.version,
     batchSeed: batch.batchSeed,
   }).slice(0, 24);
+  if (batch.requestedCount > metadata.structureCapacity) {
+    throw new Error(
+      `Requested ${batch.requestedCount} variants from ${metadata.key}, but template v${metadata.version} declares only ${metadata.structureCapacity} distinct structures.`,
+    );
+  }
   const accepted: AcceptedDeterministicVariant[] = [];
   const rejected: RejectedDeterministicVariant[] = [];
   const structures = new Set<string>();

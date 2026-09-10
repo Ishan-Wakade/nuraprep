@@ -38,4 +38,40 @@ describe("Math deterministic variant templates", () => {
     ).toBe("math.ratios.constant-rate");
     expect(getMathDeterministicVariantTemplate("missing")).toBeUndefined();
   });
+
+  it("covers every Math leaf skill with unique, explicitly bounded templates", () => {
+    const expectedLeafSkills = [
+      "MATH.ALGEBRAIC_EXPRESSIONS",
+      "MATH.ARITHMETIC",
+      "MATH.DATA_INTERPRETATION",
+      "MATH.FRACTIONS_DECIMALS_PERCENT",
+      "MATH.GEOMETRY",
+      "MATH.INEQUALITIES",
+      "MATH.LINEAR_EQUATIONS",
+      "MATH.MEASUREMENT",
+      "MATH.PROBABILITY_STATISTICS",
+      "MATH.RATIOS_PROPORTIONS",
+      "MATH.UNIT_CONVERSIONS",
+      "MATH.WORD_PROBLEMS",
+    ];
+    const keys = mathDeterministicVariantTemplates.map(
+      (template) => `${template.key}@${template.version}`,
+    );
+
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(
+      [
+        ...new Set(
+          mathDeterministicVariantTemplates.map(
+            (template) => template.targetSkillCode,
+          ),
+        ),
+      ].sort(),
+    ).toEqual(expectedLeafSkills);
+    expect(
+      mathDeterministicVariantTemplates.every(
+        (template) => template.structureCapacity === 20,
+      ),
+    ).toBe(true);
+  });
 });
