@@ -1570,6 +1570,7 @@ async function main() {
       throw new Error("Account erasure did not complete with a receipt.");
     }
 
+    await ensureDeterministicStagingPrerequisites(client);
     const deterministicTemplate = getMathDeterministicVariantTemplate(
       "math.ratios.constant-rate",
     );
@@ -1658,6 +1659,54 @@ async function main() {
   } finally {
     client.release();
     await pool.end();
+  }
+}
+
+async function ensureDeterministicStagingPrerequisites(
+  client: import("pg").PoolClient,
+) {
+  await client.query(
+    `INSERT INTO skills
+       (id, code, section, title, learning_objective, alignment_notes)
+     VALUES ($1, 'MATH.RATIOS_PROPORTIONS', 'MATH', 'Ratios and proportions',
+             'Apply ratios and proportions to solve quantitative problems.',
+             'Transactional database-smoke fixture for deterministic staging.')
+     ON CONFLICT (code) DO NOTHING`,
+    [randomUUID()],
+  );
+  await client.query(
+    `INSERT INTO source_artifacts
+       (id, canonical_url, publisher, title, artifact_type, accessed_at,
+        access_class, decision, allow_metadata, allow_coverage_analysis,
+        decision_rationale, reviewed_by)
+     VALUES ($1, $2, 'Assessment Technologies Institute, LLC',
+             'ATI TEAS Version 7 content outline', 'PDF', now(), 'PUBLIC',
+             'COVERAGE_ANALYSIS', true, true, $3, 'database-smoke-test')
+     ON CONFLICT (canonical_url) DO NOTHING`,
+    [
+      randomUUID(),
+      "https://www.atitesting.com/docs/default-source/teas-resources/ati_teas7_content_outline.pdf",
+      "The smoke fixture permits only high-level coverage analysis and stores no source question text.",
+    ],
+  );
+  for (const key of ["answer-contract", "mathematical-correctness"]) {
+    const active = await client.query<{ id: string }>(
+      `SELECT id FROM validator_rules WHERE key = $1 AND active = true LIMIT 1`,
+      [key],
+    );
+    if (active.rows[0]) continue;
+    await client.query(
+      `INSERT INTO validator_rules
+         (id, key, version, description, blocks_publication, active,
+          change_notes, created_by)
+       VALUES ($1, $2, 1, $3, true, true, $4, 'database-smoke-test')`,
+      [
+        randomUUID(),
+        key,
+        `Transactional smoke-test validator for ${key} staging evidence.`,
+        "Created only inside the rolled-back database smoke transaction.",
+      ],
+    );
   }
 }
 
