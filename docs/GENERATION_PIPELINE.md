@@ -18,7 +18,7 @@ The current slice supports:
 - strict structured-output, answer-contract, symbolic-math, misconception, and regeneration-scope checks; and
 - atomic candidate persistence with database-enforced one-way completion linked to exactly one generated candidate version.
 
-It also supports a dry-run-only deterministic path with versioned Math templates, reproducible SHA-256 seeds, structural-diversity limits, current-bank duplicate checks, and the same content, answer-contract, symbolic-math, and misconception validators used elsewhere in the application.
+It also supports a deterministic path with versioned Math templates, reproducible SHA-256 seeds, structural-diversity limits, current-bank duplicate checks, and the same content, answer-contract, symbolic-math, and misconception validators used elsewhere in the application. Dry runs write nothing; an explicit staging command can persist accepted candidates as unreviewed drafts.
 
 No action in the reviewer UI fetches source pages, stores source question text, or sends content to a model.
 
@@ -34,7 +34,15 @@ The command requires `DATABASE_URL`, emits a JSON quality report, and writes not
 
 A slot is rejected and retried when the template output is malformed, violates its declared type or difficulty, fails content or answer validation, fails deterministic mathematics, contains invalid misconception behavior, reuses a structure within the batch, or triggers an internal duplicate signal against the current corpus or earlier accepted variants. An exhausted slot is reported rather than silently replaced with a lower-quality item.
 
-The first pilot registry intentionally covers only three reviewed problem families: constant-rate ratios, discount-then-tax percent sequences, and recovering a missing value from a mean. This proves the generation and rejection machinery; it does **not** mean thousands of questions are currently approved. Scaling responsibly requires additional reviewed templates across the complete Math taxonomy, batch-level quality reports, representative human sampling, and learner-performance calibration. Deterministic acceptance is an engineering gate, not human publication approval.
+After inspecting a dry-run report, stage the same bounded pilot with:
+
+```bash
+pnpm questions:variants:stage -- --confirm-stage-drafts --count=8 --seed=reviewed-pilot-v1
+```
+
+The confirmation phrase is mandatory. Staging takes a database-wide advisory transaction lock, rechecks the current corpus, rejects partial batches, records the governed outline link and complete deterministic provenance, appends both required automated validation events, and creates each candidate as a new `DRAFT` family. It creates no review decision and no publication. Replaying the same template/version/seed/count returns the existing completed batch instead of generating a new batch against the changed corpus; reusing a seed with a different count or incomplete history fails closed.
+
+The first pilot registry intentionally covers only three reviewed problem families: constant-rate ratios, discount-then-tax percent sequences, and recovering a missing value from a mean. The first staged batch contains 24 validated but unreviewed drafts. This proves the generation, rejection, persistence, and replay-protection machinery; it does **not** mean thousands of questions are currently approved. Scaling responsibly requires additional reviewed templates across the complete Math taxonomy, representative human sampling, and learner-performance calibration. Deterministic acceptance is an engineering gate, not human publication approval.
 
 ## Source intake
 

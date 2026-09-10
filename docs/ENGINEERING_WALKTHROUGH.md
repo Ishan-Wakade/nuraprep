@@ -6,7 +6,7 @@ This document explains the implemented local alpha. It is written for three uses
 2. preparing for technical and behavioral interviews; and
 3. reviewing the tradeoffs before production decisions are made.
 
-It is not a launch announcement. NuraPrep still has no production-approved question bank, configured generation provider, live Google callback verification, verified Stripe sandbox lifecycle, AWS environment, or externally validated score predictor.
+It is not a launch announcement. NuraPrep has a 38-family owner-approved local Math bank, but it still lacks independent educator sign-off, the depth expected of a public practice library, a configured external generation provider, live Google callback verification, verified Stripe sandbox lifecycle, an applied AWS environment, and an externally validated score predictor.
 
 ## 1. The problem the architecture is solving
 
@@ -352,7 +352,7 @@ These are useful interview examples because they show correction rather than a f
 
 ### Seed content versus production truth
 
-The system needed enough content to exercise every flow, but marking AI-assisted seed content approved would have created a false safety claim. The resolution was to keep 38 candidates in draft and let Playwright create disposable test-only approval evidence in an isolated database.
+The system needed enough content to exercise every flow before human review, but marking AI-assisted seed content approved would have created a false safety claim. The initial resolution was to keep 38 candidates in draft and let Playwright create disposable test-only approval evidence in an isolated database. The owner later reviewed the real bank, recorded genuine decisions, and published the exact validated versions through the normal UI; test evidence remained excluded.
 
 Lesson: testability does not justify weakening the production state model.
 
@@ -595,7 +595,7 @@ Use these as truthful story structures, not scripts to memorize. Replace “I”
 
 The following must not be described as shipped:
 
-- independent review and publication of the Math question bank;
+- independent educator sampling and final public-launch approval of the owner-published Math bank;
 - independent approval of the engineering-draft gold evaluation set;
 - live Google callback behavior with real credentials;
 - a provider-backed conversational tutor;
@@ -606,7 +606,7 @@ The following must not be described as shipped:
 - manual screen-reader and assistive-technology review; and
 - external calibration or claimed accuracy of the readiness estimate.
 
-The strongest accurate description is: **a working local TEAS Math alpha with production-shaped content governance, learner workflows, explainable personalization, authentication and billing foundations, validated cost-gated infrastructure code, and automated quality gates; content and external services remain pre-production.**
+The strongest accurate description is: **a working local TEAS Math alpha with an owner-approved 38-family bank, production-shaped content governance, learner workflows, explainable personalization, no-cost deterministic expansion drafts, authentication and billing foundations, validated cost-gated infrastructure code, and automated quality gates; educational calibration and external services remain pre-production.**
 
 ## 19. Glossary
 

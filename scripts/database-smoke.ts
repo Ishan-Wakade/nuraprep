@@ -3,6 +3,10 @@ import { randomUUID } from "node:crypto";
 import { config } from "dotenv";
 import { Pool } from "pg";
 
+import { loadCurrentMathCorpus } from "../src/data/math-variant-corpus";
+import { stageDeterministicVariantBatches } from "../src/data/stage-deterministic-variants";
+import { generateDeterministicVariantBatch } from "../src/lib/generation/deterministic-variants";
+import { getMathDeterministicVariantTemplate } from "../src/lib/generation/math-variant-templates";
 import { MAX_GENERATION_ATTEMPTS } from "../src/lib/generation/retry-policy";
 
 config({ path: ".env.local", quiet: true });
@@ -1564,6 +1568,72 @@ async function main() {
       successfulErasure.rows[0].billing_subscriptions !== 0
     ) {
       throw new Error("Account erasure did not complete with a receipt.");
+    }
+
+    const deterministicTemplate = getMathDeterministicVariantTemplate(
+      "math.ratios.constant-rate",
+    );
+    if (!deterministicTemplate) {
+      throw new Error("The deterministic smoke-test template is missing.");
+    }
+    const deterministicBatch = generateDeterministicVariantBatch({
+      template: deterministicTemplate,
+      batchSeed: `database-smoke-${randomUUID()}`,
+      requestedCount: 1,
+      maxAttemptsPerItem: 100,
+      corpus: await loadCurrentMathCorpus(client),
+    });
+    if (
+      deterministicBatch.accepted.length !== 1 ||
+      deterministicBatch.exhaustedSlots !== 0
+    ) {
+      throw new Error("The deterministic smoke-test batch was not accepted.");
+    }
+    const firstStaging = await stageDeterministicVariantBatches({
+      client,
+      templates: [deterministicTemplate],
+      batches: [deterministicBatch],
+      requestedBy: "database-smoke-test",
+    });
+    const repeatedStaging = await stageDeterministicVariantBatches({
+      client,
+      templates: [deterministicTemplate],
+      batches: [deterministicBatch],
+      requestedBy: "database-smoke-test",
+    });
+    const stagedState = await client.query<{
+      lifecycle: string;
+      run_status: string;
+      validation_count: number;
+      review_count: number;
+      publication_count: number;
+    }>(
+      `SELECT question.lifecycle,
+              run.status AS run_status,
+              (SELECT count(*)::int FROM validation_runs
+                WHERE question_version_id = version.id) AS validation_count,
+              (SELECT count(*)::int FROM review_decisions
+                WHERE question_version_id = version.id) AS review_count,
+              (SELECT count(*)::int FROM question_publications
+                WHERE question_version_id = version.id) AS publication_count
+         FROM question_versions AS version
+         INNER JOIN questions AS question ON question.id = version.question_id
+         INNER JOIN generation_runs AS run ON run.id = version.generation_run_id
+        WHERE version.id = $1`,
+      [firstStaging.questionVersionIds[0]],
+    );
+    if (
+      firstStaging.created !== 1 ||
+      repeatedStaging.skipped !== 1 ||
+      stagedState.rows[0]?.lifecycle !== "DRAFT" ||
+      stagedState.rows[0]?.run_status !== "SUCCEEDED" ||
+      stagedState.rows[0]?.validation_count !== 2 ||
+      stagedState.rows[0]?.review_count !== 0 ||
+      stagedState.rows[0]?.publication_count !== 0
+    ) {
+      throw new Error(
+        "Deterministic staging did not preserve draft-only, validated, idempotent behavior.",
+      );
     }
 
     const result = await client.query<{ version_count: number }>(

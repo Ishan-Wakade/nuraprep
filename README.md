@@ -12,7 +12,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 ## Project status
 
-**Working local alpha — content review remains the release gate.** The repository contains the PostgreSQL content model, deterministic answer and math checks, owner-review and publication workflows, persisted topic practice, a coverage-aware diagnostic, a versioned rules-based adaptive scheduler, full timed-test mechanics, a transparent readiness-estimation baseline, and a fail-closed source/generation control plane. Thirty-eight original seed candidates cover every current Math leaf skill and fill the internal 20-family Numbers-and-Algebra and 18-family Measurement-and-Data targets. They remain deliberately unapproved, and browser tests use disposable, explicitly test-only approvals to verify complete learner flows. There is no approved production question bank, configured generation provider, or externally validated score predictor yet.
+**Working local alpha — public-launch QA remains open.** The repository contains the PostgreSQL content model, deterministic answer and math checks, owner-review and publication workflows, persisted topic practice, a coverage-aware diagnostic, a versioned rules-based adaptive scheduler, full timed-test mechanics, a transparent readiness-estimation baseline, and a fail-closed source/generation control plane. Thirty-eight original Math families cover every current leaf skill, fill the internal 20-family Numbers-and-Algebra and 18-family Measurement-and-Data blueprint, and have genuine owner approval plus passing deterministic release checks on their exact published versions. A separate no-cost deterministic pilot has staged 24 additional validated drafts for later sampling; they are not learner-visible. Independent educator review, broader bank depth, external score calibration, and production service verification remain open.
 
 | Area                                        | Status                                                                                                                                             |
 | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -22,9 +22,9 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 | Topic practice                              | Working local multi-format vertical slice                                                                                                          |
 | Diagnostic                                  | Working local flow with explicit coverage and starting signals                                                                                     |
 | Adaptive mode                               | Working local, inspectable rules baseline                                                                                                          |
-| Timed Math practice test                    | Mechanics verified; production bank lacks 38 approved families                                                                                     |
+| Timed Math practice test                    | Working with 38 distinct owner-approved local families; broader depth and independent educational QA remain open                                   |
 | Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                                                                     |
-| Source and generation controls              | Registry, leased request queue, and worker gates working; provider intentionally off                                                               |
+| Source and generation controls              | Registry, deterministic dry-run/draft staging, leased request queue, and worker gates working; paid provider intentionally off                     |
 | Account and Google sign-in                  | Sessions, logout, device revocation, export, learner erasure, privileged pseudonymization, and roles implemented; real callback awaits credentials |
 | Billing                                     | Stripe-hosted integration implemented fail-closed; sandbox verification and product decisions remain open                                          |
 | AWS deployment                              | Terraform validated; region cost review, prerequisites, staging apply, and restore drill remain                                                    |
@@ -43,7 +43,7 @@ The interface shown is a product-direction preview. The example readiness state 
 
 ![NuraPrep diagnostic results with conservative skill signals and a personalized starting point](public/screenshots/diagnostic-results.png)
 
-These screens are backed by the local PostgreSQL practice flow. The diagnostic samples one current published item per available skill and labels every result as preliminary; it does not infer mastery from one answer. A learner can also report an answered item, and the owner can append an auditable triage decision against that exact question version and attempt. The owner workspace searches learner and reviewer evidence together and summarizes recurring categories or stable issue codes without erasing source attribution. Displayed items are disposable browser-test fixtures; they are not production-approved content.
+These screens are backed by the local PostgreSQL practice flow. The diagnostic samples one current published item per available skill and labels every result as preliminary; it does not infer mastery from one answer. A learner can also report an answered item, and the owner can append an auditable triage decision against that exact question version and attempt. The owner workspace searches learner and reviewer evidence together and summarizes recurring categories or stable issue codes without erasing source attribution. The screenshots predate the owner's publication pass and may show disposable browser-test fixtures; the current local database uses the genuine owner-approved bank.
 
 ![NuraPrep session summary separating practice accuracy from official or validated scores](public/screenshots/session-summary.png)
 
@@ -116,7 +116,7 @@ See the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md), [Architectur
 - Stripe-hosted subscription boundary, disabled until sandbox or live credentials are explicitly configured
 - Vitest, Testing Library, Playwright, and automated axe WCAG checks
 - Docker Compose for local PostgreSQL
-- Provider-neutral generation interface and auditable request queue; external provider adapter intentionally not configured
+- No-cost deterministic variant generation with duplicate rejection and draft-only staging, plus a provider-neutral request queue whose external adapter is intentionally not configured
 - Terraform 1.16 deployment root for an approval-gated AWS staging and production path
 
 No vector database or separate API service is planned for version 1. They will be introduced only if measured product requirements justify them.

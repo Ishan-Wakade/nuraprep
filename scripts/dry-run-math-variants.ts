@@ -1,6 +1,7 @@
 import { config } from "dotenv";
 import { Pool } from "pg";
 
+import { loadCurrentMathCorpus } from "@/data/math-variant-corpus";
 import { generateDeterministicVariantBatch } from "@/lib/generation/deterministic-variants";
 import {
   getMathDeterministicVariantTemplate,
@@ -21,7 +22,7 @@ async function main() {
           getMathDeterministicVariantTemplate(options.template) ??
             fail(`Unknown template: ${options.template}`),
         ];
-  const corpus = await loadCurrentMathCorpus();
+  const corpus = await withPool((pool) => loadCurrentMathCorpus(pool));
   const evolvingCorpus = [...corpus];
   const batches = templates.map((template) => {
     const batch = generateDeterministicVariantBatch({
@@ -73,7 +74,7 @@ async function main() {
   );
 }
 
-async function loadCurrentMathCorpus(): Promise<OriginalityDocument[]> {
+async function withPool<T>(callback: (pool: Pool) => Promise<T>) {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     throw new Error(
@@ -82,24 +83,7 @@ async function loadCurrentMathCorpus(): Promise<OriginalityDocument[]> {
   }
   const pool = new Pool({ connectionString: databaseUrl });
   try {
-    const result = await pool.query<{
-      id: string;
-      prompt: string;
-      choices: { content: string }[] | null;
-    }>(
-      `SELECT version.id, version.prompt, version.choices
-         FROM question_versions AS version
-         INNER JOIN questions AS question ON question.id = version.question_id
-        WHERE question.section = 'MATH'
-          AND question.internal_slug NOT LIKE 'e2e-%'
-          AND version.version = (
-            SELECT max(latest.version)
-              FROM question_versions AS latest
-             WHERE latest.question_id = version.question_id
-          )
-        ORDER BY question.internal_slug`,
-    );
-    return result.rows;
+    return await callback(pool);
   } finally {
     await pool.end();
   }
@@ -107,15 +91,17 @@ async function loadCurrentMathCorpus(): Promise<OriginalityDocument[]> {
 
 function parseOptions(arguments_: string[]) {
   const values = Object.fromEntries(
-    arguments_.map((argument) => {
-      const match = argument.match(/^--([a-z-]+)=(.+)$/);
-      if (!match) {
-        throw new Error(
-          `Invalid argument ${argument}. Use --template=, --count=, --seed=, or --max-attempts=.`,
-        );
-      }
-      return [match[1], match[2]];
-    }),
+    arguments_
+      .filter((argument) => argument !== "--")
+      .map((argument) => {
+        const match = argument.match(/^--([a-z-]+)=(.+)$/);
+        if (!match) {
+          throw new Error(
+            `Invalid argument ${argument}. Use --template=, --count=, --seed=, or --max-attempts=.`,
+          );
+        }
+        return [match[1], match[2]];
+      }),
   );
   const count = integerOption(values.count ?? "8", "count", 1, 1_000);
   const maxAttempts = integerOption(

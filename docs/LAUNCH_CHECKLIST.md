@@ -4,7 +4,7 @@
 
 This is a go/no-go record for a future staging or public launch. Repository implementation and local tests satisfy only part of it. Mark an item complete only with a dated evidence link or artifact and a named owner. Any unresolved stop condition keeps the launch at **NO-GO**.
 
-Current status: **NO-GO for public launch.** The local 38-family Math bank has owner decisions and passing deterministic checks, but the larger production bank and the real Google, Stripe, AWS, legal, manual-accessibility, restore, load, monitoring, and support gates have not been completed.
+Current status: **NO-GO for public launch.** The local 38-family Math bank has owner decisions and passing deterministic checks, but broader practice depth, independent educator sampling, and the real Google, Stripe, AWS, legal, manual-accessibility, restore, load, monitoring, and support gates have not been completed.
 
 ## Release identity and ownership
 
