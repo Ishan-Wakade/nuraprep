@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { Pool } from "pg";
 
 import reviewedMathBankJson from "../src/content/reviewed-math-bank.json";
 import { reviewedMathBankSnapshotSchema } from "../src/lib/questions/reviewed-bank-snapshot";
@@ -9,6 +10,7 @@ test.describe.configure({ mode: "serial" });
 const reviewedMathBank =
   reviewedMathBankSnapshotSchema.parse(reviewedMathBankJson);
 let diagnosticWeakSkillTitle = "";
+const graphFixtureVersionId = "26000000-0000-4000-8000-000000000001";
 
 test("completes a published topic-practice question with feedback", async ({
   page,
@@ -144,6 +146,48 @@ test("uses a responsive practice setup without horizontal overflow", async ({
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/practice");
 
+  const dimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
+});
+
+test("renders an accessible graph and exact-value fallback in learner practice", async ({
+  page,
+}) => {
+  const sessionId = await createGraphPracticeSession();
+  await page.goto(`/practice/${sessionId}?item=1`);
+
+  await expect(
+    page.getByRole("heading", { name: "Question 1 of 1" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("img", {
+      name: /Clinic appointments.*Monday has 12.*Tuesday has 18.*Wednesday has 11/i,
+    }),
+  ).toBeVisible();
+  await expect(page.locator("figure svg rect")).toHaveCount(3);
+
+  await page.getByText("View graph data as a table", { exact: true }).click();
+  const graphTable = page.locator("figure table");
+  await expect(
+    graphTable.getByRole("columnheader", { name: "Weekday" }),
+  ).toBeVisible();
+  await expect(
+    graphTable.getByRole("columnheader", { name: "Appointments" }),
+  ).toBeVisible();
+  await expect(graphTable.getByRole("cell", { name: "Monday" })).toBeVisible();
+  await expect(graphTable.getByRole("cell", { name: "12" })).toBeVisible();
+  await expectNoA11yViolations(page);
+
+  await page.getByLabel("Numeric answer").fill("30");
+  await page.getByRole("button", { name: "Check answer" }).click();
+  await expect(
+    page.getByText("Your reasoning landed on the right result."),
+  ).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
   const dimensions = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
     scrollWidth: document.documentElement.scrollWidth,
@@ -450,6 +494,70 @@ async function answerReviewedQuestion(
         exact: true,
       })
       .click();
+  }
+}
+
+async function createGraphPracticeSession() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error("DATABASE_URL is required for E2E tests.");
+  const target = new URL(databaseUrl);
+  const databaseName = decodeURIComponent(target.pathname.slice(1));
+  if (!databaseName.endsWith("_e2e")) {
+    throw new Error(
+      `Refusing to write graph fixtures outside an E2E database: ${databaseName}`,
+    );
+  }
+
+  const pool = new Pool({ connectionString: databaseUrl });
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const learner = await client.query<{ id: string }>(
+      `INSERT INTO learner_profiles (auth_subject, display_name)
+       VALUES ('development-learner', 'Development learner')
+       ON CONFLICT (auth_subject) DO UPDATE
+       SET display_name = EXCLUDED.display_name, updated_at = now()
+       RETURNING id`,
+    );
+    const learnerId = learner.rows[0]?.id;
+    if (!learnerId) throw new Error("Failed to resolve the E2E learner.");
+
+    const session = await client.query<{ id: string }>(
+      `INSERT INTO practice_sessions
+       (learner_id, mode, status, timing_mode, requested_question_count, filters)
+       VALUES ($1, 'TOPIC_PRACTICE', 'IN_PROGRESS', 'UNTIMED', 1, $2::jsonb)
+       RETURNING id`,
+      [
+        learnerId,
+        JSON.stringify({
+          questionCount: 1,
+          timingMode: "UNTIMED",
+          newOnly: false,
+          missedOnly: false,
+        }),
+      ],
+    );
+    const sessionId = session.rows[0]?.id;
+    if (!sessionId) throw new Error("Failed to create the graph session.");
+
+    await client.query(
+      `INSERT INTO practice_session_items
+       (session_id, question_version_id, position, selection_reason)
+       VALUES ($1, $2, 1, $3)`,
+      [
+        sessionId,
+        graphFixtureVersionId,
+        "Synthetic E2E-only session for graph rendering and accessibility checks.",
+      ],
+    );
+    await client.query("COMMIT");
+    return sessionId;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+    await pool.end();
   }
 }
 

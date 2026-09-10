@@ -201,6 +201,8 @@ async function publishAdditionalDiagnosticFixtures() {
       await publishPracticeTestFixtures(client, rules.rows);
     }
 
+    await seedGraphRendererFixture(client);
+
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -209,6 +211,76 @@ async function publishAdditionalDiagnosticFixtures() {
     client.release();
     await pool.end();
   }
+}
+
+async function seedGraphRendererFixture(client: PoolClient) {
+  const questionId = "25000000-0000-4000-8000-000000000001";
+  const versionId = "26000000-0000-4000-8000-000000000001";
+  const dataInterpretationSkillId = "11000000-0000-4000-8000-000000000022";
+
+  await client.query(
+    `INSERT INTO questions
+     (id, internal_slug, section, lifecycle)
+     VALUES ($1, 'e2e-graph-renderer', 'MATH', 'DRAFT')
+     ON CONFLICT (id) DO NOTHING`,
+    [questionId],
+  );
+  await client.query(
+    `INSERT INTO question_versions
+     (id, question_id, version, question_type, prompt, stimulus, answer_spec,
+      explanation, distractor_rationales, verification_spec, primary_skill_id,
+      learning_objective, difficulty, difficulty_rationale, estimated_seconds,
+      calculator_policy, common_misconceptions, authoring_mode, author_id,
+      provenance_summary)
+     VALUES
+     ($1, $2, 1, 'NUMERIC', $3, $4::jsonb, $5::jsonb, $6, '{}'::jsonb,
+      $7::jsonb, $8, $9, 'PROFICIENT', $10, 75, 'NOT_NEEDED', $11::jsonb,
+      'HUMAN', 'e2e-fixture-author', $12)
+     ON CONFLICT (id) DO NOTHING`,
+    [
+      versionId,
+      questionId,
+      "The graph shows appointments scheduled on three weekdays. How many appointments were scheduled on Monday and Tuesday in all?",
+      JSON.stringify({
+        type: "graph",
+        accessibleDescription:
+          "Bar graph titled Clinic appointments. Monday has 12 appointments, Tuesday has 18 appointments, and Wednesday has 11 appointments.",
+        data: {
+          kind: "bar",
+          title: "Clinic appointments",
+          xAxisLabel: "Weekday",
+          yAxisLabel: "Appointments",
+          bars: [
+            { label: "Monday", value: 12 },
+            { label: "Tuesday", value: 18 },
+            { label: "Wednesday", value: 11 },
+          ],
+        },
+      }),
+      JSON.stringify({
+        type: "numeric",
+        value: 30,
+        tolerance: 0,
+        toleranceMode: "absolute",
+        acceptedUnits: [],
+        unitRequired: false,
+      }),
+      "Read 12 for Monday and 18 for Tuesday, then add: 12 + 18 = 30 appointments.",
+      JSON.stringify({
+        kind: "numeric_result",
+        expression: [12, 18, "add"],
+        tolerance: 0,
+      }),
+      dataInterpretationSkillId,
+      "Read exact values from a bar graph and combine the requested categories.",
+      "This test-only item combines visual decoding with a one-step calculation; the band is not learner-calibrated.",
+      JSON.stringify([
+        "Reading the wrong category",
+        "Subtracting the category values instead of finding their total",
+      ]),
+      "Synthetic E2E-only fixture authored without external source material. It is intentionally unpublished and exists only in the disposable browser-test database.",
+    ],
+  );
 }
 
 async function publishPracticeTestFixtures(
