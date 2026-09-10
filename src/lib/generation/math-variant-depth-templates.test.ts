@@ -25,4 +25,35 @@ describe("Math depth templates", () => {
       20,
     );
   });
+
+  it.each([
+    ["math.algebra.distributive-expression-equivalence", "MULTIPLE_SELECT"],
+    ["math.word-problems.reverse-percent-change", "SINGLE_CHOICE"],
+  ] as const)(
+    "realizes all declared structures for %s",
+    (templateKey, questionType) => {
+      const template = mathVariantDepthTemplates.find(
+        (candidate) => candidate.key === templateKey,
+      );
+      expect(template).toBeDefined();
+      const batch = generateDeterministicVariantBatch({
+        template: template!,
+        batchSeed: `${templateKey}-capacity-test`,
+        requestedCount: template!.structureCapacity,
+        maxAttemptsPerItem: 100,
+      });
+
+      expect(template).toMatchObject({
+        key: templateKey,
+        questionType,
+        difficulty: "PROFICIENT",
+        structureCapacity: 20,
+      });
+      expect(batch.accepted).toHaveLength(20);
+      expect(batch.exhaustedSlots).toBe(0);
+      expect(
+        new Set(batch.accepted.map((item) => item.structureKey)).size,
+      ).toBe(20);
+    },
+  );
 });
