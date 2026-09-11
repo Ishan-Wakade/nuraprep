@@ -506,7 +506,9 @@ pnpm dev
 
 Open `http://localhost:3000`. The normal development seed reconstructs the exact 38-family reviewed Math snapshot and publishes only versions that regain deterministic release evidence. Synthetic complete-flow fixtures remain confined to the disposable E2E database.
 
-The September 11, 2026 clean-clone drill installed the frozen lockfile, migrated and seeded an isolated empty database, reconstructed and audited all 38 active publications, and passed formatting, linting, type checking, and 292 unit tests. It also found two portability defects before release: the instructions assumed an available `corepack` executable, and the otherwise self-hosted application build still fetched Google font metadata. The supported instructions now install the pinned pnpm version directly when needed, while the application uses its existing system font stacks so builds do not depend on a font host. The production build and browser suite were rerun after those corrections; the final public-launch clone drill remains intentionally open in the launch checklist.
+The September 11, 2026 clean-clone drill installed the frozen lockfile, migrated and seeded an isolated empty database, reconstructed and audited all 38 active publications, and passed formatting, linting, type checking, and the then-current 292 unit tests. It also found two portability defects before release: the instructions assumed an available `corepack` executable, and the otherwise self-hosted application build still fetched Google font metadata. The supported instructions now install the pinned pnpm version directly when needed, while the application uses its existing system font stacks so builds do not depend on a font host.
+
+The final `f746208` CI run repeated the production-shaped checks after subsequent accessibility and documentation changes: Terraform validation, migrations, database smoke tests, the exact published-bank audit, 295 unit tests, the production and Docker builds, and 62 browser tests all passed. A separate final backup drill created a complete Git bundle and PostgreSQL custom-format dump, verified both formats, restored the dump into a disposable database, and matched all 38 active publications, 464 generated versions, and 432 generated drafts before dropping only the disposable restore target. These checks establish local repository and PostgreSQL recoverability; they do not substitute for a future public-launch clone, managed-database restore, or production disaster-recovery drill.
 
 To verify the deployment-shaped image:
 
@@ -526,7 +528,7 @@ Use these as truthful story structures, not scripts to memorize. Replace “I”
 
 **Action:** Separate discovery metadata, rights decisions, human-authored coverage abstraction, internal generation, deterministic validation, human review, and publication. Default unclear sources to quarantine and prevent source question text from entering model input.
 
-**Result:** The repository can track coverage and provenance while generated or seeded candidates remain blocked until independent review. The honest limitation is that the production bank is still unapproved.
+**Result:** The repository can track coverage and provenance while generated drafts remain blocked until review. The owner has approved and published the initial 38-family local bank through the governed workflow; independent educator sampling and broader approved-bank depth remain open before public launch.
 
 **Follow-up question to expect:** Why not rely on semantic similarity alone? Explain that similarity is an imperfect rejection signal, legally retained comparison text may be limited, and human review remains necessary.
 
@@ -550,7 +552,7 @@ Use these as truthful story structures, not scripts to memorize. Replace “I”
 
 **Action:** Keep normal seed candidates draft. Build an isolated `_e2e` database that creates clearly labeled synthetic approval fixtures and refuses to reset a database without the safety suffix.
 
-**Result:** The 38-question experience is tested end to end without contaminating development or claiming a production bank.
+**Result:** The 38-question experience was tested end to end without contaminating development or prematurely claiming a production bank. Afterward, the owner reviewed the real candidates and published the exact passing versions through the normal workflow, while synthetic E2E approvals remained isolated.
 
 **Follow-up question to expect:** Why not mock the database? Explain that mocks would miss triggers, transaction behavior, query scoping, timer persistence, and publication joins.
 
