@@ -70,6 +70,15 @@ Current status: **NO-GO for public launch.** The local 38-family Math bank has o
 - [ ] Review plain language, reading load, error recovery, color independence, target sizes, and form instructions with humans.
 - [ ] Resolve or explicitly accept every launch-blocking defect with an owner and rationale.
 
+For the manual accessibility evidence, use the exact release candidate and record the date, commit, operating system, browser/version, assistive technology, reviewer, route, result, and defect link for each pass:
+
+1. Navigate the landing, sign-in, topic setup, diagnostic, adaptive setup, timed-test setup, question, results, progress, account, review queue, question-review, source, feedback, generation, and validator surfaces using only `Tab`, `Shift+Tab`, `Enter`, `Space`, arrow keys, and `Escape`. Confirm logical order, visible focus, skip-link behavior, operable controls, and no keyboard trap.
+2. Repeat representative learner and reviewer flows at 200% and 400% browser zoom. Confirm readable reflow without two-dimensional page scrolling; a deliberately scrollable data table may scroll horizontally within its labeled focusable region.
+3. Enable the operating system's reduced-motion preference. Confirm the interface remains understandable and that decorative transitions do not create necessary information or unexpected motion.
+4. Use VoiceOver with Safari on macOS and one additional supported browser/screen-reader combination available to the reviewer. Confirm page-title and route announcements, heading order, form names/instructions/errors, question choices, timers, progress state, exact table values, graph alternatives, and feedback status.
+5. Check representative phone, tablet, and desktop widths in Chromium, Firefox, and WebKit/Safari. Exercise long prompts, all four response formats, tables, graphs, validation errors, empty states, expired timing, and recovery links.
+6. File every failure with reproduction steps and severity. Re-run the affected route after correction and link the passing evidence; do not mark this gate complete from automated axe results alone.
+
 ## Operations and public presentation
 
 - [ ] Assign incident contacts and complete every drill in the incident-response runbook.

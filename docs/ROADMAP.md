@@ -108,7 +108,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [ ] Add a configured provider and production queue host, wall-clock rate controls, and calibration cases for originality thresholds.
 - [x] Add recurring-error summaries and evidence-backed, separately approved improvement proposals that never auto-mutate prompts or rubrics.
 - [x] Implement approved generation-template proposals as linked, scope-preserving draft revisions with recorded regression evidence and a separate approval gate.
-- [ ] Implement approved proposals only through reviewed version changes and regression suites.
+- [ ] Add equivalent reviewed-version and regression-suite implementation paths for approved validator, rubric, policy, and evaluation-case proposals.
 - Expand only at the rate human review and quality sampling can support.
 
 **Exit:** the deterministic pilot now moves from governed inputs through checks into the review queue without copying source content or silently publishing failures. Taxonomy-scale template coverage and both lightweight and broader QA sampling workflows are implemented; independent educator execution and observed-defect calibration remain open.
