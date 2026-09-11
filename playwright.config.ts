@@ -44,6 +44,18 @@ export default defineConfig({
       dependencies: ["setup"],
       testIgnore: /.*\.setup\.ts/,
     },
+    {
+      name: "firefox-smoke",
+      use: { ...devices["Desktop Firefox"] },
+      dependencies: ["setup"],
+      testMatch: /cross-browser\.spec\.ts/,
+    },
+    {
+      name: "webkit-smoke",
+      use: { ...devices["Desktop Safari"] },
+      dependencies: ["setup"],
+      testMatch: /cross-browser\.spec\.ts/,
+    },
   ],
   webServer: {
     command: process.env.CI

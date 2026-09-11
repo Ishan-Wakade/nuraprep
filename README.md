@@ -170,7 +170,7 @@ pnpm test:load # with the local app already running
 
 `pnpm check` runs formatting, linting, type-checking, unit tests, and the production build. `pnpm test:db` requires the local PostgreSQL container. `pnpm questions:bank:audit` fails unless the 38 active Math publications exactly match the immutable reviewed snapshot and retain genuine approval, active deterministic validator passes, governed public-outline provenance, active leaf-skill mappings, and the internal 20/18 domain blueprint. `pnpm test:e2e` derives or uses `E2E_DATABASE_URL`, refuses any database name that does not end in `_e2e`, resets only that isolated schema, and applies migrations plus seed data automatically. This keeps synthetic browser fixtures out of the development database. GitHub Actions provisions fresh PostgreSQL databases and runs the complete sequence on every pull request and `main` push.
 
-The browser suite also runs automated WCAG A/AA checks across the public, learner, account, and reviewer entry surfaces. Automated analysis is a regression gate, not a substitute for keyboard, screen-reader, zoom, reduced-motion, and human usability review.
+The browser suite runs the full transactional and automated WCAG A/AA regression coverage in Chromium, plus read-only critical-entry smoke checks in Chromium, Firefox, and WebKit. Automated analysis is a regression gate, not a substitute for keyboard, screen-reader, zoom, reduced-motion, and human usability review.
 
 The load command is a bounded local smoke test, not a benchmark claim. It refuses remote targets without an explicit opt-in and prints its workload, thresholds, status counts, throughput, and latency percentiles so results remain interpretable.
 
