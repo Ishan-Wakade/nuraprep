@@ -28,7 +28,10 @@ import {
 } from "@/db/schema";
 import { requireReviewer } from "@/lib/auth/reviewer";
 import { getServerEnvironment } from "@/lib/env/server";
-import { selectDeterministicReviewSample } from "@/lib/questions/review-sampling";
+import {
+  buildDeterministicQualitySample,
+  selectDeterministicReviewSample,
+} from "@/lib/questions/review-sampling";
 import {
   evaluatePublicationGate,
   REQUIRED_PUBLICATION_VALIDATORS,
@@ -43,7 +46,7 @@ export type ReviewQueueFilters = {
   reviewStatus?:
     "UNREVIEWED" | (typeof reviewDecisions.decision.enumValues)[number];
   validationStatus?: "HUMAN_NEEDED";
-  sampleMode?: "DETERMINISTIC_UNREVIEWED";
+  sampleMode?: "DETERMINISTIC_UNREVIEWED" | "DETERMINISTIC_QUALITY_SAMPLE";
   skillCode?: string;
 };
 
@@ -68,6 +71,7 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
       slug: questions.internalSlug,
       lifecycle: questions.lifecycle,
       prompt: questionVersions.prompt,
+      hasStimulus: sql<boolean>`${questionVersions.stimulus} IS NOT NULL`,
       questionType: questionVersions.questionType,
       difficulty: questionVersions.difficulty,
       skillCode: skills.code,
@@ -330,8 +334,13 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
         (!filters.validationStatus ||
           row.passingReviewerValidatorCount < row.reviewerValidatorCount),
     );
-  const items =
-    filters.sampleMode === "DETERMINISTIC_UNREVIEWED"
+  const qualitySample =
+    filters.sampleMode === "DETERMINISTIC_QUALITY_SAMPLE"
+      ? buildDeterministicQualitySample(filteredItems)
+      : null;
+  const items = qualitySample
+    ? qualitySample.items
+    : filters.sampleMode === "DETERMINISTIC_UNREVIEWED"
       ? selectDeterministicReviewSample(filteredItems)
       : filteredItems;
 
@@ -356,6 +365,23 @@ export async function getReviewQueue(filters: ReviewQueueFilters) {
         (row) => row.published_families === 0,
       ).length,
     },
+    samplingReport: qualitySample
+      ? {
+          populationSize: qualitySample.populationSize,
+          templateCount: qualitySample.templateCount,
+          templateAnchorCount: qualitySample.templateAnchorCount,
+          hashEligiblePopulationSize: qualitySample.hashEligiblePopulationSize,
+          detectionSampleSize: qualitySample.detectionSampleSize,
+          targetConfidence: qualitySample.targetConfidence,
+          assumedDefectRate: qualitySample.assumedDefectRate,
+          modeledDetectionProbability:
+            qualitySample.modeledDetectionProbability,
+          riskTemplateCount: qualitySample.riskTemplateCount,
+          riskSupplementCount: qualitySample.riskSupplementCount,
+          missingHashCount: qualitySample.missingHashCount,
+          riskVersionIds: qualitySample.riskVersionIds,
+        }
+      : null,
     summary: {
       total: items.length,
       unreviewed: items.filter((item) => item.latestDecision === "UNREVIEWED")

@@ -101,6 +101,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Cover every Math leaf skill with a bounded pilot template and report structural capacity, taxonomy gaps, and response-format concentration without treating capacity as approved inventory.
 - [x] Prove format-specific deterministic generation for single choice, multiple select, numeric response, ordered response, and table stimuli while keeping every candidate draft-only.
 - [x] Add stable one-per-template sampling for unreviewed deterministic drafts without implying approval of sibling variants.
+- [x] Add a reproducible coverage-plus-detection QA sample with explicit finite-population assumptions, higher-risk format supplements, and no approval inheritance.
 - [x] Add a read-only whole-pool audit that recomputes persisted contracts and duplicate signals without creating human-review evidence.
 - [x] Exceed the 1,000-structure planning target with balanced final-tranche coverage across all four response formats and all four internal difficulty levels.
 - [ ] Add a reviewed network transport and licensed-storage adapter; do not enable collection from gated or unclear-rights sources.
@@ -110,7 +111,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [ ] Implement approved proposals only through reviewed version changes and regression suites.
 - Expand only at the rate human review and quality sampling can support.
 
-**Exit:** the deterministic pilot now moves from governed inputs through checks into the review queue without copying source content or silently publishing failures. Taxonomy-scale template coverage and its sampling workflow are implemented; representative human decisions and broader statistical sampling remain open.
+**Exit:** the deterministic pilot now moves from governed inputs through checks into the review queue without copying source content or silently publishing failures. Taxonomy-scale template coverage and both lightweight and broader QA sampling workflows are implemented; independent educator execution and observed-defect calibration remain open.
 
 ## 7. Authentication and account lifecycle
 

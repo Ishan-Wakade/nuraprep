@@ -33,7 +33,8 @@ export default async function QuestionReviewPage({
   const { versionId } = await params;
   const requestedSample = single((await searchParams).sample);
   const sampleMode =
-    requestedSample === "DETERMINISTIC_UNREVIEWED"
+    requestedSample === "DETERMINISTIC_UNREVIEWED" ||
+    requestedSample === "DETERMINISTIC_QUALITY_SAMPLE"
       ? requestedSample
       : undefined;
   const [question, sampleQueue] = await Promise.all([
@@ -60,16 +61,18 @@ export default async function QuestionReviewPage({
         href={reviewQueueHref}
         className="text-sm font-semibold text-[#116b65]"
       >
-        ← Back to {sampleMode ? "representative sample" : "review queue"}
+        ← Back to {sampleMode ? "draft QA sample" : "review queue"}
       </Link>
       {sampleMode && sampleQueue && (
         <section className="mt-5 flex flex-col justify-between gap-3 rounded-2xl border border-[#b9d4cb] bg-[#eef7f3] p-4 sm:flex-row sm:items-center">
           <div>
             <p className="text-[11px] font-bold tracking-wide text-[#116b65] uppercase">
-              Representative sample
+              {sampleMode === "DETERMINISTIC_QUALITY_SAMPLE"
+                ? "Broader QA sample"
+                : "One-per-template sample"}
             </p>
             <p className="mt-1 text-sm leading-6 text-[#47615f]">
-              {sampleQueue.summary.total} deterministic template candidate
+              {sampleQueue.summary.total} sampled deterministic candidate
               {sampleQueue.summary.total === 1 ? " remains" : "s remain"}
               unreviewed. A decision applies only to this exact version.
             </p>

@@ -22,7 +22,10 @@ const reviewStatuses = [
 ] as const;
 const scopes = ["CURRENT", "HISTORY"] as const;
 const validationStatuses = ["HUMAN_NEEDED"] as const;
-const sampleModes = ["DETERMINISTIC_UNREVIEWED"] as const;
+const sampleModes = [
+  "DETERMINISTIC_UNREVIEWED",
+  "DETERMINISTIC_QUALITY_SAMPLE",
+] as const;
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -73,11 +76,13 @@ export default async function ReviewQueuePage({
         </div>
         <span className="rounded-full border border-[#c9d9d3] bg-[#e8f3ef] px-3 py-2 text-xs font-semibold text-[#116b65]">
           {queue.summary.total} visible versions ·{" "}
-          {filters.sampleMode
-            ? "one unreviewed candidate per deterministic template"
-            : filters.scope === "CURRENT"
-              ? "latest candidate per family"
-              : "full history"}
+          {filters.sampleMode === "DETERMINISTIC_QUALITY_SAMPLE"
+            ? "coverage, detection, and risk QA sample"
+            : filters.sampleMode === "DETERMINISTIC_UNREVIEWED"
+              ? "one unreviewed candidate per deterministic template"
+              : filters.scope === "CURRENT"
+                ? "latest candidate per family"
+                : "full history"}
         </span>
       </div>
 
@@ -177,15 +182,23 @@ export default async function ReviewQueuePage({
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-3xl text-xs leading-5 text-[#52676a]">
-          For scaled pilots, inspect a stable cross-template sample before
-          deciding whether a larger review batch is justified.
+          Start with one stable anchor per template, or use the broader QA queue
+          to add finite-population detection coverage and higher-risk formats.
         </p>
-        <Link
-          href="/review?sample=DETERMINISTIC_UNREVIEWED"
-          className="rounded-lg border border-[#9cbcb3] bg-[#e8f3ef] px-4 py-2 text-xs font-bold text-[#116b65]"
-        >
-          Open representative draft sample
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/review?sample=DETERMINISTIC_UNREVIEWED"
+            className="rounded-lg border border-[#9cbcb3] px-4 py-2 text-xs font-bold text-[#116b65]"
+          >
+            Open one-per-template sample
+          </Link>
+          <Link
+            href="/review?sample=DETERMINISTIC_QUALITY_SAMPLE"
+            className="rounded-lg bg-[#116b65] px-4 py-2 text-xs font-bold text-white"
+          >
+            Open broader QA sample
+          </Link>
+        </div>
       </div>
 
       <form className="mt-3 grid gap-3 rounded-2xl border border-[#d8ded9] bg-[#fffdf8] p-4 shadow-sm md:grid-cols-2 lg:grid-cols-8">
@@ -276,14 +289,54 @@ export default async function ReviewQueuePage({
             Sampling aid
           </p>
           <h2 className="mt-1 font-serif text-2xl">
-            Representative deterministic sample
+            {filters.sampleMode === "DETERMINISTIC_QUALITY_SAMPLE"
+              ? "Coverage and defect-detection sample"
+              : "One-per-template deterministic sample"}
           </h2>
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-[#47615f]">
-            This view uses each candidate&apos;s stable prompt hash to select
-            one unreviewed draft from every available deterministic template. It
-            reduces repetitive review work, but it is not statistical validation
-            and does not approve the remaining variants.
-          </p>
+          {queue.samplingReport ? (
+            <>
+              <p className="mt-2 max-w-4xl text-sm leading-6 text-[#47615f]">
+                This queue combines one anchor from every template, a stable
+                hash-ranked sample sized under a 95% confidence / 5% assumed
+                defect-rate planning model, and extra candidates from advanced,
+                table/graph, multiple-select, and ordered-response templates.
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <SummaryCard
+                  label="Eligible population"
+                  value={queue.samplingReport.populationSize}
+                />
+                <SummaryCard label="Review queue" value={queue.summary.total} />
+                <SummaryCard
+                  label="Template anchors"
+                  value={queue.samplingReport.templateAnchorCount}
+                />
+                <SummaryCard
+                  label="Detection subsample"
+                  value={queue.samplingReport.detectionSampleSize}
+                />
+              </div>
+              <p className="mt-3 max-w-4xl text-xs leading-5 text-[#52676a]">
+                Modeled detection probability:{" "}
+                {formatPercent(
+                  queue.samplingReport.modeledDetectionProbability,
+                )}
+                . This assumes non-adversarial, uniformly distributed SHA-256
+                prompt hashes and at least a 5% defect prevalence. It is a
+                planning aid—not proof that unreviewed drafts are correct, and
+                no sampled item is approved automatically. Invalid or missing
+                hashes are included directly (
+                {queue.samplingReport.missingHashCount} currently).
+              </p>
+            </>
+          ) : (
+            <p className="mt-2 max-w-4xl text-sm leading-6 text-[#47615f]">
+              This view uses each candidate&apos;s stable prompt hash to select
+              one unreviewed draft from every available deterministic template.
+              It reduces repetitive review work, but it is not statistical
+              validation and does not approve the remaining variants.
+            </p>
+          )}
         </section>
       )}
 
@@ -317,10 +370,19 @@ export default async function ReviewQueuePage({
                   {item.skillTitle} · <code>{item.slug}</code>
                 </p>
                 {filters.sampleMode && item.generationTemplateKey && (
-                  <p className="mt-2 text-xs font-semibold text-[#116b65]">
-                    Sampled from {item.generationTemplateKey} v
-                    {item.generationTemplateVersion}
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-[#116b65]">
+                    <span>
+                      Sampled from {item.generationTemplateKey} v
+                      {item.generationTemplateVersion}
+                    </span>
+                    {queue.samplingReport?.riskVersionIds.includes(
+                      item.versionId,
+                    ) && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-800">
+                        Higher-risk stratum
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-5 border-t border-[#edf0ed] pt-4 text-xs text-[#52676a] lg:border-t-0 lg:pt-0">
@@ -366,6 +428,10 @@ export default async function ReviewQueuePage({
       </section>
     </div>
   );
+}
+
+function formatPercent(value: number) {
+  return `${(value * 100).toFixed(1)}%`;
 }
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
@@ -433,6 +499,9 @@ function StatusBadge({ status }: { status: string }) {
 function formatLabel(value: string) {
   if (value === "DETERMINISTIC_UNREVIEWED") {
     return "One unreviewed per template";
+  }
+  if (value === "DETERMINISTIC_QUALITY_SAMPLE") {
+    return "Broader QA sample";
   }
   return value.toLocaleLowerCase("en-US").replaceAll("_", " ");
 }

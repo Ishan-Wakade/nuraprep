@@ -1,13 +1,25 @@
 import { describe, expect, it } from "vitest";
 
-import { selectDeterministicReviewSample } from "./review-sampling";
+import {
+  buildDeterministicQualitySample,
+  detectionProbability,
+  type DeterministicReviewSampleCandidate,
+  minimumSampleSizeForDetection,
+  selectDeterministicReviewSample,
+} from "./review-sampling";
 
-const base = {
+const base: Omit<
+  DeterministicReviewSampleCandidate,
+  "versionId" | "generationTemplateKey" | "generationPromptHash"
+> = {
   latestDecision: "UNREVIEWED",
+  difficulty: "DEVELOPING",
+  questionType: "NUMERIC",
+  hasStimulus: false,
   generationProvider: "NuraPrep",
   generationModel: "deterministic/math.example/v1",
   generationTemplateVersion: 1,
-} as const;
+};
 
 describe("deterministic review sampling", () => {
   it("selects the lowest stable prompt hash once per template", () => {
@@ -63,6 +75,85 @@ describe("deterministic review sampling", () => {
       first,
       second,
     ]);
+  });
+
+  it("builds a stable union of template, detection, and risk samples", () => {
+    const candidates = Array.from({ length: 100 }, (_, index) =>
+      candidate(
+        `version-${index}`,
+        `math.example.${index % 10}`,
+        index.toString(16).padStart(64, "0"),
+      ),
+    );
+    candidates[11] = {
+      ...candidates[11],
+      difficulty: "ADVANCED",
+      questionType: "ORDERED_RESPONSE",
+    };
+
+    const report = buildDeterministicQualitySample(candidates);
+    const reversedReport = buildDeterministicQualitySample(
+      [...candidates].reverse(),
+    );
+
+    expect(report.populationSize).toBe(100);
+    expect(report.templateCount).toBe(10);
+    expect(report.templateAnchorCount).toBe(10);
+    expect(report.detectionSampleSize).toBeGreaterThan(0);
+    expect(report.modeledDetectionProbability).toBeGreaterThanOrEqual(0.95);
+    expect(report.riskTemplateCount).toBe(1);
+    expect(report.riskSupplementCount).toBe(1);
+    expect(report.riskVersionIds).toContain("version-11");
+    expect(report.items.map((item) => item.versionId)).toEqual(
+      reversedReport.items.map((item) => item.versionId),
+    );
+    expect(
+      new Set(
+        report.items.map(
+          (item) =>
+            `${item.generationTemplateKey}@${item.generationTemplateVersion}`,
+        ),
+      ).size,
+    ).toBe(10);
+  });
+
+  it("includes invalid-hash candidates for direct inspection", () => {
+    const missingHash = candidate(
+      "missing-hash",
+      "math.example.a",
+      "not-a-hash",
+    );
+    const report = buildDeterministicQualitySample([
+      missingHash,
+      candidate("valid", "math.example.b", "a".repeat(64)),
+    ]);
+
+    expect(report.missingHashCount).toBe(1);
+    expect(report.items).toContain(missingHash);
+    expect(report.hashEligiblePopulationSize).toBe(1);
+  });
+
+  it("finds the smallest finite-population detection sample", () => {
+    const sampleSize = minimumSampleSizeForDetection({
+      populationSize: 432,
+      assumedDefectRate: 0.05,
+      targetConfidence: 0.95,
+    });
+
+    expect(
+      detectionProbability({
+        populationSize: 432,
+        sampleSize,
+        assumedDefectRate: 0.05,
+      }),
+    ).toBeGreaterThanOrEqual(0.95);
+    expect(
+      detectionProbability({
+        populationSize: 432,
+        sampleSize: sampleSize - 1,
+        assumedDefectRate: 0.05,
+      }),
+    ).toBeLessThan(0.95);
   });
 });
 
