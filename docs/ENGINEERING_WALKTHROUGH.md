@@ -485,7 +485,7 @@ Definition of done: learner isolation, reviewer denial, token exclusion, revocat
 ```bash
 git clone https://github.com/Ishan-Wakade/nuraprep.git
 cd nuraprep
-corepack enable
+npm install --global pnpm@11.19.0 # skip when pnpm --version already reports 11.19.0
 pnpm install --frozen-lockfile
 cp .env.example .env.local
 docker compose up -d postgres
@@ -493,11 +493,14 @@ pnpm db:migrate
 pnpm db:seed
 pnpm check
 pnpm test:db
+pnpm questions:bank:audit
 pnpm test:e2e
 pnpm dev
 ```
 
-Open `http://localhost:3000`. The normal development seed intentionally has no learner-safe publication, so use the reviewer workflow to approve content or rely on the isolated E2E setup for disposable complete-flow fixtures.
+Open `http://localhost:3000`. The normal development seed reconstructs the exact 38-family reviewed Math snapshot and publishes only versions that regain deterministic release evidence. Synthetic complete-flow fixtures remain confined to the disposable E2E database.
+
+The September 11, 2026 clean-clone drill installed the frozen lockfile, migrated and seeded an isolated empty database, reconstructed and audited all 38 active publications, and passed formatting, linting, type checking, and 292 unit tests. It also found two portability defects before release: the instructions assumed an available `corepack` executable, and the otherwise self-hosted application build still fetched Google font metadata. The supported instructions now install the pinned pnpm version directly when needed, while the application uses its existing system font stacks so builds do not depend on a font host. The production build and browser suite were rerun after those corrections; the final public-launch clone drill remains intentionally open in the launch checklist.
 
 To verify the deployment-shaped image:
 

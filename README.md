@@ -134,7 +134,7 @@ Requirements:
 ```bash
 git clone https://github.com/Ishan-Wakade/nuraprep.git
 cd nuraprep
-corepack enable
+npm install --global pnpm@11.19.0 # skip when pnpm --version already reports 11.19.0
 pnpm install --frozen-lockfile
 cp .env.example .env.local
 docker compose up -d postgres
@@ -144,6 +144,8 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). The account entry point is [http://localhost:3000/sign-in](http://localhost:3000/sign-in), account data and portable export are at [http://localhost:3000/account](http://localhost:3000/account), and local topic practice is at [http://localhost:3000/practice](http://localhost:3000/practice); diagnostic, adaptive, and timed-test entry points are nested beneath it. The owner review queue is at [http://localhost:3000/review](http://localhost:3000/review), with a one-per-template deterministic draft sample linked from that page, source governance at `/review/sources`, and generation controls at `/review/generation`. Optional development identities are rejected whenever `APP_ENV=production`; Google sign-in is shown only when both provider credentials are configured.
+
+The application uses system font stacks and does not download fonts during builds or page loads. This keeps fresh-clone and container builds independent of a third-party font host while avoiding an additional runtime privacy boundary.
 
 To exercise the production-style image locally instead, run `docker compose --profile application up --build`. This starts PostgreSQL, runs migrations once, and serves a non-root standalone Next.js container. See [Deployment and container operations](docs/DEPLOYMENT.md) for port overrides, health checks, runtime configuration, and the unprovisioned AWS plan.
 
