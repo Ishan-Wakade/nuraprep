@@ -43,7 +43,7 @@ The interface shown is a product-direction preview. The example readiness state 
 
 ![NuraPrep diagnostic results with conservative skill signals and a personalized starting point](public/screenshots/diagnostic-results.png)
 
-These screens are backed by the local PostgreSQL practice flow. The diagnostic samples one current published item per available skill and labels every result as preliminary; it does not infer mastery from one answer. A learner can also report an answered item, and the owner can append an auditable triage decision against that exact question version and attempt. The owner workspace searches learner and reviewer evidence together and summarizes recurring categories or stable issue codes without erasing source attribution. The screenshots predate the owner's publication pass and may show disposable browser-test fixtures; the current local database uses the genuine owner-approved bank.
+These screens are backed by the local PostgreSQL practice flow. The topic-practice preview reflects the current 38-family owner-published local bank; the other captures illustrate persisted learner flows from earlier development sessions. The diagnostic samples one current published item per available skill and labels every result as preliminary; it does not infer mastery from one answer. A learner can also report an answered item, and the owner can append an auditable triage decision against that exact question version and attempt. The owner workspace searches learner and reviewer evidence together and summarizes recurring categories or stable issue codes without erasing source attribution.
 
 ![NuraPrep session summary separating practice accuracy from official or validated scores](public/screenshots/session-summary.png)
 
