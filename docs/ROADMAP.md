@@ -154,6 +154,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Add a safe local load-smoke harness, incident-response runbook, and evidence-based launch checklist.
 - [x] Add an automated WCAG A/AA regression gate for public, learner, account, and reviewer entry surfaces.
 - [x] Add read-only critical-entry smoke coverage for Chromium, Firefox, and WebKit while keeping shared-database mutation flows serialized in one browser project.
+- [x] Add cross-browser 320-CSS-pixel overflow coverage plus automated skip-link and reduced-motion contract checks.
 - [x] Add and exercise a baseline Content Security Policy without sacrificing static rendering; retain strict nonce/integrity evaluation as a staging decision.
 - Complete manual keyboard, screen-reader, zoom, reduced-motion, and assistive-technology review before launch.
 

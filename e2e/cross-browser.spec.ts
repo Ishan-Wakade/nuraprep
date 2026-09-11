@@ -22,3 +22,22 @@ test("renders critical entry points without horizontal overflow", async ({
     expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
   }
 });
+
+test("keeps critical entry points within a 320 CSS-pixel viewport", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+
+  for (const entryPoint of entryPoints) {
+    await page.goto(entryPoint.path);
+    await expect(
+      page.getByRole("heading", { name: entryPoint.heading }),
+    ).toBeVisible();
+
+    const dimensions = await page.evaluate(() => ({
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
+  }
+});
