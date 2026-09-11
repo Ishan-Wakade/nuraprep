@@ -6,6 +6,8 @@ NuraPrep has a verified application image and a local Compose topology. No AWS r
 
 The container uses Next.js 16 standalone output so the runtime image contains traced production dependencies rather than the full source tree and development toolchain. It runs as the unprivileged `nextjs` user and reports only `ok` or `unavailable` from `/api/health`; database errors and connection details are never returned.
 
+The Docker build context excludes generated Next.js/test output, dependency folders, local backups, Terraform provider caches, and Terraform state. The small infrastructure source files and provider lockfile remain available to CI, but machine-local provider binaries and potentially sensitive state never enter an application build context.
+
 ## Local workflows
 
 For the fastest edit-refresh loop, run only PostgreSQL in Docker and Next.js on the host:
