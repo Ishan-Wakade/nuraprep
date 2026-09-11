@@ -50,7 +50,7 @@ Run the honest capacity and gap report with:
 pnpm questions:variants:capacity -- --target=1000
 ```
 
-The target is a planning input, not an official requirement. The report compares current and published families with registered template capacity, uncovered leaf skills, and capacity by response format. Capacity is an upper bound; it is never labeled as accepted, reviewed, or published inventory.
+The target is a planning input, not an official requirement. The report compares current and published families with registered template capacity, uncovered leaf skills, and capacity by response format and internal difficulty. The reviewer generation console exposes the same difficulty bands alongside live staged-draft counts so sparse Foundational or Advanced coverage is visible before another batch is staged. Capacity is an upper bound; it is never labeled as accepted, reviewed, or published inventory.
 
 ### Representative review sampling
 

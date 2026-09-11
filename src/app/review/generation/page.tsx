@@ -108,6 +108,39 @@ export default async function GenerationConsolePage() {
             note="Unreviewed and not learner-visible"
           />
         </div>
+        <div className="mt-3 overflow-x-auto rounded-xl border border-[#d8ded9] bg-white">
+          <table
+            className="w-full min-w-[520px] border-collapse text-left text-xs"
+            aria-label="Deterministic capacity by internal difficulty"
+          >
+            <thead className="bg-[#edf3ef] text-[#385b59]">
+              <tr>
+                <th className="px-4 py-3 font-bold">Internal difficulty</th>
+                <th className="px-4 py-3 text-right font-bold">
+                  Structure ceiling
+                </th>
+                <th className="px-4 py-3 text-right font-bold">
+                  Staged drafts
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {consoleData.deterministicExpansion.byDifficulty.map((band) => (
+                <tr key={band.difficulty} className="border-t border-[#e0e5e1]">
+                  <th className="px-4 py-3 font-semibold">
+                    {titleCase(band.difficulty)}
+                  </th>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {band.declaredStructureCapacity}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {band.stagedDraftCount}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="mt-7 grid gap-4 lg:grid-cols-2">
@@ -296,4 +329,8 @@ function formatDollars(micros: number) {
     minimumFractionDigits: 4,
     maximumFractionDigits: 4,
   }).format(micros / 1_000_000);
+}
+
+function titleCase(value: string) {
+  return value.charAt(0) + value.slice(1).toLocaleLowerCase("en-US");
 }

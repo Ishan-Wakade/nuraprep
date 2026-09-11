@@ -320,6 +320,28 @@ export async function getGenerationConsole() {
       ? total + (draftCountByTemplate.get(template.id) ?? 0)
       : total;
   }, 0);
+  const difficultyBands = [
+    "FOUNDATIONAL",
+    "DEVELOPING",
+    "PROFICIENT",
+    "ADVANCED",
+  ] as const;
+  const deterministicDifficultyBreakdown = difficultyBands.map(
+    (difficulty) => ({
+      difficulty,
+      declaredStructureCapacity: mathDeterministicVariantTemplates
+        .filter((template) => template.difficulty === difficulty)
+        .reduce((total, template) => total + template.structureCapacity, 0),
+      stagedDraftCount: templates.reduce((total, template) => {
+        const deterministic = deterministicTemplateByKey.get(
+          `${template.templateKey}@${template.version}`,
+        );
+        return deterministic?.difficulty === difficulty
+          ? total + (draftCountByTemplate.get(template.id) ?? 0)
+          : total;
+      }, 0),
+    }),
+  );
 
   return {
     templates: templates.map((template) => ({
@@ -357,6 +379,7 @@ export async function getGenerationConsole() {
         0,
       ),
       stagedDraftCount: stagedDeterministicDrafts,
+      byDifficulty: deterministicDifficultyBreakdown,
     },
   };
 }

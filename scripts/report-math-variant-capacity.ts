@@ -86,6 +86,16 @@ async function main() {
         ],
       ),
     );
+    const capacityByDifficulty = Object.fromEntries(
+      ["FOUNDATIONAL", "DEVELOPING", "PROFICIENT", "ADVANCED"].map(
+        (difficulty) => [
+          difficulty,
+          mathDeterministicVariantTemplates
+            .filter((template) => template.difficulty === difficulty)
+            .reduce((sum, template) => sum + template.structureCapacity, 0),
+        ],
+      ),
+    );
     process.stdout.write(
       `${JSON.stringify(
         {
@@ -110,6 +120,7 @@ async function main() {
               target - declaredStructureCapacity,
             ),
             capacityByQuestionType,
+            capacityByDifficulty,
             uncoveredLeafSkills: rows
               .filter((row) => row.registeredTemplates === 0)
               .map((row) => row.code),
