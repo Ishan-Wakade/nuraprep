@@ -150,6 +150,7 @@ export function auditDeterministicDrafts(input: {
     validDocuments.push({
       id: record.versionId,
       prompt: content.content.prompt,
+      stimulus: content.content.stimulus,
       choices: content.content.choices,
     });
   }

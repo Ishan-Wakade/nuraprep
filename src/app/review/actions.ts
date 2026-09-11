@@ -83,6 +83,7 @@ export async function runDeterministicValidation(
     .select({
       id: questionVersions.id,
       prompt: questionVersions.prompt,
+      stimulus: questionVersions.stimulus,
       choices: questionVersions.choices,
     })
     .from(questionVersions)
@@ -91,6 +92,7 @@ export async function runDeterministicValidation(
     {
       id: version.id,
       prompt: version.prompt,
+      stimulus: version.stimulus,
       choices: version.choices,
     },
     comparisonVersions,

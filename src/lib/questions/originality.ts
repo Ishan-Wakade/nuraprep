@@ -1,6 +1,9 @@
+import type { QuestionStimulus } from "./contracts";
+
 export type OriginalityDocument = {
   id: string;
   prompt: string;
+  stimulus?: QuestionStimulus | null;
   choices?: { content: string }[] | null;
 };
 
@@ -71,7 +74,28 @@ export function findInternalSimilaritySignals(
 function documentText(document: OriginalityDocument) {
   return [
     document.prompt,
+    stimulusText(document.stimulus),
     ...(document.choices?.map((choice) => choice.content) ?? []),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function stimulusText(stimulus: QuestionStimulus | null | undefined) {
+  if (!stimulus) return "";
+  if (stimulus.type === "table") {
+    return [
+      stimulus.caption,
+      ...stimulus.columns,
+      ...stimulus.rows.flat(),
+    ].join(" ");
+  }
+  return [
+    stimulus.accessibleDescription,
+    stimulus.data.title,
+    stimulus.data.xAxisLabel,
+    stimulus.data.yAxisLabel,
+    ...stimulus.data.bars.flatMap((bar) => [bar.label, String(bar.value)]),
   ].join(" ");
 }
 

@@ -73,6 +73,7 @@ async function main() {
         ...batch.accepted.map((item): OriginalityDocument => ({
           id: `${batch.batchId}:${item.contentHash}`,
           prompt: item.candidate.content.prompt,
+          stimulus: item.candidate.content.stimulus,
           choices: item.candidate.content.choices,
         })),
       );

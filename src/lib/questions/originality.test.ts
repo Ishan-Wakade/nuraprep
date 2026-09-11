@@ -69,4 +69,40 @@ describe("internal originality signals", () => {
       ),
     ).toEqual([]);
   });
+
+  it("includes structured table content when comparing otherwise identical prompts", () => {
+    const signals = findInternalSimilaritySignals(
+      {
+        id: "candidate",
+        prompt: "Use the table to find the requested value.",
+        stimulus: {
+          type: "table",
+          caption: "Books finished by reading-club members",
+          columns: ["Books", "Readers"],
+          rows: [
+            ["2", "3"],
+            ["4", "5"],
+          ],
+        },
+      },
+      [
+        {
+          id: "existing",
+          prompt: "Use the table to find the requested value.",
+          stimulus: {
+            type: "table",
+            caption: "Calls handled across service-desk shifts",
+            columns: ["Calls", "Shifts"],
+            rows: [
+              ["12", "1"],
+              ["19", "6"],
+            ],
+          },
+        },
+      ],
+    );
+
+    expect(signals.some((signal) => signal.exactTextMatch)).toBe(false);
+    expect(signals.some((signal) => signal.numberInvariantMatch)).toBe(false);
+  });
 });

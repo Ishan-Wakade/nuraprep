@@ -362,6 +362,7 @@ function toOriginalityDocument(
   return {
     id,
     prompt: content.prompt,
+    stimulus: content.stimulus,
     choices: content.choices,
   };
 }

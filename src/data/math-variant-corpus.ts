@@ -13,9 +13,10 @@ export async function loadCurrentMathCorpus(
   const result = await database.query<{
     id: string;
     prompt: string;
+    stimulus: OriginalityDocument["stimulus"];
     choices: { content: string }[] | null;
   }>(
-    `SELECT version.id, version.prompt, version.choices
+    `SELECT version.id, version.prompt, version.stimulus, version.choices
        FROM question_versions AS version
        INNER JOIN questions AS question ON question.id = version.question_id
       WHERE question.section = 'MATH'

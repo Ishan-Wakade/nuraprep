@@ -2,6 +2,7 @@ import { config } from "dotenv";
 import { Pool } from "pg";
 
 import { auditDeterministicDrafts } from "@/lib/generation/deterministic-draft-audit";
+import type { OriginalityDocument } from "@/lib/questions/originality";
 
 config({ path: ".env.local", quiet: true });
 
@@ -45,6 +46,7 @@ async function main() {
       pool.query<{
         id: string;
         prompt: string;
+        stimulus: OriginalityDocument["stimulus"];
         choices: { content: string }[] | null;
       }>(corpusQuery),
     ]);
@@ -156,7 +158,7 @@ const auditQuery = `
    ORDER BY template.template_key, template.version, generation.prompt_hash`;
 
 const corpusQuery = `
-  SELECT version.id, version.prompt, version.choices
+  SELECT version.id, version.prompt, version.stimulus, version.choices
     FROM question_versions version
     INNER JOIN questions question ON question.id = version.question_id
    WHERE question.section = 'MATH'
