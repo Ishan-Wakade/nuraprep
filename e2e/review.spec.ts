@@ -469,7 +469,7 @@ test("approves a template and deduplicates regeneration requests", async ({
     page.getByRole("heading", { name: "Deterministic draft capacity" }),
   ).toBeVisible();
   await expect(page.getByText("Declared structure ceiling")).toBeVisible();
-  await expect(page.getByText("608", { exact: true })).toBeVisible();
+  await expect(page.getByText("688", { exact: true })).toBeVisible();
   await expect(
     page.getByText(/pre-rejection engineering ceiling/i),
   ).toBeVisible();
