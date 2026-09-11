@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ReadinessTrend } from "@/components/readiness-trend";
 import { getScoreDashboardData } from "@/data/score";
 
 import {
@@ -205,24 +206,7 @@ function EstimateView({
         </p>
       </section>
 
-      {data.history.length > 1 && (
-        <section className="mt-6 rounded-2xl border border-[#d6ddd7] bg-[#fffdf8] p-6 shadow-sm">
-          <h2 className="font-serif text-2xl">Estimate history</h2>
-          <ul className="mt-4 space-y-3 text-sm">
-            {data.history.map((item) => (
-              <li key={item.id}>
-                <Link
-                  href={`/practice/progress?estimate=${item.id}`}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d9e0da] p-4 hover:border-[#85afa6]"
-                >
-                  <span>{formatDate(item.createdAt)}</span>
-                  <strong>{formatBasisPoints(item.estimateBasisPoints)}</strong>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <ReadinessTrend history={data.history} selectedEstimateId={estimate.id} />
     </>
   );
 }

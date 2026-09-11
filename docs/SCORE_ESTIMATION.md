@@ -41,6 +41,8 @@ Evidence labels are deterministic:
 
 Every generated estimate is an append-only database record containing the model version, point estimate, interval, evidence level, exact feature snapshot, and caveats. Refreshing creates a new record rather than rewriting history.
 
+The progress page plots up to ten saved snapshots on a fixed 0–100% scale, including each snapshot's internal uncertainty range. The chart remains a server-rendered presentation of versioned estimates rather than a new prediction model. Its caption explicitly rejects official-score and learning-gain interpretations, and an exact semantic table preserves dates, estimates, intervals, evidence levels, evidence counts, and navigation for learners who cannot or do not want to read the graphic.
+
 `study-plan-v1` orders up to three skills by the weakest difficulty-adjusted estimate, breaking ties with evidence need. The initial weekly allocation is 90, 60, and 30 minutes. Learners can edit status, per-skill minutes, total weekly budget, and personal notes. Study-plan edits do not alter the estimate that produced the plan.
 
 ## Outcome consent and calibration protocol

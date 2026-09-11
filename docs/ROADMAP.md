@@ -75,6 +75,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 
 - [x] Implement a calibration-ready accuracy baseline with topic/difficulty inputs, timed context, evidence thresholds, and uncertainty intervals.
 - [x] Explain estimate limits in plain language and generate an editable study plan.
+- [x] Visualize versioned readiness history on a fixed scale with uncertainty ranges and an exact accessible table.
 - [x] Define outcome-consent, calibration, MAE, interval coverage, and threshold evaluation protocols.
 
 **Exit:** estimates are reproducible, versioned, uncertainty-aware, and never represented as official ATI scores. External predictive validation remains explicitly open until consented learner outcomes exist.

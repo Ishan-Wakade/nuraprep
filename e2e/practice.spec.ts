@@ -423,8 +423,19 @@ test("creates a versioned readiness estimate and edits its study plan", async ({
 
   await page.getByRole("button", { name: "Refresh estimate" }).click();
   await expect(
-    page.getByRole("heading", { name: "Estimate history" }),
+    page.getByRole("heading", { name: "Readiness trend" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("img", {
+      name: /2 saved NuraPrep Math readiness estimates/i,
+    }),
+  ).toBeVisible();
+  await page.getByText("View exact estimate history").click();
+  const estimateHistory = page.getByRole("table", {
+    name: "Exact readiness estimate history",
+  });
+  await expect(estimateHistory).toBeVisible();
+  await expect(estimateHistory.getByRole("row")).toHaveCount(3);
 
   await page.setViewportSize({ width: 390, height: 844 });
   const dimensions = await page.evaluate(() => ({
