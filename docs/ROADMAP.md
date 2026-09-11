@@ -35,6 +35,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Fill the internal 20/18 domain blueprint with 38 distinct draft families and complete tutor guidance while preserving all review gates.
 - [x] Surface per-leaf candidate, current-publication, and learner-safe format coverage in the reviewer queue.
 - [x] Preserve the exact 38-family owner-reviewed bank in a typed source-controlled snapshot and reconstruct it idempotently in a fresh development seed.
+- [x] Add a CI-enforced release-bank drift audit for snapshot identity, genuine decisions, deterministic validators, governed provenance, skill mapping, and internal blueprint coverage.
 - [ ] Obtain independent owner/educator review before treating the engineering-draft gold set as benchmark truth.
 
 **Exit:** a reviewer can trace, validate, revise, compare, and approve a question; learner APIs cannot read drafts. Publication requires provenance, an explicit owner approval, and passing deterministic answer-contract and mathematical-correctness checks. More granular reviewer evidence remains available as optional QA.

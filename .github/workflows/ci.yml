@@ -94,6 +94,9 @@ jobs:
       - name: Seed development review fixtures
         run: pnpm db:seed
 
+      - name: Audit published Math bank
+        run: pnpm questions:bank:audit
+
       - name: Run unit tests
         run: pnpm test
 

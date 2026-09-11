@@ -113,6 +113,8 @@ The exact 38-family owner-reviewed Math bank is preserved in `src/content/review
 
 The seed process validates the entire artifact against typed question, misconception, tutor, source, and decision contracts. It recomputes content and mathematical checks, inserts deterministic snapshot evidence, restores the genuine owner decision, and publishes only after the database gate can verify the exact version. A fresh-database test confirmed 38 active, approved, source-linked, deterministic-ready publications, and repeated seeding produced no duplicates.
 
+`pnpm questions:bank:audit` is the release-bank drift gate. It compares every active Math publication ID with the checked-in immutable snapshot, rejects synthetic publications, verifies active leaf-skill and internal 20/18 domain mapping, requires a latest genuine approval with useful notes, requires current non-synthetic passes under the active answer and mathematical rules, and checks that every source link is the governed public ATI outline with metadata/coverage-only permissions and no quotation, storage, model-input, object-storage, or takedown exception. The command emits counts and caveats as JSON, writes nothing, and exits unsuccessfully on any finding. It runs after fresh seeding in CI. Passing is engineering evidence, not independent educational review or a legal opinion.
+
 This is a reproducible development-data snapshot, not a substitute for the append-only operational history. Original intermediate versions, superseded decisions, audit events, and timestamps remain in the verified PostgreSQL backup. Regenerating the snapshot after future review requires inspecting the diff and rerunning every quality gate before commit.
 
 ## Synthetic-fixture containment
