@@ -101,6 +101,7 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 - [x] Prove format-specific deterministic generation for single choice, multiple select, numeric response, ordered response, and table stimuli while keeping every candidate draft-only.
 - [x] Add stable one-per-template sampling for unreviewed deterministic drafts without implying approval of sibling variants.
 - [x] Add a read-only whole-pool audit that recomputes persisted contracts and duplicate signals without creating human-review evidence.
+- [x] Exceed the 1,000-structure planning target with balanced final-tranche coverage across all four response formats and all four internal difficulty levels.
 - [ ] Add a reviewed network transport and licensed-storage adapter; do not enable collection from gated or unclear-rights sources.
 - [ ] Add a configured provider and production queue host, wall-clock rate controls, and calibration cases for originality thresholds.
 - [x] Add recurring-error summaries and evidence-backed, separately approved improvement proposals that never auto-mutate prompts or rubrics.

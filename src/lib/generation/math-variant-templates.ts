@@ -9,6 +9,7 @@ import { mathVariantCalibrationTemplates } from "./math-variant-calibration-temp
 import { mathVariantDepthTemplates } from "./math-variant-depth-templates";
 import { mathVariantExpansionTemplates } from "./math-variant-expansion-templates";
 import { mathVariantOutlineDepthTemplates } from "./math-variant-outline-depth-templates";
+import { mathVariantTargetDepthTemplates } from "./math-variant-target-depth-templates";
 import { mathVariantVisualTemplates } from "./math-variant-visual-templates";
 import type {
   QuestionStimulus,
@@ -1376,6 +1377,7 @@ export const mathDeterministicVariantTemplates: readonly DeterministicVariantTem
     ...mathVariantCalibrationTemplates,
     ...mathVariantOutlineDepthTemplates,
     ...mathVariantAlgebraDepthTemplates,
+    ...mathVariantTargetDepthTemplates,
   ];
 
 export function getMathDeterministicVariantTemplate(key: string) {
