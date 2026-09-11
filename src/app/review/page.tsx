@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getReviewQueue, type ReviewQueueFilters } from "@/data/reviewer";
+
+export const metadata: Metadata = {
+  title: "Question queue",
+};
 
 const difficulties = [
   "FOUNDATIONAL",
@@ -129,7 +134,12 @@ export default async function ReviewQueuePage({
           not an official per-skill allocation. Candidate counts include drafts;
           only current publications are learner-safe.
         </p>
-        <div className="mt-3 overflow-x-auto rounded-2xl border border-[#d8ded9] bg-white">
+        <div
+          role="region"
+          aria-label="Scrollable Math question-bank coverage"
+          tabIndex={0}
+          className="mt-3 overflow-x-auto rounded-2xl border border-[#d8ded9] bg-white"
+        >
           <table className="w-full min-w-[760px] border-collapse text-left text-xs">
             <thead className="bg-[#edf3ef] text-[#385b59]">
               <tr>

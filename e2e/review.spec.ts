@@ -106,6 +106,7 @@ test("filters the review queue and opens full provenance", async ({ page }) => {
   ).toBeVisible();
 
   await page.goto(`/review/questions/${firstVersionId}`);
+  await expect(page).toHaveTitle("Review question | NuraPrep");
   await expect(
     page.getByRole("heading", { name: "Review question version" }),
   ).toBeVisible();

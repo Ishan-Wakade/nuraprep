@@ -6,7 +6,10 @@ import { SignOutButton } from "@/app/sign-out-button";
 import { requireReviewer } from "@/lib/auth/reviewer";
 
 export const metadata: Metadata = {
-  title: "Question review",
+  title: {
+    default: "Question review",
+    template: "%s | NuraPrep",
+  },
   robots: { index: false, follow: false },
 };
 

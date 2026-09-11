@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ReadinessTrend } from "@/components/readiness-trend";
@@ -8,6 +9,10 @@ import {
   StudyPlanItemForm,
   StudyPlanPreferencesForm,
 } from "./score-controls";
+
+export const metadata: Metadata = {
+  title: "Progress and study plan",
+};
 
 export default async function ProgressPage({
   searchParams,

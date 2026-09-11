@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getGenerationConsole } from "@/data/content-governance";
@@ -6,6 +7,10 @@ import {
   GenerationCancellationForm,
   TemplateApprovalForm,
 } from "./generation-forms";
+
+export const metadata: Metadata = {
+  title: "Generation operations",
+};
 
 export default async function GenerationConsolePage() {
   const consoleData = await getGenerationConsole();
@@ -108,7 +113,12 @@ export default async function GenerationConsolePage() {
             note="Unreviewed and not learner-visible"
           />
         </div>
-        <div className="mt-3 overflow-x-auto rounded-xl border border-[#d8ded9] bg-white">
+        <div
+          role="region"
+          aria-label="Scrollable deterministic capacity by difficulty"
+          tabIndex={0}
+          className="mt-3 overflow-x-auto rounded-xl border border-[#d8ded9] bg-white"
+        >
           <table
             className="w-full min-w-[520px] border-collapse text-left text-xs"
             aria-label="Deterministic capacity by internal difficulty"
@@ -207,7 +217,12 @@ export default async function GenerationConsolePage() {
 
       <section className="mt-9">
         <h2 className="font-serif text-2xl">Recent requests</h2>
-        <div className="mt-4 overflow-x-auto rounded-2xl border border-[#d8ded9] bg-white">
+        <div
+          role="region"
+          aria-label="Scrollable recent generation requests"
+          tabIndex={0}
+          className="mt-4 overflow-x-auto rounded-2xl border border-[#d8ded9] bg-white"
+        >
           <table className="w-full min-w-[1050px] border-collapse text-left text-xs">
             <thead className="bg-[#edf3ef] text-[#385b59]">
               <tr>

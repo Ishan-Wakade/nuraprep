@@ -3,25 +3,38 @@ import { expect, test } from "@playwright/test";
 import { expectNoA11yViolations } from "./accessibility";
 
 const entrySurfaces = [
-  ["landing page", "/"],
-  ["sign-in", "/sign-in"],
-  ["practice home", "/practice"],
-  ["diagnostic setup", "/practice/diagnostic"],
-  ["adaptive setup", "/practice/adaptive"],
-  ["timed-test setup", "/practice/test"],
-  ["progress", "/practice/progress"],
-  ["account", "/account"],
-  ["review queue", "/review"],
-  ["not-found recovery", "/this-route-does-not-exist"],
+  ["landing page", "/", "NuraPrep | Thoughtful TEAS Math Practice"],
+  ["sign-in", "/sign-in", "Sign in | NuraPrep"],
+  ["practice home", "/practice", "Topic practice | NuraPrep"],
+  ["diagnostic setup", "/practice/diagnostic", "Math diagnostic | NuraPrep"],
+  ["adaptive setup", "/practice/adaptive", "Adaptive Math practice | NuraPrep"],
+  ["timed-test setup", "/practice/test", "Timed Math simulation | NuraPrep"],
+  ["progress", "/practice/progress", "Progress and study plan | NuraPrep"],
+  ["account", "/account", "Account and data | NuraPrep"],
+  ["review queue", "/review", "Question queue | NuraPrep"],
+  ["feedback patterns", "/review/feedback", "Feedback patterns | NuraPrep"],
+  ["source register", "/review/sources", "Source register | NuraPrep"],
+  [
+    "generation operations",
+    "/review/generation",
+    "Generation operations | NuraPrep",
+  ],
+  ["validator rules", "/review/validators", "Validator rules | NuraPrep"],
+  [
+    "not-found recovery",
+    "/this-route-does-not-exist",
+    "Page not found | NuraPrep",
+  ],
 ] as const;
 
 test.describe("automated accessibility gate", () => {
-  for (const [name, path] of entrySurfaces) {
+  for (const [name, path, title] of entrySurfaces) {
     test(`${name} has no detectable WCAG A or AA violations`, async ({
       page,
     }) => {
       await page.goto(path);
       await expect(page.locator("main")).toBeVisible();
+      await expect(page).toHaveTitle(title);
 
       await expectNoA11yViolations(page);
     });

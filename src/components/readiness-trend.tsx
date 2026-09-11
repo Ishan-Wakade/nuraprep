@@ -165,7 +165,12 @@ export function ReadinessTrend({
         <summary className="cursor-pointer text-sm font-bold text-[#116b65]">
           View exact estimate history
         </summary>
-        <div className="mt-4 overflow-x-auto">
+        <div
+          role="region"
+          aria-label="Scrollable readiness estimate history"
+          tabIndex={0}
+          className="mt-4 overflow-x-auto"
+        >
           <table
             className="w-full min-w-[620px] border-collapse text-left text-sm"
             aria-label="Exact readiness estimate history"

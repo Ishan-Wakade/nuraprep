@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
@@ -22,6 +23,10 @@ import {
   RevisionForm,
 } from "./review-forms";
 import { LearnerSandbox } from "./learner-sandbox";
+
+export const metadata: Metadata = {
+  title: "Review question",
+};
 
 export default async function QuestionReviewPage({
   params,

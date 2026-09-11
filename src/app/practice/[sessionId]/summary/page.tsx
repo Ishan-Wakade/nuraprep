@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getPracticeSessionSummary } from "@/data/practice";
+
+export const metadata: Metadata = {
+  title: "Practice results",
+};
 
 export default async function PracticeSummaryPage({
   params,

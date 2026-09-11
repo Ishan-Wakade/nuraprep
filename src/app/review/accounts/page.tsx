@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
+
 import { listPrivilegedAccounts } from "@/data/account-administration";
 import { requireAdmin } from "@/lib/auth/reviewer";
 
 import { AssistedErasureForm } from "./assisted-erasure-form";
+
+export const metadata: Metadata = {
+  title: "Account privacy",
+};
 
 export default async function AccountPrivacyPage() {
   const [admin, accounts] = await Promise.all([

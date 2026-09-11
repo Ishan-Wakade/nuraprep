@@ -1,11 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { SignOutButton } from "@/app/sign-out-button";
 import { requireLearner } from "@/lib/auth/learner";
 
-export const metadata = {
-  title: "Math practice | NuraPrep",
+export const metadata: Metadata = {
+  title: {
+    default: "Math practice",
+    template: "%s | NuraPrep",
+  },
   robots: { index: false, follow: false },
 };
 

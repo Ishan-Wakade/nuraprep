@@ -396,6 +396,12 @@ The public-clone browser drill exposed a flaky account-erasure assertion. The le
 
 The check was narrowed to the ordinary-erasure receipt version, then the complete suite passed twice from fresh E2E resets. The receipt remains non-identifying rather than adding a user ID merely to simplify a test.
 
+### Shared browser-test mutation
+
+The browser suite originally allowed separate test files to run at the same time against one disposable PostgreSQL database. Individual workflows were serial within their files, but a learner answer save and reviewer mutation could still overlap across files. A final expanded accessibility run made that hidden contention visible as an indefinitely pending save and a reviewer form reaching its timeout; both workflows passed immediately when run alone.
+
+The suite now uses one worker. Read-only cross-browser checks still cover Chromium, Firefox, and WebKit, while stateful flows trade a small amount of CI time for deterministic fixture ordering. This does not claim the production application cannot handle concurrency; concurrency is tested at transaction and database-boundary levels, while the end-to-end suite owns a single shared fixture state and should not race itself.
+
 Lesson: concurrent integration tests must isolate evidence without weakening the production privacy model.
 
 ## 16. Rebuilding NuraPrep from scratch

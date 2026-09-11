@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { getSourceRegistry } from "@/data/content-governance";
 
 import {
@@ -5,6 +7,10 @@ import {
   SourcePolicyRecheckForm,
   SourceRegistrationForm,
 } from "./source-forms";
+
+export const metadata: Metadata = {
+  title: "Source register",
+};
 
 const sourceDateFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",

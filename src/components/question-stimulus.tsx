@@ -23,7 +23,12 @@ export function QuestionStimulus({
   }
 
   return (
-    <div className="mt-5 overflow-x-auto">
+    <div
+      role="region"
+      aria-label={`${stimulus.caption} scrollable table`}
+      tabIndex={0}
+      className="mt-5 overflow-x-auto"
+    >
       <table className="w-full border-collapse text-left text-sm">
         <caption className="mb-2 text-left text-xs font-semibold text-[#52676a]">
           {stimulus.caption}

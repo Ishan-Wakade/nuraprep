@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getAdaptiveSetupData } from "@/data/adaptive";
 
 import { AdaptiveStartForm } from "./adaptive-start-form";
+
+export const metadata: Metadata = {
+  title: "Adaptive Math practice",
+};
 
 export default async function AdaptivePracticePage() {
   const data = await getAdaptiveSetupData();

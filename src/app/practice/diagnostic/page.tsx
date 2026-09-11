@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getPracticeSetupData } from "@/data/practice";
 
 import { DiagnosticStartForm } from "./diagnostic-start-form";
+
+export const metadata: Metadata = {
+  title: "Math diagnostic",
+};
 
 export default async function DiagnosticStartPage() {
   const data = await getPracticeSetupData();

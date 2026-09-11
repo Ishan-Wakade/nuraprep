@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
+
 import { getValidatorRuleRegistry } from "@/data/content-governance";
 import { REVIEWER_QUALITY_VALIDATORS } from "@/lib/questions/validation";
 
 import { ValidatorRuleRevisionForm } from "./validator-rule-form";
+
+export const metadata: Metadata = {
+  title: "Validator rules",
+};
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",

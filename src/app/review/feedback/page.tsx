@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
@@ -10,6 +11,10 @@ import {
   ImprovementProposalForm,
   TemplateProposalImplementationForm,
 } from "./improvement-forms";
+
+export const metadata: Metadata = {
+  title: "Feedback patterns",
+};
 
 const categories = [
   "MATHEMATICAL_ERROR",

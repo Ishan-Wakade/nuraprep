@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -9,6 +10,10 @@ import { PracticeTestControls } from "./practice-test-controls";
 import { ProblemReportForm } from "./problem-report-form";
 import { SessionTimer } from "./session-timer";
 import { TutorPanel } from "./tutor-panel";
+
+export const metadata: Metadata = {
+  title: "Practice session",
+};
 
 export default async function PracticeSessionPage({
   params,

@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getPracticeTestSetupData } from "@/data/practice-test";
 
 import { PracticeTestStartForm } from "./practice-test-start-form";
+
+export const metadata: Metadata = {
+  title: "Timed Math simulation",
+};
 
 export default async function PracticeTestStartPage() {
   const data = await getPracticeTestSetupData();

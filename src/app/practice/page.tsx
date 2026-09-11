@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getPracticeSetupData } from "@/data/practice";
 
 import { PracticeSetupForm } from "./practice-setup-form";
+
+export const metadata: Metadata = {
+  title: "Topic practice",
+};
 
 export default async function PracticeSetupPage({
   searchParams,

@@ -35,6 +35,7 @@ test("completes a published topic-practice question with feedback", async ({
   await page.getByLabel("Number of questions").selectOption("1");
   await page.getByRole("button", { name: "Start practice" }).click();
   await expect(page).toHaveURL(/\/practice\/[a-f0-9-]+\?item=1/);
+  await expect(page).toHaveTitle("Practice session | NuraPrep");
 
   await expect(
     page.getByRole("heading", { name: "Question 1 of 1" }),
@@ -108,6 +109,7 @@ test("completes a published topic-practice question with feedback", async ({
   ).toBeVisible();
 
   await page.getByRole("link", { name: "View session summary" }).click();
+  await expect(page).toHaveTitle("Practice results | NuraPrep");
 
   await expect(
     page.getByRole("heading", { name: "0 of 1 correct" }),
