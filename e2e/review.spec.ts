@@ -469,16 +469,16 @@ test("approves a template and deduplicates regeneration requests", async ({
     page.getByRole("heading", { name: "Deterministic draft capacity" }),
   ).toBeVisible();
   await expect(page.getByText("Declared structure ceiling")).toBeVisible();
-  await expect(page.getByText("688", { exact: true })).toBeVisible();
+  await expect(page.getByText("768", { exact: true })).toBeVisible();
   const difficultyTable = page.getByRole("table", {
     name: "Deterministic capacity by internal difficulty",
   });
   await expect(difficultyTable).toBeVisible();
   await expect(
-    difficultyTable.getByRole("row", { name: /Foundational 40/ }),
+    difficultyTable.getByRole("row", { name: /Foundational 80/ }),
   ).toBeVisible();
   await expect(
-    difficultyTable.getByRole("row", { name: /Advanced 40/ }),
+    difficultyTable.getByRole("row", { name: /Advanced 60/ }),
   ).toBeVisible();
   await expect(
     page.getByText(/pre-rejection engineering ceiling/i),
