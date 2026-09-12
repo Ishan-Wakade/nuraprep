@@ -12,7 +12,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 ## Project status
 
-**Working local alpha — public-launch QA remains open.** The repository contains the PostgreSQL content model, deterministic answer and math checks, owner-review and publication workflows, persisted topic practice, a coverage-aware diagnostic, a versioned rules-based adaptive scheduler, full timed-test mechanics, a transparent readiness-estimation baseline, and a fail-closed source/generation control plane. Thirty-eight original Math families cover every current leaf skill, fill the internal 20-family Numbers-and-Algebra and 18-family Measurement-and-Data blueprint, and have genuine owner approval plus passing deterministic release checks on their exact published versions. Their schema-validated [reviewed snapshot](src/content/reviewed-math-bank.json) makes the learner content, governed source links, verification recipes, and latest owner decisions reproducible in a fresh development seed; the full operational audit history remains in the verified backup. Separate no-cost deterministic pilots have staged 432 additional validated drafts across all 12 leaf skills for controlled sampling: 200 numeric, 120 single-choice, 56 multiple-select, and 56 ordered-response. Forty-eight are Foundational, 152 Developing, 184 Proficient, and 48 Advanced under the internal rubric. Reproducible reviewer queues support one-per-template coverage and a broader, explicitly caveated defect-detection/risk sample. The drafts are not learner-visible. Independent educator review, broader approved-bank depth, external score calibration, and production service verification remain open.
+**Career-fair MVP deployment candidate — external-service verification remains open.** The local learner bank now contains 470 active original Math families across all 12 current leaf skills: a source-controlled 38-question owner-reviewed foundation plus 432 no-cost deterministic variants released under an explicit owner-delegated MVP decision. Every exact version has governed public-outline provenance, typed answer contracts, programmatic math verification, internal similarity screening, and a versioned publication record. The generated expansion is owner-authorized and machine-validated; it has not received independent educator review or learner-performance calibration. The product includes topic practice, a coverage-aware diagnostic, versioned adaptive scheduling, 38-question timed tests, transparent readiness estimates, learner reports, account controls, and a reviewer console. Vercel, Neon, and Google production configuration and public smoke testing remain open.
 
 | Area                                        | Status                                                                                                                                             |
 | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -22,7 +22,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 | Topic practice                              | Working local multi-format vertical slice                                                                                                          |
 | Diagnostic                                  | Working local flow with explicit coverage and starting signals                                                                                     |
 | Adaptive mode                               | Working local, inspectable rules baseline                                                                                                          |
-| Timed Math practice test                    | Working with 38 distinct owner-approved local families; broader depth and independent educational QA remain open                                   |
+| Timed Math practice test                    | Working with 470 active local families; independent educational QA and empirical calibration remain open                                           |
 | Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                                                                     |
 | Source and generation controls              | Registry, deterministic dry-run/draft staging, leased request queue, and worker gates working; paid provider intentionally off                     |
 | Account and Google sign-in                  | Sessions, logout, device revocation, export, learner erasure, privileged pseudonymization, and roles implemented; real callback awaits credentials |
@@ -43,14 +43,14 @@ The interface shown is a product-direction preview. The example readiness state 
 
 ![NuraPrep diagnostic results with conservative skill signals and a personalized starting point](public/screenshots/diagnostic-results.png)
 
-These screens are backed by the local PostgreSQL practice flow. The topic-practice preview reflects the current 38-family owner-published local bank; the other captures illustrate persisted learner flows from earlier development sessions. The diagnostic samples one current published item per available skill and labels every result as preliminary; it does not infer mastery from one answer. A learner can also report an answered item, and the owner can append an auditable triage decision against that exact question version and attempt. The owner workspace searches learner and reviewer evidence together and summarizes recurring categories or stable issue codes without erasing source attribution.
+These screens are backed by the local PostgreSQL practice flow. The local bank currently exposes 470 approved versions. The diagnostic samples one current published item per available skill and labels every result as preliminary; it does not infer mastery from one answer. A learner can report an answered item, and the owner can append an auditable triage decision against that exact question version and attempt. The owner workspace searches learner and reviewer evidence together and summarizes recurring categories or stable issue codes without erasing source attribution.
 
 ![NuraPrep session summary separating practice accuracy from official or validated scores](public/screenshots/session-summary.png)
 
 ## Engineering highlights
 
 - **Publication safety:** immutable question versions, independent reviewer attestations, versioned validator rubrics, and a database-enforced learner publication boundary.
-- **Reproducible reviewed content:** a typed 38-family bank snapshot is validated in unit tests and reconstructed idempotently by a fresh database seed without pretending a source snapshot replaces complete audit backups.
+- **Reproducible release content:** a typed 38-family reviewed snapshot plus a deterministic, replay-safe 432-family expansion release reconstruct the exact MVP policy without pretending machine checks are independent educational review.
 - **Deterministic educational checks:** typed answer contracts plus programmatic math, formatting, uniqueness, distractor, and originality signals instead of LLM-only grading.
 - **Reviewable scale:** deterministic template anchors, finite-population defect-detection planning, and extra higher-risk format samples reduce repetitive review without inheriting approval across variants.
 - **Accessible visual questions:** shared semantic table rendering and responsive SVG bar graphs include exact-value table alternatives without adding a charting dependency.
@@ -141,6 +141,8 @@ cp .env.example .env.local
 docker compose up -d postgres
 pnpm db:migrate
 pnpm db:seed
+# Optional: reproduce the owner-authorized 470-question local MVP bank.
+pnpm questions:mvp:release -- --confirm-owner-authorized-release
 pnpm dev
 ```
 
@@ -152,7 +154,7 @@ To exercise the production-style image locally instead, run `docker compose --pr
 
 ## Environment variables
 
-`.env.example` is the authoritative inventory. Variables are grouped by delivery phase, and secrets must never use the `NEXT_PUBLIC_` prefix. Its authentication value is an intentionally public local-only placeholder so a fresh clone builds without relying on a library default; production validation rejects it. Local database values are development-only, and every non-local environment needs unique credentials. Production startup requires a canonical HTTPS origin, PostgreSQL URLs, unique auth and Server Action encryption keys, Google OAuth credentials, and explicit reverse-proxy CIDRs. Live Stripe mode is rejected outside production. The same Server Action key is supplied securely to the image build and all tasks so rolling deployments do not create incompatible action encryption.
+`.env.example` is the authoritative inventory. Variables are grouped by delivery phase, and secrets must never use the `NEXT_PUBLIC_` prefix. Its authentication value is an intentionally public local-only placeholder so a fresh clone builds without relying on a library default; production validation rejects it. Local database values are development-only, and every non-local environment needs unique credentials. Production startup requires a canonical HTTPS origin, PostgreSQL URLs, unique auth and Server Action encryption keys, and Google OAuth credentials. AWS and self-hosted deployments also require explicit reverse-proxy CIDRs; Vercel uses its platform-owned forwarding header when `DEPLOYMENT_PLATFORM=VERCEL`. Live Stripe mode is rejected outside production.
 
 ## Quality checks
 
@@ -168,13 +170,15 @@ pnpm test:e2e
 pnpm test:load # with the local app already running
 ```
 
-`pnpm check` runs formatting, linting, type-checking, unit tests, and the production build. `pnpm test:db` requires the local PostgreSQL container. `pnpm questions:bank:audit` fails unless the 38 active Math publications exactly match the immutable reviewed snapshot and retain genuine approval, active deterministic validator passes, governed public-outline provenance, active leaf-skill mappings, and the internal 20/18 domain blueprint. `pnpm test:e2e` derives or uses `E2E_DATABASE_URL`, refuses any database name that does not end in `_e2e`, resets only that isolated schema, and applies migrations plus seed data automatically. This keeps synthetic browser fixtures out of the development database. Browser tests run with one worker because the end-to-end workflows intentionally mutate a shared disposable database; deterministic isolation is more valuable here than a shorter but race-prone run. GitHub Actions provisions fresh PostgreSQL databases and runs the complete sequence on every pull request and `main` push.
+`pnpm check` runs formatting, linting, type-checking, unit tests, and the production build. `pnpm test:db` requires the local PostgreSQL container. `pnpm questions:bank:audit` requires the immutable 38-question reviewed foundation to remain present and checks every additional active publication for genuine release approval, current deterministic validator passes, governed public-outline provenance, and active leaf-skill mapping. `pnpm test:e2e` derives or uses `E2E_DATABASE_URL`, refuses any database name that does not end in `_e2e`, resets only that isolated schema, and applies migrations plus seed data automatically. This keeps synthetic browser fixtures out of development and production banks. GitHub Actions provisions fresh PostgreSQL databases and runs the complete sequence on every pull request and `main` push.
 
 The browser suite runs the full transactional and automated WCAG A/AA regression coverage in Chromium, plus read-only critical-entry smoke checks at desktop and 320-CSS-pixel widths in Chromium, Firefox, and WebKit. It also verifies skip-link keyboard behavior and the reduced-motion CSS contract. Automated analysis is a regression gate, not a substitute for a complete keyboard, screen-reader, zoom, reduced-motion, and human usability review.
 
 The load command is a bounded local smoke test, not a benchmark claim. It refuses remote targets without an explicit opt-in and prints its workload, thresholds, status counts, throughput, and latency percentiles so results remain interpretable.
 
 ## Deployment direction
+
+The fastest public MVP path is one Vercel-hosted Next.js application connected to a Neon PostgreSQL project, with Google OAuth enabled and billing disabled. This has no required upfront infrastructure purchase and keeps the architecture identical to local development. The validated AWS Terraform remains a separate portfolio architecture and later production option; it is not on the career-fair deployment critical path.
 
 The validated, unapplied production target is AWS with separate staging and production environments:
 

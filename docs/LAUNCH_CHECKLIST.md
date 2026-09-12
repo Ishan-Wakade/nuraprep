@@ -4,7 +4,7 @@
 
 This is a go/no-go record for a future staging or public launch. Repository implementation and local tests satisfy only part of it. Mark an item complete only with a dated evidence link or artifact and a named owner. Any unresolved stop condition keeps the launch at **NO-GO**.
 
-Current status: **NO-GO for public launch.** The local 38-family Math bank has owner decisions and passing deterministic checks, but broader practice depth, independent educator sampling, and the real Google, Stripe, AWS, legal, manual-accessibility, restore, load, monitoring, and support gates have not been completed.
+Current status: **NO-GO for a fully validated commercial launch; candidate for a clearly labeled career-fair MVP.** The local 470-family Math bank has exact-version release decisions and passing deterministic checks. Independent educator sampling, real Google/Vercel/Neon verification, qualified legal review, manual accessibility testing, managed restore/load drills, monitoring, and support ownership remain open. Stripe and AWS are intentionally outside the first public MVP critical path.
 
 ## Release identity and ownership
 

@@ -6,7 +6,7 @@ This document explains the implemented local alpha. It is written for three uses
 2. preparing for technical and behavioral interviews; and
 3. reviewing the tradeoffs before production decisions are made.
 
-It is not a launch announcement. NuraPrep has a 38-family owner-approved local Math bank, but it still lacks independent educator sign-off, the depth expected of a public practice library, a configured external generation provider, live Google callback verification, verified Stripe sandbox lifecycle, an applied AWS environment, and an externally validated score predictor.
+It is not a commercial launch announcement. NuraPrep has a 470-family owner-authorized local Math bank: 38 individually owner-reviewed foundation versions and 432 deterministic expansion versions released under delegated exact-version screening. It still lacks independent educator sampling, live Google/Vercel/Neon verification, an externally validated score predictor, and qualified legal and manual-accessibility review. Stripe and the validated AWS architecture are intentionally outside the career-fair MVP critical path.
 
 ## 1. The problem the architecture is solving
 
@@ -528,7 +528,7 @@ Use these as truthful story structures, not scripts to memorize. Replace “I”
 
 **Action:** Separate discovery metadata, rights decisions, human-authored coverage abstraction, internal generation, deterministic validation, human review, and publication. Default unclear sources to quarantine and prevent source question text from entering model input.
 
-**Result:** The repository can track coverage and provenance while generated drafts remain blocked until review. The owner has approved and published the initial 38-family local bank through the governed workflow; independent educator sampling and broader approved-bank depth remain open before public launch.
+**Result:** The repository tracks coverage and provenance while generated drafts remain blocked until an explicit release decision. The owner approved the initial 38-family bank through the detailed workflow and later authorized a reproducible 432-family deterministic MVP expansion after exact-version machine and editorial gates. Independent educator sampling and learner calibration remain open.
 
 **Follow-up question to expect:** Why not rely on semantic similarity alone? Explain that similarity is an imperfect rejection signal, legally retained comparison text may be limited, and human review remains necessary.
 
@@ -619,7 +619,7 @@ The following must not be described as shipped:
 - manual screen-reader and assistive-technology review; and
 - external calibration or claimed accuracy of the readiness estimate.
 
-The strongest accurate description is: **a working local TEAS Math alpha with an owner-approved 38-family bank, production-shaped content governance, learner workflows, explainable personalization, no-cost deterministic expansion drafts, authentication and billing foundations, validated cost-gated infrastructure code, and automated quality gates; educational calibration and external services remain pre-production.**
+The strongest accurate description is: **a working TEAS Math deployment candidate with 470 owner-authorized local question families, production-shaped content governance, complete learner workflows, explainable personalization, a no-cost deterministic expansion pipeline, authentication and billing foundations, validated AWS infrastructure code, and automated quality gates; independent educational calibration and external-service verification remain pre-production.**
 
 ## 19. Glossary
 

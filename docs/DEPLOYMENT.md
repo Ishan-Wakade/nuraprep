@@ -2,7 +2,19 @@
 
 ## Current scope
 
-NuraPrep has a verified application image and a local Compose topology. No AWS resource has been provisioned. The production target remains a deliberately small modular-monolith deployment: one stateless Next.js container, one PostgreSQL database, and one short-lived migration job. A separate generation worker can be added only when a real provider and queue host are approved.
+NuraPrep has a verified application image and a local Compose topology. The fastest career-fair MVP target is Vercel plus Neon; the validated AWS design remains an unapplied portfolio architecture and later production option. Both use the same modular monolith: one stateless Next.js application and one PostgreSQL database. A separate generation worker can be added only when a real provider and queue host are approved.
+
+## Fastest public MVP: Vercel and Neon
+
+The zero-upfront-cost deployment path is:
+
+1. Create a Neon PostgreSQL project and retain both its pooled application URL and direct migration URL.
+2. Import `Ishan-Wakade/nuraprep` into Vercel as a Next.js project.
+3. Configure `APP_ENV=production`, `DEPLOYMENT_PLATFORM=VERCEL`, the exact generated HTTPS Vercel origin, both database URLs, unique auth and Server Action secrets, Google OAuth credentials, `BILLING_ENABLED=false`, and both development bypasses as `false`.
+4. Apply the committed Drizzle migrations to the Neon direct URL, run the idempotent base seed, and run `pnpm questions:mvp:release -- --confirm-owner-authorized-release` once against the same database.
+5. Configure Google's exact callback as `<public-origin>/api/auth/callback/google`, deploy, and verify health, sign-in/out, practice, diagnostic, adaptive mode, timed test, score estimate, reporting, account controls, and reviewer authorization.
+
+Vercel's generated domain is sufficient for the MVP; a purchased custom domain is optional. Billing stays disabled. Neon and Vercel free-plan limits and terms can change, so they must be checked in the account dashboards before launch and monitored after deployment. Never paste production URLs or secrets into source files, issue comments, command output, or chat transcripts.
 
 The container uses Next.js 16 standalone output so the runtime image contains traced production dependencies rather than the full source tree and development toolchain. It runs as the unprivileged `nextjs` user and reports only `ok` or `unavailable` from `/api/health`; database errors and connection details are never returned.
 
@@ -64,6 +76,7 @@ docker build \
 Runtime configuration must come from the deployment platform, never from an image layer. A production task requires:
 
 - `APP_ENV=production`;
+- `DEPLOYMENT_PLATFORM=VERCEL` for Vercel or `AWS` for the Terraform target;
 - the exact HTTPS `NEXT_PUBLIC_APP_URL` used at build time;
 - a TLS-validated `DATABASE_URL`;
 - a unique `BETTER_AUTH_SECRET` of at least 32 characters; and

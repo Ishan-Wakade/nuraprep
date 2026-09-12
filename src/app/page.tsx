@@ -34,7 +34,7 @@ const qualityChecks = [
   "Programmatic answer verification",
   "Ambiguity and distractor checks",
   "Source and license provenance",
-  "Versioned human review",
+  "Versioned release decisions",
 ];
 
 function ArrowIcon() {
@@ -228,7 +228,7 @@ export default function Home() {
             <p>
               <strong>Review before release</strong>
               <br />
-              Human approval for every item
+              Explicit approval for every item
             </p>
           </div>
           <div>
@@ -392,6 +392,8 @@ export default function Home() {
           </div>
           <div className="footer-links">
             <a href="https://github.com/Ishan-Wakade/nuraprep">GitHub</a>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
             <a href="https://github.com/Ishan-Wakade/nuraprep/blob/main/SECURITY.md">
               Security
             </a>

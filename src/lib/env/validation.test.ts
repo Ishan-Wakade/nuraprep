@@ -59,7 +59,7 @@ describe("parseServerEnvironment", () => {
     );
   });
 
-  it("fails production closed without auth, action, OAuth, and proxy configuration", () => {
+  it("fails self-hosted production closed without auth, action, OAuth, and proxy configuration", () => {
     expect(() =>
       parseServerEnvironment({
         ...baseEnvironment,
@@ -67,12 +67,26 @@ describe("parseServerEnvironment", () => {
         NEXT_PUBLIC_APP_URL: "https://staging.example.test",
       }),
     ).toThrow(
-      "Production requires auth and Server Action secrets, Google OAuth credentials, and explicit trusted proxy CIDRs.",
+      "Production requires auth and Server Action secrets, Google OAuth credentials, and trusted proxy configuration outside Vercel.",
     );
 
     expect(parseServerEnvironment(productionEnvironment)).toMatchObject({
       APP_ENV: "production",
       TRUSTED_PROXY_CIDRS: ["10.42.0.0/24", "10.42.1.0/24"],
+    });
+  });
+
+  it("uses Vercel's platform-owned forwarding header without static proxy ranges", () => {
+    expect(
+      parseServerEnvironment({
+        ...productionEnvironment,
+        DEPLOYMENT_PLATFORM: "VERCEL",
+        TRUSTED_PROXY_CIDRS: "",
+      }),
+    ).toMatchObject({
+      APP_ENV: "production",
+      DEPLOYMENT_PLATFORM: "VERCEL",
+      TRUSTED_PROXY_CIDRS: [],
     });
   });
 

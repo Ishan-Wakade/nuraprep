@@ -22,5 +22,13 @@ describe("Home", () => {
     expect(
       screen.getByRole("link", { name: /open math practice/i }),
     ).toHaveAttribute("href", "/practice");
+    expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute(
+      "href",
+      "/privacy",
+    );
+    expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute(
+      "href",
+      "/terms",
+    );
   });
 });

@@ -6,6 +6,7 @@ const LOCAL_ONLY_AUTH_SECRET = "nuraprep-local-only-auth-secret-change-me";
 
 const serverEnvironmentSchema = z.object({
   APP_ENV: z.enum(["development", "test", "production"]).default("development"),
+  DEPLOYMENT_PLATFORM: z.enum(["LOCAL", "VERCEL", "AWS"]).default("LOCAL"),
   NEXT_PUBLIC_APP_URL: z.url(),
   DATABASE_URL: z.url(),
   DIRECT_URL: z.url().optional(),
@@ -105,10 +106,11 @@ export function parseServerEnvironment(
     (!environment.BETTER_AUTH_SECRET ||
       !environment.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY ||
       !environment.GOOGLE_CLIENT_ID ||
-      environment.TRUSTED_PROXY_CIDRS.length === 0)
+      (environment.DEPLOYMENT_PLATFORM !== "VERCEL" &&
+        environment.TRUSTED_PROXY_CIDRS.length === 0))
   ) {
     throw new Error(
-      "Production requires auth and Server Action secrets, Google OAuth credentials, and explicit trusted proxy CIDRs.",
+      "Production requires auth and Server Action secrets, Google OAuth credentials, and trusted proxy configuration outside Vercel.",
     );
   }
 

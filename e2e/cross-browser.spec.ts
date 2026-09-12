@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 
 const entryPoints = [
   { path: "/", heading: "Know what to study next." },
+  { path: "/privacy", heading: "Privacy notice" },
+  { path: "/terms", heading: "Terms of use" },
   { path: "/sign-in", heading: "Welcome to NuraPrep." },
   { path: "/practice", heading: "Build a focused Math session." },
   { path: "/review", heading: "Question review queue" },

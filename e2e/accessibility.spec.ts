@@ -4,6 +4,8 @@ import { expectNoA11yViolations } from "./accessibility";
 
 const entrySurfaces = [
   ["landing page", "/", "NuraPrep | Thoughtful TEAS Math Practice"],
+  ["privacy notice", "/privacy", "Privacy | NuraPrep"],
+  ["terms of use", "/terms", "Terms | NuraPrep"],
   ["sign-in", "/sign-in", "Sign in | NuraPrep"],
   ["practice home", "/practice", "Topic practice | NuraPrep"],
   ["diagnostic setup", "/practice/diagnostic", "Math diagnostic | NuraPrep"],
