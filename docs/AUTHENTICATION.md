@@ -31,6 +31,8 @@ The authentication foundation includes:
 
 `learner_profiles` will reference the local auth user rather than trusting a caller-provided email or Google subject. Existing development data will receive an explicit development principal. Reviewer access is granted from a database role record; possession of a particular email address alone never creates reviewer privileges.
 
+Production establishes its first administrator only after that person completes a verified Google sign-in. The one-time `auth:bootstrap-admin` operator command accepts the exact email through a process-local environment variable, locks the bootstrap operation, refuses to run when a different active administrator exists, and records an account audit event. It never prints the email. Every later role grant or revocation requires an authenticated active administrator through the application workflow.
+
 ## Session policy
 
 - Use database sessions so logout, account deletion, and administrative response can revoke access immediately.

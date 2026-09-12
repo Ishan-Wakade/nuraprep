@@ -13,6 +13,7 @@ The zero-upfront-cost deployment path is:
 3. Configure `APP_ENV=production`, `DEPLOYMENT_PLATFORM=VERCEL`, the exact generated HTTPS Vercel origin, both database URLs, unique auth and Server Action secrets, Google OAuth credentials, `BILLING_ENABLED=false`, and both development bypasses as `false`.
 4. Apply the committed Drizzle migrations to the Neon direct URL, run the idempotent base seed, and run `pnpm questions:mvp:release -- --confirm-owner-authorized-release` once against the same database.
 5. Configure Google's exact callback as `<public-origin>/api/auth/callback/google`, deploy, and verify health, sign-in/out, practice, diagnostic, adaptive mode, timed test, score estimate, reporting, account controls, and reviewer authorization.
+6. After the owner signs in once through Google, run `pnpm auth:bootstrap-admin -- --confirm-first-admin` against Neon with `BOOTSTRAP_ADMIN_EMAIL` supplied only to the local process. The command requires an exact verified account, refuses to displace another active administrator, and records the bootstrap event. Remove the temporary variable immediately afterward; all later grants use the authenticated admin interface.
 
 Vercel's generated domain is sufficient for the MVP; a purchased custom domain is optional. Billing stays disabled. Neon and Vercel free-plan limits and terms can change, so they must be checked in the account dashboards before launch and monitored after deployment. Never paste production URLs or secrets into source files, issue comments, command output, or chat transcripts.
 

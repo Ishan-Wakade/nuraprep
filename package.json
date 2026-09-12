@@ -29,6 +29,7 @@
     "questions:mvp:release": "tsx scripts/release-mvp-math-bank.ts",
     "questions:bank:audit": "tsx scripts/audit-published-math-bank.ts",
     "questions:bank:export": "tsx scripts/export-reviewed-math-bank.ts",
+    "auth:bootstrap-admin": "tsx scripts/bootstrap-first-admin.ts",
     "test:db": "tsx scripts/database-smoke.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
