@@ -46,7 +46,7 @@ const rectangleContexts = [
   "garden plot",
   "floor mat",
   "storage-room wall",
-  "rectangular tabletop",
+  "tabletop",
 ] as const;
 
 const missingDimensionFrames: readonly PromptFrame[] = [
@@ -150,7 +150,7 @@ const signedChangeFrames: readonly PromptFrame[] = [
   {
     key: "increase-from-negative",
     render: ({ subject, unit, start, increase }) =>
-      `A ${subject} starts at ${start} ${unit} and increases by ${increase} ${unit}. What is the new value?`,
+      `The ${subject} starts at ${start} ${unit} and increases by ${increase} ${unit}. What is the new value?`,
   },
   {
     key: "net-position",

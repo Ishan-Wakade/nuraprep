@@ -23,6 +23,26 @@ describe("published Math bank audit", () => {
     expect(report.findings).toEqual([]);
   });
 
+  it("allows gated expansion versions while preserving the reviewed foundation", () => {
+    const foundation = passingRows();
+    const report = auditPublishedMathBank({
+      snapshot: reviewedMathBank,
+      rows: [
+        ...foundation,
+        {
+          ...foundation[0]!,
+          questionId: "30000000-0000-4000-8000-000000000001",
+          versionId: "31000000-0000-4000-8000-000000000001",
+          slug: "generated-expansion-example",
+          publishedBy: "owner-delegated-mvp-review",
+        },
+      ],
+    });
+
+    expect(report.passed).toBe(true);
+    expect(report.activePublications).toBe(39);
+  });
+
   it("fails closed when the database drifts or any exact-version gate fails", () => {
     const rows = passingRows();
     rows[0] = {
@@ -40,7 +60,7 @@ describe("published Math bank audit", () => {
     expect(report.passed).toBe(false);
     expect(report.findings.map((finding) => finding.code)).toEqual(
       expect.arrayContaining([
-        "SNAPSHOT_DATABASE_DRIFT",
+        "SNAPSHOT_FOUNDATION_MISSING",
         "MATH_VALIDATION_NOT_PASSING",
         "SOURCE_POLICY_NOT_READY",
       ]),

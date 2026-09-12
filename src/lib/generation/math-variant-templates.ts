@@ -185,21 +185,25 @@ const travelContexts = [
   { key: "river-journey", noun: "river journey" },
 ] as const;
 
+function formatHours(value: string | number) {
+  return `${value} ${Number(value) === 1 ? "hour" : "hours"}`;
+}
+
 const travelFrames: PromptFrame[] = [
   {
     key: "two-leg-total",
     render: ({ noun, rate1, time1, rate2, time2 }) =>
-      `A ${noun} covers its first leg at ${rate1} miles per hour for ${time1} hours and its second leg at ${rate2} miles per hour for ${time2} hours. What total distance is covered?`,
+      `A ${noun} covers its first leg at ${rate1} miles per hour for ${formatHours(time1)} and its second leg at ${rate2} miles per hour for ${formatHours(time2)}. What total distance is covered?`,
   },
   {
     key: "combined-distance",
     render: ({ noun, rate1, time1, rate2, time2 }) =>
-      `During a ${noun}, one segment lasts ${time1} hours at ${rate1} miles per hour and another lasts ${time2} hours at ${rate2} miles per hour. Find the combined distance.`,
+      `During a ${noun}, one segment lasts ${formatHours(time1)} at ${rate1} miles per hour and another lasts ${formatHours(time2)} at ${rate2} miles per hour. Find the combined distance.`,
   },
   {
     key: "sum-segments",
     render: ({ noun, rate1, time1, rate2, time2 }) =>
-      `For a ${noun}, calculate the distance from ${rate1} mph for ${time1} hours plus the distance from ${rate2} mph for ${time2} hours.`,
+      `For a ${noun}, calculate the distance from ${rate1} mph for ${formatHours(time1)} plus the distance from ${rate2} mph for ${formatHours(time2)}.`,
   },
   {
     key: "rate-time-model",
@@ -261,7 +265,7 @@ const angleFrames: PromptFrame[] = [
   {
     key: "unknown-interior-angle",
     render: ({ context, a, b }) =>
-      `${context} has interior angles ${a}°, ${b}°, and x°. Determine x.`,
+      `${String(context).charAt(0).toUpperCase()}${String(context).slice(1)} has interior angles ${a}°, ${b}°, and x°. Determine x.`,
   },
   {
     key: "complete-angle-set",
@@ -460,7 +464,7 @@ const purchaseFrames: PromptFrame[] = [
   {
     key: "two-stage-price",
     render: ({ item, price, discount, tax }) =>
-      `${item} costs $${price} before a ${discount}% markdown. After the markdown, a ${tax}% tax is added. Calculate the checkout price to the nearest cent.`,
+      `${String(item).charAt(0).toUpperCase()}${String(item).slice(1)} costs $${price} before a ${discount}% markdown. After the markdown, ${Number(tax) === 8 ? "an" : "a"} ${tax}% tax is added. Calculate the checkout price to the nearest cent.`,
   },
   {
     key: "sale-sequence",

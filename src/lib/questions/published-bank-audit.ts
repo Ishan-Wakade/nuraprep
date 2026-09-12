@@ -25,7 +25,7 @@ export type PublishedMathAuditFinding = {
   versionId?: string;
 };
 
-const EXPECTED_DOMAIN_COUNTS = {
+const MINIMUM_FOUNDATION_DOMAIN_COUNTS = {
   "MATH.MEASUREMENT_DATA": 18,
   "MATH.NUMBERS_ALGEBRA": 20,
 } as const;
@@ -47,10 +47,10 @@ export function auditPublishedMathBank(input: {
     });
   }
 
-  if (input.rows.length !== 38) {
+  if (input.rows.length < 38) {
     findings.push({
-      code: "ACTIVE_COUNT_MISMATCH",
-      detail: `Expected 38 active Math publications, found ${input.rows.length}.`,
+      code: "ACTIVE_COUNT_BELOW_FOUNDATION",
+      detail: `Expected at least 38 active Math publications, found ${input.rows.length}.`,
     });
   }
 
@@ -76,13 +76,10 @@ export function auditPublishedMathBank(input: {
     const missing = [...expectedVersionIds].filter(
       (versionId) => !actualVersionIds.has(versionId),
     );
-    const unexpected = [...actualVersionIds].filter(
-      (versionId) => !expectedVersionIds.has(versionId),
-    );
-    if (missing.length > 0 || unexpected.length > 0) {
+    if (missing.length > 0) {
       findings.push({
-        code: "SNAPSHOT_DATABASE_DRIFT",
-        detail: `The active database differs from the immutable snapshot: ${missing.length} expected version(s) missing and ${unexpected.length} unexpected version(s) active.`,
+        code: "SNAPSHOT_FOUNDATION_MISSING",
+        detail: `The active database is missing ${missing.length} version(s) from the immutable 38-question reviewed foundation snapshot.`,
       });
     }
   }
@@ -141,17 +138,19 @@ export function auditPublishedMathBank(input: {
   }
 
   const domainCounts = countBy(input.rows, (row) => row.domainCode ?? "NONE");
-  for (const [domainCode, expected] of Object.entries(EXPECTED_DOMAIN_COUNTS)) {
+  for (const [domainCode, expected] of Object.entries(
+    MINIMUM_FOUNDATION_DOMAIN_COUNTS,
+  )) {
     const actual = domainCounts[domainCode] ?? 0;
-    if (actual !== expected) {
+    if (actual < expected) {
       findings.push({
-        code: "BLUEPRINT_DOMAIN_MISMATCH",
-        detail: `${domainCode} requires ${expected} active families in the internal blueprint; found ${actual}.`,
+        code: "FOUNDATION_DOMAIN_BELOW_MINIMUM",
+        detail: `${domainCode} requires at least ${expected} active families from the reviewed foundation; found ${actual}.`,
       });
     }
   }
   const unexpectedDomains = Object.keys(domainCounts).filter(
-    (domainCode) => !(domainCode in EXPECTED_DOMAIN_COUNTS),
+    (domainCode) => !(domainCode in MINIMUM_FOUNDATION_DOMAIN_COUNTS),
   );
   if (unexpectedDomains.length > 0) {
     findings.push({
@@ -175,7 +174,7 @@ export function auditPublishedMathBank(input: {
     findings,
     caveats: [
       "This audit proves exact local publication identity and machine-checkable release gates; it is not independent educational review.",
-      "The 20/18 domain distribution is NuraPrep's reviewed internal blueprint, not a claimed official ATI subtopic distribution.",
+      "The 20/18 domain minimum preserves NuraPrep's reviewed foundation blueprint; generated expansion counts are internal and not an official ATI distribution.",
       "Passing source policy proves configured handling restrictions and provenance links, not a legal opinion.",
     ],
   };

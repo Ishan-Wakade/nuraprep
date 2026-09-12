@@ -39,6 +39,26 @@ describe("Math deterministic variant templates", () => {
     expect(getMathDeterministicVariantTemplate("missing")).toBeUndefined();
   });
 
+  it("rejects known grammar regressions across the MVP generation seed", () => {
+    const prompts = mathDeterministicVariantTemplates.flatMap((template) =>
+      generateDeterministicVariantBatch({
+        template,
+        batchSeed: `mvp-release-v1:${template.key}:v${template.version}`,
+        requestedCount: 8,
+        maxAttemptsPerItem: 100,
+      }).accepted.map((item) => item.candidate.content.prompt),
+    );
+
+    for (const prompt of prompts) {
+      expect(prompt).not.toMatch(
+        /\b(?:circular|rectangular) (?:circular|rectangular)\b/i,
+      );
+      expect(prompt).not.toMatch(/\b1 hours\b/i);
+      expect(prompt).not.toMatch(/\ba 8%\b/i);
+      expect(prompt).not.toMatch(/^a account\b/i);
+    }
+  });
+
   it("covers every Math leaf skill with unique, explicitly bounded templates", () => {
     const expectedLeafSkills = [
       "MATH.ALGEBRAIC_EXPRESSIONS",

@@ -41,7 +41,7 @@ const decimalFrames = [
 
 const perimeterContexts = [
   "bulletin board",
-  "rectangular garden",
+  "garden",
   "photo frame",
   "training-room mat",
   "display panel",

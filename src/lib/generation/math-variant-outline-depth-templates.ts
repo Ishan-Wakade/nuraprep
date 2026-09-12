@@ -161,7 +161,7 @@ const circularRouteContexts = [
   "cycling loop",
   "training track",
   "garden border route",
-  "circular exhibit route",
+  "exhibit route",
   "courtyard loop",
 ] as const;
 
