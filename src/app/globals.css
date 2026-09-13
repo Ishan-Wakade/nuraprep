@@ -205,7 +205,7 @@ nav a:hover,
   margin: 24px 0 22px;
   color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(52px, 6vw, 78px);
+  font-size: clamp(42px, 4.8vw, 62px);
   font-weight: 500;
   line-height: 0.98;
   letter-spacing: -0.055em;
