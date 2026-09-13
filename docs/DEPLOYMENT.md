@@ -2,11 +2,11 @@
 
 ## Current scope
 
-NuraPrep has a verified application image and a local Compose topology. The fastest career-fair MVP target is Vercel plus Neon; the validated AWS design remains an unapplied portfolio architecture and later production option. Both use the same modular monolith: one stateless Next.js application and one PostgreSQL database. A separate generation worker can be added only when a real provider and queue host are approved.
+NuraPrep's career-fair MVP is deployed at [nuraprep.vercel.app](https://nuraprep.vercel.app) on Vercel with Neon PostgreSQL and public Google OAuth. The owner account has a database-audited administrator grant, while all other Google accounts begin with learner access. The application also has a verified standalone container and local Compose topology. The validated AWS design remains an unapplied portfolio architecture and later production option. All paths use the same modular monolith: one stateless Next.js application and one PostgreSQL database.
 
 ## Fastest public MVP: Vercel and Neon
 
-The zero-upfront-cost deployment path is:
+The deployed zero-upfront-cost path is:
 
 1. Create a Neon PostgreSQL project and retain both its pooled application URL and direct migration URL.
 2. Import `Ishan-Wakade/nuraprep` into Vercel as a Next.js project.
@@ -16,6 +16,12 @@ The zero-upfront-cost deployment path is:
 6. After the owner signs in once through Google, run `pnpm auth:bootstrap-admin -- --confirm-first-admin` against Neon with `BOOTSTRAP_ADMIN_EMAIL` supplied only to the local process. The command requires an exact verified account, refuses to displace another active administrator, and records the bootstrap event. Remove the temporary variable immediately afterward; all later grants use the authenticated admin interface.
 
 Vercel's generated domain is sufficient for the MVP; a purchased custom domain is optional. Billing stays disabled. Neon and Vercel free-plan limits and terms can change, so they must be checked in the account dashboards before launch and monitored after deployment. Never paste production URLs or secrets into source files, issue comments, command output, or chat transcripts.
+
+### Verified production evidence
+
+The September 13, 2026 release applied every committed migration and the idempotent seed to Neon, reconstructed and audited the 470-question Math bank, deployed the Next.js application through Vercel, returned `ok` from the database-aware health route, completed a real Google sign-in, loaded the protected practice route, and loaded the administrator-only review queue. Billing remains disabled. This is deployment evidence for the career-fair MVP, not proof of commercial readiness, independent educational validity, managed disaster recovery, or production-scale performance.
+
+Vercel uses its native Next.js output layout. Docker and the AWS target retain standalone output so the same repository can produce a minimal self-hosted runtime image.
 
 The container uses Next.js 16 standalone output so the runtime image contains traced production dependencies rather than the full source tree and development toolchain. It runs as the unprivileged `nextjs` user and reports only `ok` or `unavailable` from `/api/health`; database errors and connection details are never returned.
 

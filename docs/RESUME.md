@@ -32,7 +32,7 @@ Next.js, React, TypeScript, PostgreSQL, Drizzle ORM, Better Auth, Google OAuth, 
 - Architected a production-shaped TEAS Math platform with diagnostic, topic, adaptive, and 38-question timed practice; explanation-first feedback; progress tracking; question reporting; and transparent readiness estimates with uncertainty.
 - Built a governed 470-question Math bank spanning 12 skills and four response formats, combining 38 individually owner-reviewed questions with 432 deterministic variants backed by versioned templates, programmatic answer verification, provenance records, immutable review history, and duplicate screening.
 - Engineered secure account and operations foundations with Google OAuth, database sessions, role-based reviewer/admin access, shared rate limits, portable data export, transactional account erasure, security headers, and a fail-closed Stripe boundary kept disabled for the free MVP.
-- Established a deployment and quality system using Vercel and Neon for the public MVP, plus Docker and validated AWS ECS/RDS/VPC/S3/CloudWatch Terraform as a cost-gated alternative; enforced CI, CodeQL, 298 unit tests, 60+ Playwright scenarios, automated accessibility checks, and cross-browser mobile coverage.
+- Deployed the public MVP on Vercel and Neon with Google OAuth and role-protected administration, while retaining Docker and validated AWS ECS/RDS/VPC/S3/CloudWatch Terraform as a cost-gated alternative; enforced CI, CodeQL, 303 unit/component tests, 60+ Playwright scenarios, automated accessibility checks, and cross-browser mobile coverage.
 
 ## One-line project description
 
@@ -44,7 +44,7 @@ NuraPrep started as an education-product idea, but the hardest engineering probl
 
 On the learner side, I implemented diagnostic, topic, adaptive, and timed-test flows around the same question and attempt model. Recommendations remain inspectable: accuracy, recency, confidence, timing, prerequisite relationships, and spaced-review state produce stored reasons rather than an opaque model output. The score estimator similarly exposes its evidence and uncertainty and is clearly labeled as unofficial until real learner outcomes support calibration.
 
-For production readiness, I added Google OAuth, database-backed sessions, role grants, shared application rate limits, account export and erasure, security headers, Stripe's hosted billing boundary in disabled mode, Docker delivery, CI and CodeQL, and an AWS Terraform architecture. The fastest MVP uses Vercel and Neon to avoid upfront infrastructure cost; AWS remains a validated, cost-gated alternative rather than an inflated deployment claim.
+For production readiness, I deployed Google OAuth, database-backed sessions, role grants, shared application rate limits, account export and erasure, and security headers on Vercel and Neon. I also implemented Stripe's hosted billing boundary in disabled mode, Docker delivery, CI and CodeQL, and an AWS Terraform architecture. AWS remains a validated, cost-gated alternative rather than an inflated live-deployment claim.
 
 ## Strong behavioral-interview stories
 

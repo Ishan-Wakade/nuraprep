@@ -6,7 +6,7 @@ This document explains the implemented local alpha. It is written for three uses
 2. preparing for technical and behavioral interviews; and
 3. reviewing the tradeoffs before production decisions are made.
 
-It is not a commercial launch announcement. NuraPrep has a 470-family owner-authorized local Math bank: 38 individually owner-reviewed foundation versions and 432 deterministic expansion versions released under delegated exact-version screening. It still lacks independent educator sampling, live Google/Vercel/Neon verification, an externally validated score predictor, and qualified legal and manual-accessibility review. Stripe and the validated AWS architecture are intentionally outside the career-fair MVP critical path.
+It is not a commercial launch announcement. NuraPrep has a live 470-family owner-authorized Math bank: 38 individually owner-reviewed foundation versions and 432 deterministic expansion versions released under delegated exact-version screening. The Vercel application, Neon database, Google sign-in, protected practice route, and owner-only reviewer authorization have been exercised in production. The product still lacks independent educator sampling, an externally validated score predictor, and qualified legal and manual-accessibility review. Stripe and the validated AWS architecture are intentionally outside the career-fair MVP critical path.
 
 ## 1. The problem the architecture is solving
 
@@ -610,7 +610,6 @@ The following must not be described as shipped:
 
 - independent educator sampling and final public-launch approval of the owner-published Math bank;
 - independent approval of the engineering-draft gold evaluation set;
-- live Google callback behavior with real credentials;
 - a provider-backed conversational tutor;
 - a configured question-generation provider and production queue schedule;
 - calibrated originality thresholds against a legally usable benchmark;
@@ -619,7 +618,7 @@ The following must not be described as shipped:
 - manual screen-reader and assistive-technology review; and
 - external calibration or claimed accuracy of the readiness estimate.
 
-The strongest accurate description is: **a working TEAS Math deployment candidate with 470 owner-authorized local question families, production-shaped content governance, complete learner workflows, explainable personalization, a no-cost deterministic expansion pipeline, authentication and billing foundations, validated AWS infrastructure code, and automated quality gates; independent educational calibration and external-service verification remain pre-production.**
+The strongest accurate description is: **a publicly deployed TEAS Math MVP with 470 owner-authorized question families, production content governance, complete learner workflows, explainable personalization, a no-cost deterministic expansion pipeline, live Google authentication and RBAC, a disabled Stripe boundary, validated but unapplied AWS infrastructure code, and automated quality gates; independent educational review, assistive-technology testing, managed operations, and empirical score calibration remain pre-commercial-launch.**
 
 ## 19. Glossary
 

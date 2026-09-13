@@ -4,7 +4,7 @@
 
 This is a go/no-go record for a future staging or public launch. Repository implementation and local tests satisfy only part of it. Mark an item complete only with a dated evidence link or artifact and a named owner. Any unresolved stop condition keeps the launch at **NO-GO**.
 
-Current status: **NO-GO for a fully validated commercial launch; candidate for a clearly labeled career-fair MVP.** The local 470-family Math bank has exact-version release decisions and passing deterministic checks. Independent educator sampling, real Google/Vercel/Neon verification, qualified legal review, manual accessibility testing, managed restore/load drills, monitoring, and support ownership remain open. Stripe and AWS are intentionally outside the first public MVP critical path.
+Current status: **LIVE career-fair MVP; NO-GO for a fully validated commercial launch.** The Vercel/Neon deployment, public Google OAuth callback, protected learner route, owner administrator bootstrap, and 470-family Math bank have been exercised in production. Independent educator sampling, qualified legal review, manual accessibility testing, managed restore/load drills, monitoring, empirical score calibration, and support ownership remain open. Stripe and AWS are intentionally outside the first public MVP critical path.
 
 ## Release identity and ownership
 
@@ -36,7 +36,7 @@ Current status: **NO-GO for a fully validated commercial launch; candidate for a
 
 ## Authentication, privacy, and authorization
 
-- [ ] Configure environment-specific Google OAuth credentials and exact HTTPS callbacks.
+- [x] Configure production Google OAuth credentials and the exact HTTPS callback for `nuraprep.vercel.app`.
 - [ ] Verify success, denial, malformed/replayed callback, state/nonce/PKCE, verified email, account-linking, logout, revocation, and secure cookies in staging.
 - [ ] Verify learner isolation and reviewer/admin denial for every protected page, route, Server Action, and data-access function.
 - [ ] Exercise export, ordinary erasure, Stripe-coordinated erasure, and second-admin privileged pseudonymization.

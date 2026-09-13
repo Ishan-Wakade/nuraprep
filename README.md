@@ -5,6 +5,7 @@
 [![CI](https://github.com/Ishan-Wakade/nuraprep/actions/workflows/ci.yml/badge.svg)](https://github.com/Ishan-Wakade/nuraprep/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/Ishan-Wakade/nuraprep/actions/workflows/codeql.yml/badge.svg)](https://github.com/Ishan-Wakade/nuraprep/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0f766e.svg)](LICENSE)
+[![Live MVP](https://img.shields.io/badge/Live_MVP-nuraprep.vercel.app-116b65.svg)](https://nuraprep.vercel.app)
 
 NuraPrep is being built for nursing-school applicants who want to understand what to study, practice deliberately, and see honest uncertainty around their progress. The first release is limited to Math. Reading, Science, and English and Language Usage will be added only after the Math experience is working and reviewed.
 
@@ -12,22 +13,22 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 ## Project status
 
-**Career-fair MVP deployment candidate — external-service verification remains open.** The local learner bank now contains 470 active original Math families across all 12 current leaf skills: a source-controlled 38-question owner-reviewed foundation plus 432 no-cost deterministic variants released under an explicit owner-delegated MVP decision. Every exact version has governed public-outline provenance, typed answer contracts, programmatic math verification, internal similarity screening, and a versioned publication record. The generated expansion is owner-authorized and machine-validated; it has not received independent educator review or learner-performance calibration. The product includes topic practice, a coverage-aware diagnostic, versioned adaptive scheduling, 38-question timed tests, transparent readiness estimates, learner reports, account controls, and a reviewer console. Vercel, Neon, and Google production configuration and public smoke testing remain open.
+**Public career-fair MVP deployed at [nuraprep.vercel.app](https://nuraprep.vercel.app).** The production learner bank contains 470 active original Math families across all 12 current leaf skills: a source-controlled 38-question owner-reviewed foundation plus 432 no-cost deterministic variants released under an explicit owner-delegated MVP decision. Every exact version has governed public-outline provenance, typed answer contracts, programmatic math verification, internal similarity screening, and a versioned publication record. The generated expansion is owner-authorized and machine-validated; it has not received independent educator review or learner-performance calibration. The Vercel application, Neon database, public Google OAuth flow, protected learner route, and owner-only reviewer authorization have been exercised against the live environment. Commercial-launch gates such as independent educator sampling, empirical score calibration, manual assistive-technology review, managed recovery/load drills, and billing verification remain open.
 
-| Area                                        | Status                                                                                                                                             |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Public repository and engineering standards | Complete                                                                                                                                           |
-| Math taxonomy and question data model       | Implemented with migrations and seed data                                                                                                          |
-| Reviewer and provenance workflow            | Review, publication, coverage gaps, reports, pattern search, and approved improvement plans working locally                                        |
-| Topic practice                              | Working local multi-format vertical slice                                                                                                          |
-| Diagnostic                                  | Working local flow with explicit coverage and starting signals                                                                                     |
-| Adaptive mode                               | Working local, inspectable rules baseline                                                                                                          |
-| Timed Math practice test                    | Working with 470 active local families; independent educational QA and empirical calibration remain open                                           |
-| Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                                                                     |
-| Source and generation controls              | Registry, deterministic dry-run/draft staging, leased request queue, and worker gates working; paid provider intentionally off                     |
-| Account and Google sign-in                  | Sessions, logout, device revocation, export, learner erasure, privileged pseudonymization, and roles implemented; real callback awaits credentials |
-| Billing                                     | Stripe-hosted integration implemented fail-closed; sandbox verification and product decisions remain open                                          |
-| AWS deployment                              | Terraform validated; region cost review, prerequisites, staging apply, and restore drill remain                                                    |
+| Area                                        | Status                                                                                                                             |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Public repository and engineering standards | Complete                                                                                                                           |
+| Math taxonomy and question data model       | Implemented with migrations and seed data                                                                                          |
+| Reviewer and provenance workflow            | Deployed with role-protected review, publication, coverage, reports, pattern search, and approved improvement plans                |
+| Topic practice                              | Deployed multi-format learner flow with 470 published questions                                                                    |
+| Diagnostic                                  | Deployed with explicit coverage and conservative starting signals                                                                  |
+| Adaptive mode                               | Deployed inspectable rules baseline                                                                                                |
+| Timed Math practice test                    | Deployed with a 38-question, 57-minute blueprint; independent educational QA and empirical calibration remain open                 |
+| Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                                                     |
+| Source and generation controls              | Registry, deterministic dry-run/draft staging, leased request queue, and worker gates working; paid provider intentionally off     |
+| Account and Google sign-in                  | Public Google OAuth, database sessions, logout, device revocation, export, erasure, privileged pseudonymization, and RBAC deployed |
+| Billing                                     | Stripe-hosted integration implemented fail-closed; sandbox verification and product decisions remain open                          |
+| AWS deployment                              | Terraform validated; region cost review, prerequisites, staging apply, and restore drill remain                                    |
 
 ## Product preview
 
@@ -35,7 +36,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 The interface shown is a product-direction preview. The example readiness state and learning plan are illustrative, not live learner results or an ATI score.
 
-### Working local flow
+### Working product flow
 
 ![NuraPrep topic-practice setup with topic, difficulty, response-format, pacing, and history filters](public/screenshots/topic-practice.png)
 
@@ -43,7 +44,7 @@ The interface shown is a product-direction preview. The example readiness state 
 
 ![NuraPrep diagnostic results with conservative skill signals and a personalized starting point](public/screenshots/diagnostic-results.png)
 
-These screens are backed by the local PostgreSQL practice flow. The local bank currently exposes 470 approved versions. The diagnostic samples one current published item per available skill and labels every result as preliminary; it does not infer mastery from one answer. A learner can report an answered item, and the owner can append an auditable triage decision against that exact question version and attempt. The owner workspace searches learner and reviewer evidence together and summarizes recurring categories or stable issue codes without erasing source attribution.
+These screens are backed by the same PostgreSQL practice flow deployed on Vercel and Neon. The production bank currently exposes 470 approved versions. The diagnostic samples one current published item per available skill and labels every result as preliminary; it does not infer mastery from one answer. A learner can report an answered item, and the owner can append an auditable triage decision against that exact question version and attempt. The owner workspace searches learner and reviewer evidence together and summarizes recurring categories or stable issue codes without erasing source attribution.
 
 ![NuraPrep session summary separating practice accuracy from official or validated scores](public/screenshots/session-summary.png)
 
@@ -178,7 +179,7 @@ The load command is a bounded local smoke test, not a benchmark claim. It refuse
 
 ## Deployment direction
 
-The fastest public MVP path is one Vercel-hosted Next.js application connected to a Neon PostgreSQL project, with Google OAuth enabled and billing disabled. This has no required upfront infrastructure purchase and keeps the architecture identical to local development. The validated AWS Terraform remains a separate portfolio architecture and later production option; it is not on the career-fair deployment critical path.
+The public MVP is one Vercel-hosted Next.js application connected to Neon PostgreSQL, with public Google OAuth enabled and billing disabled. It is live at [nuraprep.vercel.app](https://nuraprep.vercel.app) with no required upfront infrastructure purchase. The validated AWS Terraform remains a separate portfolio architecture and later production option; it is not on the career-fair deployment critical path.
 
 The validated, unapplied production target is AWS with separate staging and production environments:
 
