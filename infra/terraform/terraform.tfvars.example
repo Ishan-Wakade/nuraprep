@@ -8,6 +8,7 @@ certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/replace-me"
 # Build both stages from the same reviewed commit, push them to ECR, and pin digests.
 app_image_uri       = "123456789012.dkr.ecr.us-east-1.amazonaws.com/nuraprep-app@sha256:replace-me"
 migration_image_uri = "123456789012.dkr.ecr.us-east-1.amazonaws.com/nuraprep-migrate@sha256:replace-me"
+maintenance_worker_image_uri = "123456789012.dkr.ecr.us-east-1.amazonaws.com/nuraprep-maintenance@sha256:replace-me"
 
 google_client_id     = "replace-me.apps.googleusercontent.com"
 google_client_secret = "replace-me"

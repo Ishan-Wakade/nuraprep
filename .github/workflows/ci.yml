@@ -110,6 +110,12 @@ jobs:
           --target runner
           --tag nuraprep:ci .
 
+      - name: Build Lambda maintenance container
+        run: >-
+          docker build
+          --target lambda-worker
+          --tag nuraprep-maintenance:ci .
+
       - name: Install supported test browsers
         run: pnpm exec playwright install --with-deps chromium firefox webkit
 

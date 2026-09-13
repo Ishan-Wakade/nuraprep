@@ -28,7 +28,7 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 | Source and generation controls              | Registry, deterministic dry-run/draft staging, leased request queue, and worker gates working; paid provider intentionally off     |
 | Account and Google sign-in                  | Public Google OAuth, database sessions, logout, device revocation, export, erasure, privileged pseudonymization, and RBAC deployed |
 | Billing                                     | Stripe-hosted integration implemented fail-closed; sandbox verification and product decisions remain open                          |
-| AWS deployment                              | Terraform validated; region cost review, prerequisites, staging apply, and restore drill remain                                    |
+| AWS deployment                              | ECS/RDS/Lambda Terraform validated; region cost review, prerequisites, staging apply, and restore drill remain                     |
 
 ## Product preview
 
@@ -134,7 +134,7 @@ Important boundaries:
 - Vitest, Testing Library, Playwright, and automated axe WCAG checks
 - Docker Compose for local PostgreSQL
 - No-cost deterministic variant generation with duplicate rejection and draft-only staging, plus a provider-neutral request queue whose external adapter is intentionally not configured
-- Terraform 1.16 deployment root for an approval-gated AWS staging and production path
+- Terraform 1.16 deployment root for an approval-gated AWS staging and production path, including a scheduled queue-maintenance Lambda
 
 No vector database or separate API service is planned for version 1. They will be introduced only if measured product requirements justify them.
 
@@ -197,6 +197,7 @@ The public MVP is one Vercel-hosted Next.js application connected to Neon Postgr
 The validated, unapplied production target is AWS with separate staging and production environments:
 
 - containerized Next.js application on ECS Fargate behind an HTTPS Application Load Balancer;
+- a concurrency-limited scheduled Lambda for bounded generation-queue lease maintenance;
 - PostgreSQL on RDS with encryption, automated backups, and deletion protection;
 - S3 for permitted source artifacts and generated assets;
 - Secrets Manager or Parameter Store for credentials;

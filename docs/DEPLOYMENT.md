@@ -2,7 +2,7 @@
 
 ## Current scope
 
-NuraPrep's career-fair MVP is deployed at [nuraprep.vercel.app](https://nuraprep.vercel.app) on Vercel with Neon PostgreSQL and public Google OAuth. The owner account has a database-audited administrator grant, while all other Google accounts begin with learner access. The application also has a verified standalone container and local Compose topology. The validated AWS design remains an unapplied portfolio architecture and later production option. All paths use the same modular monolith: one stateless Next.js application and one PostgreSQL database.
+NuraPrep's career-fair MVP is deployed at [nuraprep.vercel.app](https://nuraprep.vercel.app) on Vercel with Neon PostgreSQL and public Google OAuth. The owner account has a database-audited administrator grant, while all other Google accounts begin with learner access. The application also has a verified standalone container and local Compose topology. The validated AWS design remains an unapplied portfolio architecture and later production option. All paths use the same modular monolith: one stateless Next.js application, one PostgreSQL database, and a narrowly scoped scheduled Lambda for generation-queue maintenance in AWS.
 
 ## Fastest public MVP: Vercel and Neon
 
@@ -127,6 +127,9 @@ flowchart TB
     ALB --> AppB[Private Fargate app task · AZ B]
     AppA --> RDS[(Isolated RDS PostgreSQL)]
     AppB --> RDS
+    Events[EventBridge schedule] --> Worker[Private Lambda maintenance worker]
+    Worker --> RDS
+    Secrets --> Worker
     AppA --> NAT[NAT egress for Google and Stripe]
     AppB --> NAT
     Secrets[Secrets Manager] --> AppA
@@ -144,8 +147,9 @@ The stack creates:
 4. encrypted PostgreSQL 17 on RDS with TLS required, automated backups, log exports, and no public endpoint;
 5. a private, encrypted, versioned S3 bucket that refuses public and non-TLS access and cannot be automatically force-deleted;
 6. Secrets Manager injection for generated database/auth values plus owner-supplied Google and optional Stripe values;
-7. CloudWatch log retention and alarms for server errors, task/database CPU, and database free storage; and
-8. an account-wide monthly AWS Budget with actual-spend and forecast notifications.
+7. CloudWatch log retention and alarms for server errors, task/database CPU, database free storage, and Lambda errors;
+8. a scheduled, concurrency-limited Lambda that performs bounded recovery of expired generation leases using read-only Secrets Manager access and an isolated database security path; and
+9. an account-wide monthly AWS Budget with actual-spend and forecast notifications.
 
 The application task role currently has no AWS data permissions. In particular, the app cannot access the S3 bucket until a real object-storage adapter exists and its exact key-level access is reviewed. This is intentional least privilege, not a claimed finished storage integration.
 
@@ -164,7 +168,7 @@ Before the first plan that could lead to an apply, the owner must provide or app
 - a hostname, DNS ownership, and validated ACM certificate;
 - separate staging Google OAuth credentials and approved callback URL;
 - one protected Server Action encryption key supplied to both BuildKit and Terraform;
-- two ECR image digests built from the same reviewed commit;
+- three ECR image digests built from the same reviewed commit: application, migration, and Lambda maintenance worker;
 - a private, versioned, encrypted Terraform-state bucket with narrow operator access;
 - backup retention, deletion, incident-notification, and teardown expectations; and
 - an explicit approval for the reviewed saved plan.
@@ -188,13 +192,13 @@ The final command uses mocked providers to prove the private-network, recoverabl
 
 The checked-in `backend.hcl.example` and `terraform.tfvars.example` contain placeholders only. Copy them to their gitignored real names, supply secrets through protected `TF_VAR_*` environment variables where possible, and never commit a plan file or credentials.
 
-1. Build the `runner` and `builder` Docker stages from one reviewed commit using the same protected Server Action BuildKit secret, push them to pre-created ECR repositories, and record their immutable `@sha256:` URIs.
+1. Build the `runner`, `builder`, and `lambda-worker` Docker stages from one reviewed commit, using the same protected Server Action BuildKit secret for the Next.js stages. Push them to pre-created ECR repositories and record their immutable `@sha256:` URIs. Build the Lambda image for `linux/amd64`, matching the checked-in function architecture.
 2. Initialize the pre-created remote state backend with `terraform init -backend-config=backend.hcl`.
 3. Generate a saved staging plan with `desired_task_count=0`. This creates the network and data services without starting an app against an empty schema.
 4. Review the plan for exact account, region, names, counts, replacement actions, secret handling, and monthly cost. Applying requires a separate explicit owner approval.
 5. After an approved apply, run the migration task in the output private subnets and app security group. Wait for it to stop and require container exit code zero.
 6. Generate and approve a second plan with `desired_task_count=1` to start staging.
-7. Point the approved DNS hostname at the load balancer, confirm the SNS email subscription, and verify health, Google callbacks, logs, alarms, and budget notifications.
+7. Point the approved DNS hostname at the load balancer, confirm the SNS email subscription, and verify health, Google callbacks, logs, alarms, budget notifications, the scheduled Lambda invocation, and its structured maintenance result without exposing secret values.
 8. Seed only reviewed staging content. Never run the development or E2E seed against staging.
 
 Production is a separate environment. Terraform refuses production configuration unless it requests at least two app tasks, one NAT gateway per availability zone, Multi-AZ RDS, deletion protection, and a final snapshot. Those controls improve resilience but increase cost; they are not silently enabled in staging.

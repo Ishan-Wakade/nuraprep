@@ -31,6 +31,16 @@ RUN --mount=type=secret,id=next_server_actions_encryption_key,required=false \
     fi; \
     pnpm build
 
+FROM dependencies AS lambda-builder
+COPY tsconfig.json ./
+COPY src/lambda ./src/lambda
+COPY src/lib/generation/retry-policy.ts ./src/lib/generation/retry-policy.ts
+RUN pnpm build:lambda
+
+FROM public.ecr.aws/lambda/nodejs:24 AS lambda-worker
+COPY --from=lambda-builder /app/dist/lambda/index.cjs ${LAMBDA_TASK_ROOT}/index.cjs
+CMD ["index.handler"]
+
 FROM node:24-alpine AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1

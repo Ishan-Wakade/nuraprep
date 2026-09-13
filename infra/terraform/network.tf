@@ -190,3 +190,27 @@ resource "aws_vpc_security_group_ingress_rule" "database_from_app" {
   to_port                      = 5432
   ip_protocol                  = "tcp"
 }
+
+resource "aws_security_group" "maintenance_worker" {
+  name_prefix = "${local.name}-maintenance-"
+  description = "Scheduled Lambda generation maintenance"
+  vpc_id      = aws_vpc.main.id
+
+  lifecycle { create_before_destroy = true }
+}
+
+resource "aws_vpc_security_group_egress_rule" "maintenance_worker_outbound" {
+  security_group_id = aws_security_group.maintenance_worker.id
+  description       = "Runtime secret retrieval and PostgreSQL maintenance"
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "database_from_maintenance_worker" {
+  security_group_id            = aws_security_group.database.id
+  description                  = "PostgreSQL from the scheduled maintenance Lambda only"
+  referenced_security_group_id = aws_security_group.maintenance_worker.id
+  from_port                    = 5432
+  to_port                      = 5432
+  ip_protocol                  = "tcp"
+}

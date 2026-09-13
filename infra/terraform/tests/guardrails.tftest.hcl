@@ -28,6 +28,7 @@ variables {
   certificate_arn                    = "arn:aws:acm:us-east-1:123456789012:certificate/test"
   app_image_uri                      = "123456789012.dkr.ecr.us-east-1.amazonaws.com/nuraprep-app@sha256:test"
   migration_image_uri                = "123456789012.dkr.ecr.us-east-1.amazonaws.com/nuraprep-migrate@sha256:test"
+  maintenance_worker_image_uri       = "123456789012.dkr.ecr.us-east-1.amazonaws.com/nuraprep-maintenance@sha256:test"
   google_client_id                   = "test.apps.googleusercontent.com"
   google_client_secret               = "test-only-secret"
   next_server_actions_encryption_key = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
@@ -63,6 +64,16 @@ run "staging_bootstrap_is_private_and_recoverable" {
   assert {
     condition     = aws_budgets_budget.monthly.limit_amount == "100"
     error_message = "The account-wide cost budget must use the owner-approved ceiling."
+  }
+
+  assert {
+    condition     = aws_lambda_function.generation_maintenance.reserved_concurrent_executions == 1
+    error_message = "Generation maintenance must retain a hard concurrency ceiling."
+  }
+
+  assert {
+    condition     = length(aws_lambda_function.generation_maintenance.vpc_config[0].security_group_ids) == 1
+    error_message = "The maintenance worker must use exactly one isolated VPC security group."
   }
 }
 

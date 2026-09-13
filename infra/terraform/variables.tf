@@ -65,6 +65,27 @@ variable "migration_image_uri" {
   }
 }
 
+variable "maintenance_worker_image_uri" {
+  description = "Immutable ECR image URI, including a digest, for the scheduled Lambda maintenance worker."
+  type        = string
+
+  validation {
+    condition     = strcontains(var.maintenance_worker_image_uri, "@sha256:")
+    error_message = "maintenance_worker_image_uri must be pinned by sha256 digest."
+  }
+}
+
+variable "generation_maintenance_schedule" {
+  description = "EventBridge schedule for bounded generation-queue lease maintenance."
+  type        = string
+  default     = "rate(5 minutes)"
+
+  validation {
+    condition     = can(regex("^(rate|cron)\\(.+\\)$", var.generation_maintenance_schedule))
+    error_message = "generation_maintenance_schedule must be an EventBridge rate(...) or cron(...) expression."
+  }
+}
+
 variable "google_client_id" {
   description = "Environment-specific Google OAuth client ID."
   type        = string

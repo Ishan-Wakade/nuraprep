@@ -52,3 +52,8 @@ output "operations_topic_arn" {
   description = "SNS topic for operational alarms; the email subscription must be confirmed."
   value       = aws_sns_topic.operations.arn
 }
+
+output "generation_maintenance_function_name" {
+  description = "Scheduled Lambda that recovers exhausted question-generation leases."
+  value       = aws_lambda_function.generation_maintenance.function_name
+}
