@@ -8,7 +8,9 @@ const contentSecurityPolicy = createContentSecurityPolicy(
 
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
-  output: "standalone",
+  ...(process.env.DEPLOYMENT_PLATFORM === "VERCEL"
+    ? {}
+    : { output: "standalone" as const }),
   poweredByHeader: false,
   async headers() {
     return [
