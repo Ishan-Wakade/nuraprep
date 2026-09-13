@@ -643,8 +643,7 @@ nav a:hover,
 }
 
 .section-heading p,
-.quality-copy > p,
-.roadmap-card p {
+.quality-copy > p {
   margin: 0;
   color: #52676a;
   font-size: 14px;
@@ -688,18 +687,11 @@ nav a:hover,
 }
 
 .principle-card h3 {
-  margin: 0 0 11px;
+  margin: 0;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 23px;
   font-weight: 500;
   letter-spacing: -0.025em;
-}
-
-.principle-card p {
-  margin: 0;
-  color: #52676a;
-  font-size: 12px;
-  line-height: 1.75;
 }
 
 .quality-section {

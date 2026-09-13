@@ -4,17 +4,14 @@ const principles = [
   {
     number: "01",
     title: "Find the real gap",
-    body: "A focused diagnostic separates a missed topic from a missing prerequisite, so the next step is useful.",
   },
   {
     number: "02",
     title: "Practice with purpose",
-    body: "Choose a topic or let adaptive practice balance weak skills, recency, confidence, and question variety.",
   },
   {
     number: "03",
     title: "Learn from every answer",
-    body: "Worked solutions, distractor rationales, and hint-first tutoring turn mistakes into specific lessons.",
   },
 ];
 
@@ -85,7 +82,7 @@ export default function Home() {
             <a href="#scope">Math scope</a>
           </nav>
           <a className="nav-cta" href="#roadmap">
-            View roadmap
+            Follow the build
           </a>
         </div>
       </header>
@@ -97,23 +94,15 @@ export default function Home() {
               <span />
               Independent TEAS Math preparation
             </div>
-            <h1>
-              Know what to study <em>next.</em>
-            </h1>
+            <h1>Your Tool to Master the TEAS Math Section</h1>
             <p className="hero-lede">
-              Focused practice that diagnoses weak skills, explains every
-              answer, and makes progress honest and understandable.
+              Uses adaptive learning to diagnose weak skills, explain every
+              answer, and make practice as personalized as possible.
             </p>
             <div className="hero-actions">
               <Link className="button button-primary" href="/practice">
                 Open Math practice <ArrowIcon />
               </Link>
-              <a
-                className="button button-secondary"
-                href="https://github.com/Ishan-Wakade/nuraprep"
-              >
-                View on GitHub
-              </a>
             </div>
             <p className="build-note">
               <span aria-hidden="true" />
@@ -212,7 +201,7 @@ export default function Home() {
             <p>
               <strong>Math first</strong>
               <br />
-              One section, done carefully
+              Expanding to other sections
             </p>
           </div>
           <div>
@@ -220,7 +209,7 @@ export default function Home() {
             <p>
               <strong>Transparent estimates</strong>
               <br />
-              Evidence and uncertainty shown
+              Honest score predictions using evidence
             </p>
           </div>
           <div>
@@ -228,7 +217,7 @@ export default function Home() {
             <p>
               <strong>Review before release</strong>
               <br />
-              Explicit approval for every item
+              Questions reviewed with traceable evidence
             </p>
           </div>
           <div>
@@ -257,7 +246,6 @@ export default function Home() {
               <span className="card-number">{principle.number}</span>
               <div className="card-rule" />
               <h3>{principle.title}</h3>
-              <p>{principle.body}</p>
             </article>
           ))}
         </div>
@@ -339,9 +327,9 @@ export default function Home() {
             <span className="section-label">Deliberately focused</span>
             <h2>Math, before everything else.</h2>
             <p>
-              The first release stays narrow enough to validate content,
-              learning, and review systems properly. Other TEAS sections come
-              later, one at a time.
+              The first release is narrow in order to ensure questions can be
+              thoroughly reviewed and accurate to the TEAS exam. Our goal is to
+              ensure that your learning will be as perfect as possible.
             </p>
           </div>
           <div className="topic-cloud" aria-label="Planned Math topics">
@@ -362,16 +350,12 @@ export default function Home() {
           <div>
             <span className="section-label">Open development</span>
             <h2>Follow the build from foundation to full practice.</h2>
-            <p>
-              The public roadmap shows what is implemented, what is planned, and
-              the evidence required before each milestone is called complete.
-            </p>
           </div>
           <a
             className="button button-cream"
-            href="https://github.com/Ishan-Wakade/nuraprep/blob/main/docs/ROADMAP.md"
+            href="https://github.com/Ishan-Wakade/nuraprep"
           >
-            Read the roadmap <ArrowIcon />
+            View on GitHub <ArrowIcon />
           </a>
         </div>
       </section>

@@ -5,19 +5,27 @@ import Home from "./page";
 
 describe("Home", () => {
   it("renders the product message and independent-project disclosure", () => {
-    render(<Home />);
+    const { container } = render(<Home />);
 
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: /know what to study next/i,
+        name: /your tool to master the teas math section/i,
       }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /uses adaptive learning to diagnose weak skills, explain every answer, and make practice as personalized as possible/i,
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/not affiliated with or endorsed by ATI/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /view on github/i }),
+      container.querySelector(".hero-actions a[href*='github.com']"),
+    ).not.toBeInTheDocument();
+    expect(
+      container.querySelector(".roadmap-card a[href*='github.com']"),
     ).toHaveAttribute("href", "https://github.com/Ishan-Wakade/nuraprep");
     expect(
       screen.getByRole("link", { name: /open math practice/i }),
@@ -30,5 +38,19 @@ describe("Home", () => {
       "href",
       "/terms",
     );
+    expect(screen.queryByText(/one section, done carefully/i)).toBeNull();
+    expect(
+      screen.getByText(/expanding to other sections/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/honest score predictions using evidence/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/questions reviewed with traceable evidence/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/a focused diagnostic separates/i)).toBeNull();
+    expect(
+      screen.queryByText(/the public roadmap shows what is implemented/i),
+    ).toBeNull();
   });
 });
