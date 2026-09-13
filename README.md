@@ -50,7 +50,7 @@ These screens are backed by the same PostgreSQL practice flow deployed on Vercel
 
 ## Engineering highlights
 
-- **Publication safety:** immutable question versions, independent reviewer attestations, versioned validator rubrics, and a database-enforced learner publication boundary.
+- **Publication safety:** immutable question versions, reviewer attestations, versioned validator rubrics, and a database-enforced learner publication boundary.
 - **Reproducible release content:** a typed 38-family reviewed snapshot plus a deterministic, replay-safe 432-family expansion release reconstruct the exact MVP policy without pretending machine checks are independent educational review.
 - **Deterministic educational checks:** typed answer contracts plus programmatic math, formatting, uniqueness, distractor, and originality signals instead of LLM-only grading.
 - **Reviewable scale:** deterministic template anchors, finite-population defect-detection planning, and extra higher-risk format samples reduce repetitive review without inheriting approval across variants.
@@ -66,7 +66,7 @@ For a system-level tour, exact rebuild sequence, tradeoff analysis, and truthful
 
 ## Product direction
 
-The first shippable Math release will let a learner:
+The current Math MVP lets a learner:
 
 1. use a development account or sign in;
 2. take a short diagnostic;
@@ -109,7 +109,20 @@ Important boundaries:
 - Adaptive recommendations and score estimates retain their inputs, model version, explanation, and uncertainty.
 - Authentication foundations protect learner and reviewer flows. Billing is disabled by default and ready for a zero-upfront-cost Stripe sandbox exercise; no learner feature is paywalled yet.
 
-See the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md), [Architecture](docs/ARCHITECTURE.md), [authentication and account security](docs/AUTHENTICATION.md), [billing and entitlements](docs/BILLING.md), [container and deployment operations](docs/DEPLOYMENT.md), [incident-response runbook](docs/INCIDENT_RESPONSE.md), [launch checklist](docs/LAUNCH_CHECKLIST.md), [Adaptive model](docs/ADAPTIVE_MODEL.md), [Practice-test blueprint](docs/PRACTICE_TEST.md), [Score estimation](docs/SCORE_ESTIMATION.md), [Question model](docs/QUESTION_MODEL.md), [Validation and publication](docs/VALIDATION.md), [Content governance](docs/CONTENT_GOVERNANCE.md), [source research log](docs/SOURCE_RESEARCH_LOG.md), [generation pipeline](docs/GENERATION_PIPELINE.md), and [Roadmap](docs/ROADMAP.md).
+## Documentation
+
+| Guide                                                      | What it covers                                                                           |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [Engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md) | End-to-end build sequence, design decisions, tradeoffs, and interview framing            |
+| [Architecture](docs/ARCHITECTURE.md)                       | System boundaries, request paths, data ownership, and infrastructure shape               |
+| [Content system](docs/CONTENT_SYSTEM.md)                   | Taxonomy, provenance, question versions, validation, review, generation, and publication |
+| [Learning system](docs/LEARNING_SYSTEM.md)                 | Diagnostic, adaptive scheduling, timed tests, readiness estimates, and study plans       |
+| [Authentication](docs/AUTHENTICATION.md)                   | Google OAuth, sessions, authorization, account lifecycle, and privacy controls           |
+| [Billing](docs/BILLING.md)                                 | Fail-closed Stripe boundary, entitlements, and unfinished launch decisions               |
+| [Deployment](docs/DEPLOYMENT.md)                           | Vercel/Neon MVP, Docker operations, and approval-gated AWS architecture                  |
+| [Operations](docs/OPERATIONS.md)                           | Incident response, launch gates, accessibility checks, and required drills               |
+| [Roadmap](docs/ROADMAP.md)                                 | Completed scope, remaining validation, and post-Math expansion                           |
+| [Resume and interviews](docs/RESUME.md)                    | Evidence-bounded resume bullets and project-story guidance                               |
 
 ## Technology
 

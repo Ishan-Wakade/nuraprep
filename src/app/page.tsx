@@ -381,7 +381,7 @@ export default function Home() {
             <a href="https://github.com/Ishan-Wakade/nuraprep/blob/main/SECURITY.md">
               Security
             </a>
-            <a href="https://github.com/Ishan-Wakade/nuraprep/blob/main/docs/CONTENT_GOVERNANCE.md">
+            <a href="https://github.com/Ishan-Wakade/nuraprep/blob/main/docs/CONTENT_SYSTEM.md">
               Content policy
             </a>
           </div>

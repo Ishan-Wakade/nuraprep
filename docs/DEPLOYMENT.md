@@ -234,4 +234,4 @@ The default run sends 100 requests with concurrency 10, rejects any request erro
 
 The harness refuses a non-local origin unless `ALLOW_REMOTE_LOAD_TEST=true` is explicitly set. That switch is not authorization: obtain the environment owner's approval, define a safe ceiling, and observe application/database metrics before targeting staging. Local numbers vary with hardware and development mode and are not product performance claims. A real staging test must use the release image, realistic read/write distribution and data volume, a warm-up period, longer duration, and concurrent monitoring of ALB, task, database, connection-pool, and error metrics.
 
-Use [the incident-response runbook](INCIDENT_RESPONSE.md) for containment and recovery procedures and [the launch checklist](LAUNCH_CHECKLIST.md) as the final evidence-based go/no-go gate.
+Use [operations and launch readiness](OPERATIONS.md) for containment, recovery, accessibility evidence, and the final go/no-go gate.

@@ -46,7 +46,7 @@ Run `pnpm test:e2e` for learner/reviewer workflow changes. Database migrations m
 
 ## Content contributions
 
-Question work follows [docs/CONTENT_GOVERNANCE.md](docs/CONTENT_GOVERNANCE.md). A candidate is not publishable until it has:
+Question work follows [docs/CONTENT_SYSTEM.md](docs/CONTENT_SYSTEM.md). A candidate is not publishable until it has:
 
 - a valid source/provenance record;
 - an explicit skill and learning objective;

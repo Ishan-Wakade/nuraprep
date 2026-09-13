@@ -89,7 +89,7 @@ No generated item bypasses the explicit owner-decision gate in the first release
 
 PostgreSQL triggers reject updates and deletes on question versions, validation runs, and review decisions. A revision copies the source and skill links into a new version but intentionally carries over neither validation evidence nor approval. Publication is a separate attributed ledger record; its trigger permits one controlled retirement and rejects identity changes or later history rewrites. The MVP publication evaluator requires provenance, the latest genuine owner decision to be approved, and passing deterministic answer-contract and mathematical-correctness checks. Seven granular reviewer rubrics remain versioned but advisory.
 
-The source registry derives permissions from reviewed decisions and fails closed for paid, gated, and user-submitted material. Generation requests use approved versioned templates, stable idempotency keys, and cost ceilings. Workers atomically claim eligible jobs with expiring leases and unique claim tokens; PostgreSQL fences stale workers, rejects active-lease theft, preserves terminal history, and requires a linked candidate version for `SUCCEEDED`. The provider interface exists, but no external provider is configured yet; see [Controlled question-generation pipeline](GENERATION_PIPELINE.md).
+The source registry derives permissions from reviewed decisions and fails closed for paid, gated, and user-submitted material. Generation requests use approved versioned templates, stable idempotency keys, and cost ceilings. Workers atomically claim eligible jobs with expiring leases and unique claim tokens; PostgreSQL fences stale workers, rejects active-lease theft, preserves terminal history, and requires a linked candidate version for `SUCCEEDED`. The provider interface exists, but no external provider is configured yet; see the [content system](CONTENT_SYSTEM.md).
 
 The feedback console groups reviewer and learner signals without erasing their provenance. At least two matching open signals are required to create an immutable improvement proposal; its evidence links and separate approval/rejection are append-only. An approved proposal is a plan, not executable configuration, so the system cannot silently rewrite a template, validator, rubric, policy, evaluation case, or question from feedback.
 
@@ -107,17 +107,17 @@ The initial adaptive selector is rules-based and inspectable:
 
 The algorithm will be evaluated for learning outcomes and subgroup behavior before more complex ML is considered.
 
-The exact current rules, constants, and limitations are recorded in [Adaptive model](ADAPTIVE_MODEL.md). They are internal product hypotheses, not ATI scoring rules, and must be changed under a new model version with regression tests.
+The exact current rules, constants, and limitations are recorded in the [learning system](LEARNING_SYSTEM.md). They are internal product hypotheses, not ATI scoring rules, and must be changed under a new model version with regression tests.
 
 ## Timed simulation boundary
 
-The practice-test assembler reads a versioned exam specification and only current learner-safe question publications. It blocks on domain deficits, stores a seeded immutable 38-item manifest without repeated families, and withholds answer feedback until completion. Timer recovery uses the persisted server start time; review marks are separate append-only events. See [Practice-test blueprint](PRACTICE_TEST.md) for official-versus-internal boundaries and test-fixture isolation.
+The practice-test assembler reads a versioned exam specification and only current learner-safe question publications. It blocks on domain deficits, stores a seeded immutable 38-item manifest without repeated families, and withholds answer feedback until completion. Timer recovery uses the persisted server start time; review marks are separate append-only events. See the [learning system](LEARNING_SYSTEM.md) for official-versus-internal boundaries and test-fixture isolation.
 
 ## Score-estimation baseline
 
 The first estimator combines reviewed performance by public scored domain, internal difficulty band, recency, and session evidence quality. Timed attempts retain separate accuracy and pacing features rather than receiving an arbitrary penalty. A weighted Beta baseline provides an approximate internal uncertainty interval; sparse histories remain close to a neutral prior with a deliberately wide range and an explicit low-evidence label.
 
-This estimate is not an ATI score conversion. Estimate records are append-only; their model version, features, prediction, interval, and caveats cannot be rewritten. Study plans reference an estimate but remain editable. Eventual consented outcomes will be evaluated using mean absolute error, interval coverage, calibration curves, and named-threshold classification metrics. See [Score estimation and study planning](SCORE_ESTIMATION.md).
+This estimate is not an ATI score conversion. Estimate records are append-only; their model version, features, prediction, interval, and caveats cannot be rewritten. Study plans reference an estimate but remain editable. Eventual consented outcomes will be evaluated using mean absolute error, interval coverage, calibration curves, and named-threshold classification metrics. See the [learning system](LEARNING_SYSTEM.md).
 
 ## Deployment evolution
 
