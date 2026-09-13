@@ -4,7 +4,10 @@ test("presents the product accurately", async ({ page }) => {
   await page.goto("/");
 
   await expect(
-    page.getByRole("heading", { level: 1, name: /know what to study next/i }),
+    page.getByRole("heading", {
+      level: 1,
+      name: /your tool to master the teas math section/i,
+    }),
   ).toBeVisible();
   await expect(
     page.getByText(/currently in active development/i),
@@ -62,7 +65,9 @@ test("has no horizontal overflow on a mobile viewport", async ({ page }) => {
   }));
 
   expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
-  await expect(page.getByRole("link", { name: /view roadmap/i })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /follow the build/i }),
+  ).toBeVisible();
 });
 
 test("gives an unknown route a useful recovery path", async ({ page }) => {
