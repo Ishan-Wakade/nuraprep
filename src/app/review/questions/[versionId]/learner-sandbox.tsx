@@ -7,6 +7,7 @@ import type {
   LearnerAnswer,
   QuestionChoice,
 } from "@/lib/questions/contracts";
+import { getAnswerChoiceDisplayLabel } from "@/lib/questions/display";
 import { evaluateAnswer } from "@/lib/questions/validation";
 
 type SandboxResult = ReturnType<typeof evaluateAnswer> | null;
@@ -95,7 +96,7 @@ export function LearnerSandbox({
         answerSpec.type === "multiple_select") && (
         <fieldset className="mt-4 grid gap-2 sm:grid-cols-2">
           <legend className="sr-only">Answer choices</legend>
-          {(choices ?? []).map((choice) => {
+          {(choices ?? []).map((choice, index) => {
             const multiple = answerSpec.type === "multiple_select";
             const checked = multiple
               ? multipleChoices.includes(choice.id)
@@ -125,7 +126,7 @@ export function LearnerSandbox({
                 />
                 <span>
                   <strong className="mr-2 text-[#116b65]">
-                    {choice.id.toUpperCase()}.
+                    {getAnswerChoiceDisplayLabel(index)}.
                   </strong>
                   {choice.content}
                 </span>

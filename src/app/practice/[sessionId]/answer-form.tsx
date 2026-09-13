@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 
 import type { QuestionChoice } from "@/lib/questions/contracts";
+import { getAnswerChoiceDisplayLabel } from "@/lib/questions/display";
 
 import { submitPracticeAnswer } from "../actions";
 
@@ -69,8 +70,13 @@ export function AnswerForm({
         <fieldset>
           <legend className="sr-only">Choose one answer</legend>
           <div className="grid gap-3 sm:grid-cols-2">
-            {choices?.map((choice) => (
-              <ChoiceControl key={choice.id} choice={choice} type="radio" />
+            {choices?.map((choice, index) => (
+              <ChoiceControl
+                key={choice.id}
+                choice={choice}
+                displayLabel={getAnswerChoiceDisplayLabel(index)}
+                type="radio"
+              />
             ))}
           </div>
         </fieldset>
@@ -82,8 +88,13 @@ export function AnswerForm({
             Select every answer that applies.
           </legend>
           <div className="grid gap-3 sm:grid-cols-2">
-            {choices?.map((choice) => (
-              <ChoiceControl key={choice.id} choice={choice} type="checkbox" />
+            {choices?.map((choice, index) => (
+              <ChoiceControl
+                key={choice.id}
+                choice={choice}
+                displayLabel={getAnswerChoiceDisplayLabel(index)}
+                type="checkbox"
+              />
             ))}
           </div>
         </fieldset>
@@ -197,9 +208,11 @@ export function AnswerForm({
 
 function ChoiceControl({
   choice,
+  displayLabel,
   type,
 }: {
   choice: QuestionChoice;
+  displayLabel: string;
   type: "radio" | "checkbox";
 }) {
   return (
@@ -211,7 +224,7 @@ function ChoiceControl({
         className="h-4 w-4 accent-[#116b65]"
       />
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#edf1ee] text-xs font-bold text-[#47615f] group-has-checked:bg-[#116b65] group-has-checked:text-white">
-        {choice.id.toLocaleUpperCase("en-US")}
+        {displayLabel}
       </span>
       <span className="text-sm leading-6">{choice.content}</span>
     </label>
