@@ -61,7 +61,7 @@ These screens are backed by the local PostgreSQL practice flow. The local bank c
 - **Production-shaped delivery:** isolated browser-test databases, transactional failure tests, a non-root standalone container, one-shot migrations, health checks, and validated cost-gated AWS Terraform.
 - **Layered application security:** a tested source-restricting browser policy and hidden framework identity complement dependency alerts, secret-scanning push protection, and weekly plus change-triggered CodeQL analysis using SHA-pinned actions.
 
-For a system-level tour, exact rebuild sequence, tradeoff analysis, and truthful interview-story framework, read the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md).
+For a system-level tour, exact rebuild sequence, tradeoff analysis, and truthful interview-story framework, read the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md). A concise, evidence-bounded [resume entry and behavioral-interview guide](docs/RESUME.md) is maintained alongside the implementation.
 
 ## Product direction
 
