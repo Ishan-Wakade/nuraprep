@@ -2,7 +2,7 @@
 
 ## Current scope
 
-NuraPrep's career-fair MVP is deployed at [nuraprep.vercel.app](https://nuraprep.vercel.app) on Vercel with Neon PostgreSQL and public Google OAuth. The owner account has a database-audited administrator grant, while all other Google accounts begin with learner access. The application also has a verified standalone container and local Compose topology. The validated AWS design remains an unapplied portfolio architecture and later production option. All paths use the same modular monolith: one stateless Next.js application, one PostgreSQL database, and a narrowly scoped scheduled Lambda for generation-queue maintenance in AWS.
+NuraPrep's career-fair MVP is deployed at [nuraprep.vercel.app](https://nuraprep.vercel.app) on Vercel with Neon PostgreSQL and public Google OAuth. The owner account has a database-audited administrator grant, while all other Google accounts begin with learner access. The application also has a verified standalone container and local Compose topology. Two AWS paths are checked in but unapplied: a scale-to-zero Lambda mirror for the lowest practical idle cost and a resilient ECS/RDS commercial target. All paths use the same modular monolith: one stateless Next.js application, one PostgreSQL database, and a narrowly scoped scheduled Lambda for generation-queue maintenance in the commercial AWS design.
 
 ## Fastest public MVP: Vercel and Neon
 
@@ -116,7 +116,17 @@ docker run --rm \
 
 `NEXT_SERVER_ACTIONS_KEY_VERSION` is a non-secret rotation label that invalidates Docker's build cache; increment it whenever the underlying protected key changes. In a real deployment, runtime secrets are injected by the orchestrator and are not written directly on a command line. The release process must stop if migration fails. Destructive rollback migrations are not automatic; application rollback must remain compatible with the migrated schema or use an explicitly reviewed forward fix.
 
-## AWS infrastructure: validated, not applied
+## Lowest-idle-cost AWS mirror: validated, not applied
+
+[`infra/serverless`](../infra/serverless) packages the Next.js 16 standalone server with AWS's Lambda Web Adapter, retains Neon PostgreSQL, and exposes a generated Lambda Function URL. Lambda is capped at two concurrent executions, so the mirror cannot fan out an unbounded number of application connection pools. The runtime role reads one exact SSM SecureString; Terraform state contains no database, authentication, or OAuth secret. ECR retains three immutable scanned images, CloudWatch logs expire after seven days, and an optional account budget defaults to $1.
+
+This route avoids the NAT Gateway, Application Load Balancer, Fargate, and RDS resources that create the commercial design's material idle bill. It is still usage-priced: an account can incur Lambda compute/request, ECR storage, SSM API, log, and transfer charges after applicable credits or allowances. Budget notifications lag and do not stop resources. The AWS-generated URL is adequate for a portfolio mirror, so a domain is not required.
+
+AWS Amplify is intentionally not used for this mirror because its current managed SSR documentation supports Next.js only through version 15, while NuraPrep uses Next.js 16. The Lambda Web Adapter is maintained by AWS and runs ordinary HTTP applications without replacing Next.js routing.
+
+The local evidence currently proves that the Lambda image builds for the selected target, starts through a fail-closed encrypted-configuration bootstrap, and that Terraform validates with both guardrail tests passing. It does not prove a public AWS deployment. Complete the two-pass procedure in [`infra/serverless/README.md`](../infra/serverless/README.md), add the generated Google callback, and run live QA before changing that status.
+
+## Commercial AWS infrastructure: validated, not applied
 
 The Terraform root at [`infra/terraform`](../infra/terraform) defines the intended deployment. Running its formatter, provider initialization with the backend disabled, and `terraform validate` does not create resources. No NuraPrep AWS resource or recurring charge has been created.
 

@@ -15,20 +15,20 @@ NuraPrep is not affiliated with, endorsed by, or sponsored by Assessment Technol
 
 **Public career-fair MVP deployed at [nuraprep.vercel.app](https://nuraprep.vercel.app).** The production learner bank contains 470 active original Math families across all 12 current leaf skills: a source-controlled 38-question owner-reviewed foundation plus 432 no-cost deterministic variants released under an explicit owner-delegated MVP decision. Every exact version has governed public-outline provenance, typed answer contracts, programmatic math verification, internal similarity screening, and a versioned publication record. The generated expansion is owner-authorized and machine-validated; it has not received independent educator review or learner-performance calibration. The Vercel application, Neon database, public Google OAuth flow, protected learner route, and owner-only reviewer authorization have been exercised against the live environment. Commercial-launch gates such as independent educator sampling, empirical score calibration, manual assistive-technology review, managed recovery/load drills, and billing verification remain open.
 
-| Area                                        | Status                                                                                                                             |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Public repository and engineering standards | Complete                                                                                                                           |
-| Math taxonomy and question data model       | Implemented with migrations and seed data                                                                                          |
-| Reviewer and provenance workflow            | Deployed with role-protected review, publication, coverage, reports, pattern search, and approved improvement plans                |
-| Topic practice                              | Deployed multi-format learner flow with 470 published questions                                                                    |
-| Diagnostic                                  | Deployed with explicit coverage and conservative starting signals                                                                  |
-| Adaptive mode                               | Deployed inspectable rules baseline                                                                                                |
-| Timed Math practice test                    | Deployed with a 38-question, 57-minute blueprint; independent educational QA and empirical calibration remain open                 |
-| Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                                                     |
-| Source and generation controls              | Registry, deterministic dry-run/draft staging, leased request queue, and worker gates working; paid provider intentionally off     |
-| Account and Google sign-in                  | Public Google OAuth, database sessions, logout, device revocation, export, erasure, privileged pseudonymization, and RBAC deployed |
-| Billing                                     | Stripe-hosted integration implemented fail-closed; sandbox verification and product decisions remain open                          |
-| AWS deployment                              | ECS/RDS/Lambda Terraform validated; region cost review, prerequisites, staging apply, and restore drill remain                     |
+| Area                                        | Status                                                                                                                                 |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Public repository and engineering standards | Complete                                                                                                                               |
+| Math taxonomy and question data model       | Implemented with migrations and seed data                                                                                              |
+| Reviewer and provenance workflow            | Deployed with role-protected review, publication, coverage, reports, pattern search, and approved improvement plans                    |
+| Topic practice                              | Deployed multi-format learner flow with 470 published questions                                                                        |
+| Diagnostic                                  | Deployed with explicit coverage and conservative starting signals                                                                      |
+| Adaptive mode                               | Deployed inspectable rules baseline                                                                                                    |
+| Timed Math practice test                    | Deployed with a 38-question, 57-minute blueprint; independent educational QA and empirical calibration remain open                     |
+| Score estimate and study plan               | Working, versioned baseline; external calibration remains open                                                                         |
+| Source and generation controls              | Registry, deterministic dry-run/draft staging, leased request queue, and worker gates working; paid provider intentionally off         |
+| Account and Google sign-in                  | Public Google OAuth, database sessions, logout, device revocation, export, erasure, privileged pseudonymization, and RBAC deployed     |
+| Billing                                     | Stripe-hosted integration implemented fail-closed; sandbox verification and product decisions remain open                              |
+| AWS deployment                              | Scale-to-zero Lambda mirror implemented and locally validated; AWS sign-in, ECR push, public apply, OAuth callback, and live QA remain |
 
 ## Product preview
 
@@ -59,7 +59,7 @@ These screens are backed by the same PostgreSQL practice flow deployed on Vercel
 - **Privacy-aware accounts:** database sessions, revocable roles, fresh-session export and learner erasure, second-admin privileged pseudonymization, token-safe audit events, and shared authentication rate limits.
 - **Abuse-resistant mutations:** atomic per-account budgets protect session creation, answers, review marks, tutoring, reports, predictions, exports, billing sessions, and generation requests across replicas.
 - **Fail-closed billing boundary:** server-owned Stripe Checkout/Portal flows, signed replay-safe webhook receipts, order-independent subscription synchronization, and no card-data handling.
-- **Production-shaped delivery:** isolated browser-test databases, transactional failure tests, a non-root standalone container, one-shot migrations, health checks, and validated cost-gated AWS Terraform.
+- **Production-shaped delivery:** isolated browser-test databases, transactional failure tests, a non-root standalone container, one-shot migrations, health checks, a scale-to-zero Lambda image, and validated cost-gated AWS Terraform.
 - **Layered application security:** a tested source-restricting browser policy and hidden framework identity complement dependency alerts, secret-scanning push protection, and weekly plus change-triggered CodeQL analysis using SHA-pinned actions.
 
 For a system-level tour, exact rebuild sequence, tradeoff analysis, and truthful interview-story framework, read the [engineering walkthrough](docs/ENGINEERING_WALKTHROUGH.md). A concise, evidence-bounded [resume entry and behavioral-interview guide](docs/RESUME.md) is maintained alongside the implementation.
@@ -134,7 +134,7 @@ Important boundaries:
 - Vitest, Testing Library, Playwright, and automated axe WCAG checks
 - Docker Compose for local PostgreSQL
 - No-cost deterministic variant generation with duplicate rejection and draft-only staging, plus a provider-neutral request queue whose external adapter is intentionally not configured
-- Terraform 1.16 deployment root for an approval-gated AWS staging and production path, including a scheduled queue-maintenance Lambda
+- Terraform 1.16 roots for a scale-to-zero AWS Lambda portfolio mirror and an approval-gated ECS/RDS commercial path, including a scheduled queue-maintenance Lambda
 
 No vector database or separate API service is planned for version 1. They will be introduced only if measured product requirements justify them.
 
@@ -192,7 +192,9 @@ The load command is a bounded local smoke test, not a benchmark claim. It refuse
 
 ## Deployment direction
 
-The public MVP is one Vercel-hosted Next.js application connected to Neon PostgreSQL, with public Google OAuth enabled and billing disabled. It is live at [nuraprep.vercel.app](https://nuraprep.vercel.app) with no required upfront infrastructure purchase. The validated AWS Terraform remains a separate portfolio architecture and later production option; it is not on the career-fair deployment critical path.
+The public MVP is one Vercel-hosted Next.js application connected to Neon PostgreSQL, with public Google OAuth enabled and billing disabled. It is live at [nuraprep.vercel.app](https://nuraprep.vercel.app) with no required upfront infrastructure purchase.
+
+The repository now also contains a scale-to-zero AWS mirror path: the same Next.js 16 standalone output runs in a non-root Lambda container through AWS's Lambda Web Adapter, reads one encrypted SSM runtime parameter through exact-resource IAM, and is exposed by a generated Function URL. ECR retention, two-request maximum concurrency, seven-day logs, an error alarm, and an optional $1 account budget bound idle cost and blast radius. The image and Terraform plans pass locally, but the AWS account has not yet been authenticated and no AWS resource has been created. See [`infra/serverless`](infra/serverless) for the two-pass deployment procedure.
 
 The validated, unapplied production target is AWS with separate staging and production environments:
 
@@ -204,7 +206,7 @@ The validated, unapplied production target is AWS with separate staging and prod
 - CloudWatch logs, alarms, and audit-friendly structured events;
 - least-privilege IAM and budget alerts.
 
-The standalone application image, migration job, Compose topology, database-aware health endpoint, and Terraform configuration are implemented and validated. The infrastructure root enforces digest-pinned images, private tasks and database subnets, production availability guards, secret injection, alarms, and an account-wide budget. No cloud resources are provisioned. A region-specific estimate, prerequisite setup, teardown review, and explicit approval are required before the first staging apply; see [deployment operations](docs/DEPLOYMENT.md).
+The standalone application image, Lambda-compatible image, migration job, Compose topology, database-aware health endpoint, and both Terraform configurations are implemented and locally validated. The commercial infrastructure root enforces digest-pinned images, private tasks and database subnets, production availability guards, secret injection, alarms, and an account-wide budget. The scale-to-zero root deliberately retains Neon and omits the always-on load balancer, NAT, Fargate, and RDS resources. No AWS resources are provisioned yet. A signed-in AWS operator, exact generated callback URL, and live verification are required before describing the AWS mirror as deployed; see [deployment operations](docs/DEPLOYMENT.md).
 
 ## Security, privacy, and educational integrity
 

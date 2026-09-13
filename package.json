@@ -11,6 +11,7 @@
     "dev": "next dev",
     "build": "next build",
     "build:lambda": "esbuild src/lambda/generation-maintenance.ts --bundle --format=cjs --platform=node --target=node24 --outfile=dist/lambda/index.cjs",
+    "build:lambda-app-bootstrap": "esbuild src/lambda/serverless-app-bootstrap.ts --bundle --format=cjs --platform=node --target=node24 --outfile=dist/lambda-app/bootstrap.cjs",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
@@ -31,6 +32,7 @@
     "questions:bank:audit": "tsx scripts/audit-published-math-bank.ts",
     "questions:bank:export": "tsx scripts/export-reviewed-math-bank.ts",
     "auth:bootstrap-admin": "tsx scripts/bootstrap-first-admin.ts",
+    "aws:serverless:configure": "tsx scripts/configure-aws-serverless-runtime.ts",
     "test:db": "tsx scripts/database-smoke.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -38,6 +40,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.1131.0",
+    "@aws-sdk/client-ssm": "^3.1131.0",
     "better-auth": "1.7.2",
     "drizzle-orm": "0.45.2",
     "next": "16.3.4",

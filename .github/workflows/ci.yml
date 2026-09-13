@@ -76,6 +76,13 @@ jobs:
       - name: Test infrastructure guardrails without AWS credentials
         run: terraform -chdir=infra/terraform test
 
+      - name: Validate scale-to-zero AWS infrastructure
+        run: |
+          terraform -chdir=infra/serverless fmt -check -recursive
+          terraform -chdir=infra/serverless init -backend=false -input=false
+          terraform -chdir=infra/serverless validate
+          terraform -chdir=infra/serverless test
+
       - name: Check formatting
         run: pnpm format:check
 
@@ -115,6 +122,13 @@ jobs:
           docker build
           --target lambda-worker
           --tag nuraprep-maintenance:ci .
+
+      - name: Build scale-to-zero Lambda application container
+        run: >-
+          docker build
+          --build-arg NEXT_PUBLIC_APP_URL=https://placeholder.invalid
+          --target lambda-app
+          --tag nuraprep-lambda-app:ci .
 
       - name: Install supported test browsers
         run: pnpm exec playwright install --with-deps chromium firefox webkit

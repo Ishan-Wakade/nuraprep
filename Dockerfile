@@ -37,6 +37,11 @@ COPY src/lambda ./src/lambda
 COPY src/lib/generation/retry-policy.ts ./src/lib/generation/retry-policy.ts
 RUN pnpm build:lambda
 
+FROM dependencies AS lambda-app-bootstrap-builder
+COPY tsconfig.json ./
+COPY src/lambda/serverless-app-bootstrap.ts ./src/lambda/serverless-app-bootstrap.ts
+RUN pnpm build:lambda-app-bootstrap
+
 FROM public.ecr.aws/lambda/nodejs:24 AS lambda-worker
 COPY --from=lambda-builder /app/dist/lambda/index.cjs ${LAMBDA_TASK_ROOT}/index.cjs
 CMD ["index.handler"]
@@ -61,3 +66,17 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1
 
 CMD ["node", "server.js"]
+
+FROM runner AS lambda-app
+USER root
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:1.0.1@sha256:1e5ab4d9242167500ed8a7bed8a79b448228aaa51cf382fb51fe4bf8a5f9a811 /lambda-adapter /opt/extensions/lambda-adapter
+COPY --from=lambda-app-bootstrap-builder --chown=nextjs:nodejs /app/dist/lambda-app/bootstrap.cjs ./bootstrap.cjs
+RUN ln -s /tmp/nuraprep-next-cache ./.next/cache
+ENV AWS_LWA_PORT=3000
+ENV AWS_LWA_READINESS_CHECK_PATH=/api/health
+ENV AWS_LWA_READINESS_CHECK_HEALTHY_STATUS=200-399
+ENV AWS_LWA_ENABLE_COMPRESSION=true
+ENV AWS_LWA_ERROR_STATUS_CODES=500-504
+ENV NURAPREP_BOOTSTRAP_ENTRYPOINT=true
+USER nextjs
+CMD ["node", "bootstrap.cjs"]
