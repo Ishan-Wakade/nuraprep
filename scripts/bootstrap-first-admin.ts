@@ -66,7 +66,7 @@ async function main() {
       `INSERT INTO auth_role_grants
          (user_id, role, granted_by, reason)
        VALUES
-         ($1, 'ADMIN', $1, $2)`,
+         ($1::text, 'ADMIN', $1::varchar(160), $2)`,
       [
         userId,
         "Initial production administrator bootstrap after verified Google sign-in. Future grants require an authenticated administrator.",
@@ -76,7 +76,7 @@ async function main() {
       `INSERT INTO account_audit_events
          (user_id, event_type, actor_id, metadata)
        VALUES
-         ($1, 'ADMIN_ROLE_BOOTSTRAPPED', $1, $2::jsonb)`,
+         ($1::text, 'ADMIN_ROLE_BOOTSTRAPPED', $1::varchar(160), $2::jsonb)`,
       [
         userId,
         JSON.stringify({
