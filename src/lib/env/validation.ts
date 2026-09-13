@@ -42,7 +42,15 @@ export type ServerEnvironment = z.infer<typeof serverEnvironmentSchema>;
 export function parseServerEnvironment(
   input: Record<string, string | undefined>,
 ): ServerEnvironment {
-  const environment = serverEnvironmentSchema.parse(input);
+  const vercelProductionHost = input.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  const normalizedInput =
+    input.DEPLOYMENT_PLATFORM === "VERCEL" && vercelProductionHost
+      ? {
+          ...input,
+          NEXT_PUBLIC_APP_URL: `https://${vercelProductionHost}`,
+        }
+      : input;
+  const environment = serverEnvironmentSchema.parse(normalizedInput);
   const publicUrl = new URL(environment.NEXT_PUBLIC_APP_URL);
   const databaseUrl = new URL(environment.DATABASE_URL);
   const directUrl = environment.DIRECT_URL

@@ -90,6 +90,20 @@ describe("parseServerEnvironment", () => {
     });
   });
 
+  it("derives the canonical origin from Vercel's production-domain variable", () => {
+    expect(
+      parseServerEnvironment({
+        ...productionEnvironment,
+        DEPLOYMENT_PLATFORM: "VERCEL",
+        NEXT_PUBLIC_APP_URL: "",
+        VERCEL_PROJECT_PRODUCTION_URL: "nuraprep.vercel.app",
+        TRUSTED_PROXY_CIDRS: "",
+      }),
+    ).toMatchObject({
+      NEXT_PUBLIC_APP_URL: "https://nuraprep.vercel.app",
+    });
+  });
+
   it("requires a canonical HTTPS origin in production", () => {
     expect(() =>
       parseServerEnvironment({
