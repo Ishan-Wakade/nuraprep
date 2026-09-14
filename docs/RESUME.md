@@ -32,7 +32,7 @@ Next.js, React, TypeScript, PostgreSQL, Drizzle ORM, Better Auth, Google OAuth, 
 - Architected a production-shaped TEAS Math platform with diagnostic, topic, adaptive, and 38-question timed practice; explanation-first feedback; progress tracking; question reporting; and transparent readiness estimates with uncertainty.
 - Built a governed 470-question Math bank spanning 12 skills and four response formats, combining 38 individually owner-reviewed questions with 432 deterministic variants backed by versioned templates, programmatic answer verification, provenance records, immutable review history, and duplicate screening.
 - Engineered secure account and operations foundations with Google OAuth, database sessions, role-based reviewer/admin access, shared rate limits, portable data export, transactional account erasure, security headers, and a fail-closed Stripe boundary kept disabled for the free MVP.
-- Deployed the public MVP on Vercel and Neon with Google OAuth and role-protected administration, while retaining Docker and validated AWS ECS/RDS/VPC/S3/CloudWatch Terraform as a cost-gated alternative; enforced CI, CodeQL, 303 unit/component tests, 60+ Playwright scenarios, automated accessibility checks, and cross-browser mobile coverage.
+- Deployed the public MVP on Vercel/Neon and a security-scanned, digest-pinned distroless Docker mirror on AWS Lambda/ECR with Terraform, exact-resource SSM/IAM, short-retention CloudWatch logs, Google OAuth, and role-protected administration; retained a validated ECS/RDS/VPC/ALB/S3 commercial design and enforced CI, CodeQL, 314 unit/component tests, 64 Playwright scenarios, automated accessibility checks, and cross-browser mobile coverage.
 
 ## One-line project description
 
@@ -44,7 +44,7 @@ NuraPrep started as an education-product idea, but the hardest engineering probl
 
 On the learner side, I implemented diagnostic, topic, adaptive, and timed-test flows around the same question and attempt model. Recommendations remain inspectable: accuracy, recency, confidence, timing, prerequisite relationships, and spaced-review state produce stored reasons rather than an opaque model output. The score estimator similarly exposes its evidence and uncertainty and is clearly labeled as unofficial until real learner outcomes support calibration.
 
-For production readiness, I deployed Google OAuth, database-backed sessions, role grants, shared application rate limits, account export and erasure, and security headers on Vercel and Neon. I also implemented Stripe's hosted billing boundary in disabled mode, Docker delivery, CI and CodeQL, and an AWS Terraform architecture. AWS remains a validated, cost-gated alternative rather than an inflated live-deployment claim.
+For production readiness, I deployed Google OAuth, database-backed sessions, role grants, shared application rate limits, account export and erasure, and security headers on Vercel and Neon. I also deployed the same Dockerized application as a scale-to-zero AWS Lambda/ECR mirror through Terraform with encrypted SSM configuration, least-privilege IAM, and CloudWatch observability. Stripe's hosted billing boundary remains disabled, and the more resilient ECS/RDS commercial AWS architecture remains validated but unapplied.
 
 ## Strong behavioral-interview stories
 
@@ -52,8 +52,8 @@ For production readiness, I deployed Google OAuth, database-backed sessions, rol
 
 - **Situation:** A career-fair deadline made a public MVP more valuable than completing every long-term infrastructure milestone.
 - **Task:** Ship a credible product quickly without weakening content, privacy, or security claims.
-- **Action:** Kept the modular monolith, selected Vercel and Neon for the first deployment, disabled billing, retained the AWS design as a separate validated architecture, and converted content expansion into a reproducible release command with explicit limitations.
-- **Result:** A deployable Math product with 470 active questions and complete learner flows, while independent educational calibration and commercial launch gates remain documented rather than falsely marked complete.
+- **Action:** Kept the modular monolith, selected Vercel and Neon for the primary deployment, disabled billing, added a scale-to-zero Lambda mirror for verified AWS experience, retained the costly ECS/RDS design as a separate validated architecture, and converted content expansion into a reproducible release command with explicit limitations.
+- **Result:** A Math product with 470 active questions and complete learner flows deployed on two platforms, while independent educational calibration and commercial launch gates remain documented rather than falsely marked complete.
 
 ### Preventing content-quality failures at scale
 

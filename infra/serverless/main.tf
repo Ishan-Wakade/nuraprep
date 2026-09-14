@@ -130,11 +130,18 @@ resource "aws_lambda_function" "app" {
   memory_size   = 1024
   timeout       = 30
 
-  reserved_concurrent_executions = 2
+  # New Free plan accounts can have a regional concurrency quota of 10 and
+  # AWS requires all 10 executions to remain unreserved. A null value keeps
+  # provisioned concurrency disabled and lets that account-wide quota remain
+  # the hard ceiling. Operators with a larger quota may opt into a lower,
+  # explicit per-function reservation through reserved_concurrency.
+  reserved_concurrent_executions = var.reserved_concurrency
 
   environment {
     variables = {
-      NURAPREP_RUNTIME_PARAMETER = var.runtime_parameter_name
+      NURAPREP_RUNTIME_PARAMETER                   = var.runtime_parameter_name
+      AWS_LWA_READINESS_CHECK_PATH                 = "/icon.svg"
+      AWS_LWA_READINESS_CHECK_MIN_UNHEALTHY_STATUS = "400"
     }
   }
 

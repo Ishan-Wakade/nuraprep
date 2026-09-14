@@ -32,6 +32,18 @@ variable "runtime_parameter_name" {
   }
 }
 
+variable "reserved_concurrency" {
+  description = "Optional per-function concurrency reservation; leave null when the account quota cannot spare AWS's required 10 unreserved executions."
+  type        = number
+  default     = null
+  nullable    = true
+
+  validation {
+    condition     = var.reserved_concurrency == null || (var.reserved_concurrency >= 1 && var.reserved_concurrency <= 5)
+    error_message = "reserved_concurrency must be null or between 1 and 5."
+  }
+}
+
 variable "alert_email" {
   description = "Optional owner email for the account-level cost budget."
   type        = string

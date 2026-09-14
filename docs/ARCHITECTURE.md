@@ -123,7 +123,8 @@ This estimate is not an ATI score conversion. Estimate records are append-only; 
 
 1. **Local:** Next.js plus PostgreSQL in Docker; local object-storage emulator only when required.
 2. **Preview:** ephemeral app preview with an isolated disposable database and synthetic content.
-3. **Staging:** AWS environment with non-production OAuth, Stripe test mode, monitored jobs, and sanitized content.
-4. **Production:** separate AWS account or strongly isolated environment, RDS backups, encrypted S3, least-privilege IAM, alarms, budget alerts, and a tested restore path.
+3. **Portfolio mirror:** the live Vercel/Neon application is independently packaged into a scale-to-zero Lambda/ECR deployment with SSM, exact-resource IAM, short-retention CloudWatch logs, and an AWS-generated HTTPS URL.
+4. **Commercial staging:** AWS environment with non-production OAuth, Stripe test mode, monitored jobs, and sanitized content.
+5. **Commercial production:** separate AWS account or strongly isolated environment, RDS backups, encrypted S3, least-privilege IAM, alarms, budget alerts, and a tested restore path.
 
 The validated Terraform root under `infra/terraform` encodes the intended ALB, private Fargate, isolated RDS, Secrets Manager, S3, alarm, and account-budget boundaries. A scheduled Lambda performs only bounded generation-lease maintenance: it has one reserved concurrent execution, a 30-second timeout, read-only access to the runtime secret, an isolated VPC security group, and no content-publication or model-provider authority. The stack has not been applied. Production infrastructure still requires a reviewed threat model, provider-specific cost estimate, data-retention policy, restore drill, and explicit approval.

@@ -4,7 +4,7 @@ This document combines NuraPrep's incident runbook with its evidence-based launc
 
 ## Current release status
 
-**LIVE career-fair MVP; NO-GO for a fully validated commercial launch.** Vercel, Neon PostgreSQL, public Google OAuth, protected learner routes, owner administrator access, and the 470-family Math bank have been exercised in production. Independent educator sampling, legal review, manual assistive-technology testing, managed restore/load drills, production monitoring, empirical score calibration, support ownership, Stripe verification, and AWS deployment remain open.
+**LIVE career-fair MVP; NO-GO for a fully validated commercial launch.** Vercel, Neon PostgreSQL, a scale-to-zero AWS Lambda mirror, public Google OAuth, protected learner routes, owner administrator access, and the 470-family Math bank have been exercised live. Independent educator sampling, legal review, manual assistive-technology testing, managed restore/load drills, full production monitoring, empirical score calibration, support ownership, Stripe verification, and the commercial ECS/RDS AWS deployment remain open.
 
 ## Incident severity
 
@@ -116,9 +116,10 @@ Every completed item needs dated evidence and a named owner. Any unresolved stop
 - [ ] Keep `BILLING_ENABLED=false` until pricing, trial, cancellation, refund, tax, and support decisions are approved.
 - [ ] Complete Stripe test-mode checkout, renewal, failure/recovery, cancellation, refund, Portal, replay, reordering, and test-clock scenarios.
 - [ ] Verify mode-matched credentials, raw-body signatures, fail-closed entitlements, alerts, and reconciliation.
-- [ ] Save a region-specific AWS plan, estimate cost, approve a ceiling, and identify the budget recipient.
+- [x] Apply and smoke-test the free-plan Lambda/ECR portfolio mirror with exact-resource SSM/IAM and bounded logs.
+- [ ] Save a region-specific commercial ECS/RDS plan, estimate cost, approve a ceiling, and identify the budget recipient.
 - [ ] Review networking, IAM, secrets, TLS, logging, backups, deletion protection, final snapshots, and S3 access.
-- [ ] Apply staging only after explicit owner approval.
+- [ ] Apply commercial staging only after explicit owner approval.
 - [ ] Run migration, rollback, restore, rotation, scaling, load, alarm, and teardown drills.
 
 ### Accessibility and browser quality

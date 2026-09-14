@@ -147,8 +147,9 @@ Each milestone ends with formatted code, passing lint/type/tests/build, updated 
 ## 9. AWS staging and production readiness
 
 - [x] Add a non-root Next.js standalone image, one-shot migration container, local Compose topology, database-aware health check, and CI image build.
+- [x] Deploy and smoke-test a free-plan scale-to-zero Lambda/ECR portfolio mirror with Google OAuth, exact-resource SSM/IAM, short-retention logs, and no always-on infrastructure.
 - [x] Add validated infrastructure as code for private app hosting, RDS, governed S3, write-only secret injection, logs, alarms, backups, narrow IAM, and account-wide budget alerts.
-- Build and push immutable ECR images, bootstrap remote state, calculate region-specific cost, and receive explicit owner approval before the first staging apply.
+- Build and push immutable commercial ECR images, bootstrap remote state, calculate region-specific cost, and receive explicit owner approval before the first ECS/RDS staging apply.
 - Separate staging/production, run restore and teardown drills, and document expected cost before approval.
 - Complete privacy policy, terms, manual accessibility audit, and staging load test.
 - [x] Add a safe local load-smoke harness, incident-response runbook, and evidence-based launch checklist.

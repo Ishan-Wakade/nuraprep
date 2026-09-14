@@ -2,7 +2,7 @@
 
 ## Current scope
 
-NuraPrep's career-fair MVP is deployed at [nuraprep.vercel.app](https://nuraprep.vercel.app) on Vercel with Neon PostgreSQL and public Google OAuth. The owner account has a database-audited administrator grant, while all other Google accounts begin with learner access. The application also has a verified standalone container and local Compose topology. Two AWS paths are checked in but unapplied: a scale-to-zero Lambda mirror for the lowest practical idle cost and a resilient ECS/RDS commercial target. All paths use the same modular monolith: one stateless Next.js application, one PostgreSQL database, and a narrowly scoped scheduled Lambda for generation-queue maintenance in the commercial AWS design.
+NuraPrep's career-fair MVP is deployed at [nuraprep.vercel.app](https://nuraprep.vercel.app) on Vercel with Neon PostgreSQL and public Google OAuth. A second public copy is deployed through a [scale-to-zero AWS Lambda mirror](https://mq6xnisbdyio5lcyhi6afmv7ti0lfomm.lambda-url.us-east-1.on.aws). The owner account has a database-audited administrator grant, while all other Google accounts begin with learner access. Both applications share the same production database and authorization model. The resilient ECS/RDS commercial target remains checked in but unapplied. All paths use the same modular monolith: one stateless Next.js application, one PostgreSQL database, and a narrowly scoped scheduled Lambda for generation-queue maintenance in the commercial AWS design.
 
 ## Fastest public MVP: Vercel and Neon
 
@@ -23,7 +23,7 @@ The September 13, 2026 release applied every committed migration and the idempot
 
 Vercel uses its native Next.js output layout. Docker and the AWS target retain standalone output so the same repository can produce a minimal self-hosted runtime image.
 
-The container uses Next.js 16 standalone output so the runtime image contains traced production dependencies rather than the full source tree and development toolchain. It runs as the unprivileged `nextjs` user and reports only `ok` or `unavailable` from `/api/health`; database errors and connection details are never returned.
+The container uses Next.js 16 standalone output so the runtime image contains traced production dependencies rather than the full source tree and development toolchain. Its final image is a digest-pinned distroless Node.js runtime that runs as unprivileged UID/GID 65532, omits a shell and package manager, and reports only `ok` or `unavailable` from `/api/health`; database errors and connection details are never returned.
 
 The Docker build context excludes generated Next.js/test output, dependency folders, local backups, Terraform provider caches, and Terraform state. The small infrastructure source files and provider lockfile remain available to CI, but machine-local provider binaries and potentially sensitive state never enter an application build context.
 
@@ -116,15 +116,15 @@ docker run --rm \
 
 `NEXT_SERVER_ACTIONS_KEY_VERSION` is a non-secret rotation label that invalidates Docker's build cache; increment it whenever the underlying protected key changes. In a real deployment, runtime secrets are injected by the orchestrator and are not written directly on a command line. The release process must stop if migration fails. Destructive rollback migrations are not automatic; application rollback must remain compatible with the migrated schema or use an explicitly reviewed forward fix.
 
-## Lowest-idle-cost AWS mirror: validated, not applied
+## Lowest-idle-cost AWS mirror: deployed and verified
 
-[`infra/serverless`](../infra/serverless) packages the Next.js 16 standalone server with AWS's Lambda Web Adapter, retains Neon PostgreSQL, and exposes a generated Lambda Function URL. Lambda is capped at two concurrent executions, so the mirror cannot fan out an unbounded number of application connection pools. The runtime role reads one exact SSM SecureString; Terraform state contains no database, authentication, or OAuth secret. ECR retains three immutable scanned images, CloudWatch logs expire after seven days, and an optional account budget defaults to $1.
+[`infra/serverless`](../infra/serverless) packages the Next.js 16 standalone server with AWS's Lambda Web Adapter, retains Neon PostgreSQL, and exposes a generated Lambda Function URL. Provisioned and reserved concurrency are disabled; the new account's regional quota of 10 is the current hard ceiling because AWS requires all 10 executions to remain unreserved. The runtime role reads one exact SSM SecureString; Terraform state contains no database, authentication, or OAuth secret. ECR retains three immutable scanned images, CloudWatch logs expire after seven days, and an optional account budget defaults to $1.
 
-This route avoids the NAT Gateway, Application Load Balancer, Fargate, and RDS resources that create the commercial design's material idle bill. It is still usage-priced: an account can incur Lambda compute/request, ECR storage, SSM API, log, and transfer charges after applicable credits or allowances. Budget notifications lag and do not stop resources. The AWS-generated URL is adequate for a portfolio mirror, so a domain is not required.
+This route avoids the NAT Gateway, Application Load Balancer, Fargate, and RDS resources that create the commercial design's material idle bill. It is still usage-priced. At deployment time, the AWS Free account plan prevented charges and the private ECR footprint remained below its 500 MB introductory allowance; an upgrade to a paid plan or future usage beyond allowances changes that risk. Budget notifications lag and do not stop resources. The AWS-generated URL is adequate for a portfolio mirror, so a domain is not required.
 
 AWS Amplify is intentionally not used for this mirror because its current managed SSR documentation supports Next.js only through version 15, while NuraPrep uses Next.js 16. The Lambda Web Adapter is maintained by AWS and runs ordinary HTTP applications without replacing Next.js routing.
 
-The local evidence currently proves that the Lambda image builds for the selected target, starts through a fail-closed encrypted-configuration bootstrap, and that Terraform validates with both guardrail tests passing. It does not prove a public AWS deployment. Complete the two-pass procedure in [`infra/serverless/README.md`](../infra/serverless/README.md), add the generated Google callback, and run live QA before changing that status.
+The applied mirror uses a single-platform `linux/amd64` distroless image pinned by digest. Its September 14, 2026 ECR enhanced scan completed with no reported findings; that is point-in-time evidence, not a guarantee about future vulnerability data. Live checks proved database-aware health, public rendering, protected practice, and a complete Google OAuth round trip. The Lambda policy contains only AWS's two Function URL statements, runtime IAM reads one exact SSM parameter, and the application secret values remain outside Terraform state. The two-pass release procedure is documented in [`infra/serverless/README.md`](../infra/serverless/README.md).
 
 ## Commercial AWS infrastructure: validated, not applied
 

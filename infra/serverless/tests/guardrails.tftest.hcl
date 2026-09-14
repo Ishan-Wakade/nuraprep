@@ -23,8 +23,13 @@ run "public_runtime_is_bounded" {
   }
 
   assert {
-    condition     = aws_lambda_function.app[0].reserved_concurrent_executions == 2
-    error_message = "Portfolio concurrency must remain explicitly cost-gated."
+    condition     = aws_lambda_function.app[0].reserved_concurrent_executions == null
+    error_message = "The Free plan deployment must not request reserved or provisioned concurrency."
+  }
+
+  assert {
+    condition     = var.reserved_concurrency == null
+    error_message = "The default must preserve the new-account regional concurrency ceiling."
   }
 
   assert {
@@ -35,5 +40,10 @@ run "public_runtime_is_bounded" {
   assert {
     condition     = aws_lambda_function.app[0].environment[0].variables.NURAPREP_RUNTIME_PARAMETER == "/nuraprep/portfolio/runtime"
     error_message = "The application must receive only the configured runtime parameter name."
+  }
+
+  assert {
+    condition     = aws_lambda_function.app[0].environment[0].variables.AWS_LWA_READINESS_CHECK_PATH == "/icon.svg"
+    error_message = "Lambda startup readiness must not depend on a sleeping database."
   }
 }
