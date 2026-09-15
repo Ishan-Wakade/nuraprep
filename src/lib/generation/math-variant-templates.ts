@@ -113,11 +113,15 @@ const linearEquationForms = [
 ] as const;
 
 const inequalityContexts = [
-  { key: "workshop-seats", noun: "workshop seats" },
-  { key: "study-guides", noun: "study guides" },
-  { key: "supply-packs", noun: "supply packs" },
-  { key: "event-tickets", noun: "event tickets" },
-  { key: "meal-kits", noun: "meal kits" },
+  {
+    key: "workshop-seats",
+    noun: "workshop seats",
+    singularNoun: "workshop seat",
+  },
+  { key: "study-guides", noun: "study guides", singularNoun: "study guide" },
+  { key: "supply-packs", noun: "supply packs", singularNoun: "supply pack" },
+  { key: "event-tickets", noun: "event tickets", singularNoun: "event ticket" },
+  { key: "meal-kits", noun: "meal kits", singularNoun: "meal kit" },
 ] as const;
 
 const inequalityFrames: PromptFrame[] = [
@@ -133,8 +137,8 @@ const inequalityFrames: PromptFrame[] = [
   },
   {
     key: "upper-bound",
-    render: ({ fixed, unit, budget, noun }) =>
-      `After a $${fixed} setup charge, each ${noun} costs $${unit}. If spending is limited to $${budget}, how many ${noun} can be included at most?`,
+    render: ({ fixed, unit, budget, noun, singularNoun }) =>
+      `After a $${fixed} setup charge, each ${singularNoun} costs $${unit}. If spending is limited to $${budget}, how many ${noun} can be included at most?`,
   },
   {
     key: "solve-context-inequality",

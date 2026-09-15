@@ -29,6 +29,7 @@
     "questions:variants:audit": "tsx scripts/audit-deterministic-drafts.ts",
     "questions:variants:stage": "tsx scripts/stage-math-variants.ts",
     "questions:mvp:release": "tsx scripts/release-mvp-math-bank.ts",
+    "questions:math:expand": "tsx scripts/release-math-expansion-wave.ts",
     "questions:bank:audit": "tsx scripts/audit-published-math-bank.ts",
     "questions:bank:export": "tsx scripts/export-reviewed-math-bank.ts",
     "auth:bootstrap-admin": "tsx scripts/bootstrap-first-admin.ts",

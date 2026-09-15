@@ -56,6 +56,8 @@ describe("Math deterministic variant templates", () => {
       expect(prompt).not.toMatch(/\b1 hours\b/i);
       expect(prompt).not.toMatch(/\ba 8%\b/i);
       expect(prompt).not.toMatch(/^a account\b/i);
+      expect(prompt).not.toMatch(/\beach [a-z -]+s costs\b/i);
+      expect(prompt).not.toMatch(/^a exhibit\b/i);
     }
   });
 

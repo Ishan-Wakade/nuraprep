@@ -179,7 +179,7 @@ const circularRouteFrames = [
   {
     key: "repeated-circuit",
     render: (context: string, radius: number, laps: number) =>
-      `A ${context} forms a circle with radius ${radius} meters. What total distance is covered by going around the circle ${laps} times? Use π = 3.14.`,
+      `The ${context} forms a circle with radius ${radius} meters. What total distance is covered by going around the circle ${laps} times? Use π = 3.14.`,
   },
   {
     key: "route-distance",

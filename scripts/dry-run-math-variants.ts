@@ -1,7 +1,10 @@
 import { config } from "dotenv";
 import { Pool } from "pg";
 
-import { loadCurrentMathCorpus } from "@/data/math-variant-corpus";
+import {
+  loadCurrentMathCorpus,
+  loadPublishedMathCorpus,
+} from "@/data/math-variant-corpus";
 import { generateDeterministicVariantBatch } from "@/lib/generation/deterministic-variants";
 import {
   getMathDeterministicVariantTemplate,
@@ -22,7 +25,11 @@ async function main() {
           getMathDeterministicVariantTemplate(options.template) ??
             fail(`Unknown template: ${options.template}`),
         ];
-  const corpus = await withPool((pool) => loadCurrentMathCorpus(pool));
+  const corpus = await withPool((pool) =>
+    options.corpus === "published"
+      ? loadPublishedMathCorpus(pool)
+      : loadCurrentMathCorpus(pool),
+  );
   const evolvingCorpus = [...corpus];
   const batches = templates.map((template) => {
     const batch = generateDeterministicVariantBatch({
@@ -50,6 +57,7 @@ async function main() {
         notice:
           "No question, review decision, validation run, or publication was written.",
         existingCorpusSize: corpus.length,
+        corpusScope: options.corpus,
         requestedPerTemplate: options.count,
         seed: options.seed,
         totals: {
@@ -98,7 +106,7 @@ function parseOptions(arguments_: string[]) {
         const match = argument.match(/^--([a-z-]+)=(.+)$/);
         if (!match) {
           throw new Error(
-            `Invalid argument ${argument}. Use --template=, --count=, --seed=, or --max-attempts=.`,
+            `Invalid argument ${argument}. Use --template=, --count=, --seed=, --max-attempts=, or --corpus=all|published.`,
           );
         }
         return [match[1], match[2]];
@@ -113,9 +121,13 @@ function parseOptions(arguments_: string[]) {
   );
   const seed = values.seed?.trim() || "local-reviewed-pilot-v1";
   const template = values.template?.trim() || "all";
+  const corpus = values.corpus?.trim() || "all";
+  if (corpus !== "all" && corpus !== "published") {
+    throw new Error("corpus must be all or published.");
+  }
   if (seed.length > 160)
     throw new Error("seed must be at most 160 characters.");
-  return { count, maxAttempts, seed, template };
+  return { count, maxAttempts, seed, template, corpus };
 }
 
 function integerOption(

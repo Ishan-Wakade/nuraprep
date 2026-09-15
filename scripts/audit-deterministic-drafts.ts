@@ -37,12 +37,13 @@ type AuditRow = {
 };
 
 async function main() {
+  const lifecycle = parseLifecycle(process.argv.slice(2));
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL is required.");
   const pool = new Pool({ connectionString: databaseUrl });
   try {
     const [draftResult, corpusResult] = await Promise.all([
-      pool.query<AuditRow>(auditQuery),
+      pool.query<AuditRow>(auditQuery, [lifecycle]),
       pool.query<{
         id: string;
         prompt: string;
@@ -86,11 +87,26 @@ async function main() {
       })),
       currentMathCorpus: corpusResult.rows,
     });
-    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+    process.stdout.write(
+      `${JSON.stringify({ lifecycle, ...report }, null, 2)}\n`,
+    );
     if (!report.passed) process.exitCode = 1;
   } finally {
     await pool.end();
   }
+}
+
+function parseLifecycle(arguments_: string[]) {
+  const values = arguments_.filter((argument) => argument !== "--");
+  if (values.length === 0) return "DRAFT";
+  if (values.length !== 1) {
+    throw new Error("Use at most one --lifecycle=DRAFT|ARCHIVED option.");
+  }
+  const match = values[0]?.match(/^--lifecycle=(DRAFT|ARCHIVED)$/);
+  if (!match) {
+    throw new Error("lifecycle must be DRAFT or ARCHIVED.");
+  }
+  return match[1];
 }
 
 const auditQuery = `
@@ -147,7 +163,7 @@ const auditQuery = `
     INNER JOIN generation_runs generation ON generation.id = version.generation_run_id
     INNER JOIN generation_templates template ON template.id = generation.template_id
    WHERE question.section = 'MATH'
-     AND question.lifecycle = 'DRAFT'
+     AND question.lifecycle = $1
      AND question.internal_slug NOT LIKE 'e2e-%'
      AND generation.provider = 'NuraPrep'
      AND generation.model LIKE 'deterministic/%'
