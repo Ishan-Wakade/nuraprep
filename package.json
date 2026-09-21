@@ -40,17 +40,17 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "dependencies": {
-    "@aws-sdk/client-secrets-manager": "^3.1131.0",
-    "@aws-sdk/client-ssm": "^3.1131.0",
-    "better-auth": "1.7.2",
+    "@aws-sdk/client-secrets-manager": "^3.1135.0",
+    "@aws-sdk/client-ssm": "^3.1135.0",
+    "better-auth": "1.7.5",
     "drizzle-orm": "0.45.2",
-    "next": "16.3.4",
+    "next": "16.3.5",
     "pg": "^8.23.0",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "server-only": "0.0.1",
-    "stripe": "^22.6.1",
-    "zod": "^4.5.4"
+    "stripe": "^22.6.2",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
