@@ -45,7 +45,7 @@ COPY tsconfig.json ./
 COPY src/lambda/serverless-app-bootstrap.ts ./src/lambda/serverless-app-bootstrap.ts
 RUN pnpm build:lambda-app-bootstrap
 
-FROM public.ecr.aws/lambda/nodejs:24 AS lambda-worker
+FROM public.ecr.aws/lambda/nodejs:26 AS lambda-worker
 COPY --from=lambda-builder /app/dist/lambda/index.cjs ${LAMBDA_TASK_ROOT}/index.cjs
 CMD ["index.handler"]
 
